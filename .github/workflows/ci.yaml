@@ -1,0 +1,80 @@
+name: Lint and type check
+
+on:
+  pull_request:
+    branches: [main, dev]
+  push:
+    branches: [main, dev]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: "22"
+
+jobs:
+  lint:
+    name: Lint - ${{ matrix.app-name }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - app-name: "Frontend"
+            directory: "apps/frontend"
+          # - app-name: "Auth Microservice"
+          #   directory: "apps/auth_microservice"
+          - app-name: "Core Microservice"
+            directory: "apps/core_microservice"
+          - app-name: "Notifications Consumer"
+            directory: "apps/notifications_consumer_microservice"
+
+    defaults:
+      run:
+        working-directory: ./${{ matrix.directory }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+  type-check:
+    name: Type Check - ${{ matrix.app-name }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - app-name: "Frontend"
+            directory: "apps/frontend"
+          - app-name: "Auth Microservice"
+            directory: "apps/auth_microservice"
+          - app-name: "Core Microservice"
+            directory: "apps/core_microservice"
+          - app-name: "Notifications Consumer"
+            directory: "apps/notifications_consumer_microservice"
+
+    defaults:
+      run:
+        working-directory: ./${{ matrix.directory }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Type Check
+        run: npm run type-check
