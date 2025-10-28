@@ -1,4 +1,4 @@
-version: '3.8'
+#version: "3.8"
 
 services:
   postgres:
@@ -37,10 +37,65 @@ services:
     networks:
       - innogram-network
 
+  auth_microservice:
+    build:
+      context: ./apps/auth_microservice
+      dockerfile: Dockerfile
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - innogram-network
+
+  core_microservice:
+    build:
+      context: ./apps/core_microservice
+      dockerfile: Dockerfile
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - innogram-network
+
+  notifications_consumer_microservice:
+    build:
+      context: ./apps/notifications_consumer_microservice
+      dockerfile: Dockerfile
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - innogram-network
+
+  nginx:
+    image: nginx:1.27.4-bookworm
+    ports:
+      - "80:80"
+    volumes:
+      - ./apps/frontend/dist:/usr/share/nginx/html:ro
+      - ./apps/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - innogram-network
+
 volumes:
   postgres_data:
   redis_data:
 
 networks:
   innogram-network:
-    driver: bridge
+    driver: innogram-network
