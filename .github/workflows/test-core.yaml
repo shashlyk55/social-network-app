@@ -33,7 +33,7 @@ jobs:
     needs: install-dependencies
     defaults:
       run:
-        working-directory: ./apps/core_microservice
+        working-directory: apps/core_microservice
 
     steps:
       - name: Run tests

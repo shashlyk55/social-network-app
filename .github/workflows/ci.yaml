@@ -45,12 +45,12 @@ jobs:
 
     defaults:
       run:
-        working-directory: ./${{ matrix.directory }}
+        working-directory: ${{ matrix.directory }}
 
     steps:
       - name: Run ESLint
-        run: npm run lint --workspace=./${{ matrix.directory }}
-        
+        run: npm run lint --workspace=${{ matrix.directory }}
+
   type-check:
     name: Type Check - ${{ matrix.app-name }}
     runs-on: ubuntu-latest
@@ -68,7 +68,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: ./${{ matrix.directory }}
+        working-directory: ${{ matrix.directory }}
 
     steps:
       - name: Run Type Check
