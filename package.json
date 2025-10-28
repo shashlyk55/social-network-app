@@ -18,7 +18,7 @@
     "docker:down": "docker-compose down",
     "db:migrate": "turbo run db:migrate",
     "db:seed": "turbo run db:seed",
-    "test:core": "jest "
+    "test:core": "jest --projects apps/core_microservice"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
