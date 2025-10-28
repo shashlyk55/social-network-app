@@ -78,3 +78,26 @@ jobs:
 
       - name: Run Type Check
         run: npm run type-check
+
+  test:
+    name: Run Tests - Core Microservice
+    needs: [lint, type-check]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./apps/core_microservice
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm run test
