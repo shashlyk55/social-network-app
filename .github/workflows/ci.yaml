@@ -35,13 +35,13 @@ jobs:
       matrix:
         include:
           - app-name: "Frontend"
-            directory: "frontend"
+            directory: "@innogram/frontend"
           # - app-name: "Auth Microservice"
-          #   directory: "auth_microservice"
+          #   directory: "@innogram/auth_microservice"
           - app-name: "Core Microservice"
-            directory: "core_microservice"
+            directory: "@innogram/core_microservice"
           - app-name: "Notifications Consumer"
-            directory: "notifications_consumer_microservice"
+            directory: "@innogram/notifications_consumer_microservice"
 
     defaults:
       run:
@@ -58,13 +58,13 @@ jobs:
       matrix:
         include:
           - app-name: "Frontend"
-            directory: "frontend"
+            directory: "@innogram/frontend"
           - app-name: "Auth Microservice"
-            directory: "auth_microservice"
+            directory: "@innogram/auth_microservice"
           - app-name: "Core Microservice"
-            directory: "core_microservice"
+            directory: "@innogram/core_microservice"
           - app-name: "Notifications Consumer"
-            directory: "notifications_consumer_microservice"
+            directory: "@innogram/notifications_consumer_microservice"
 
     defaults:
       run:
