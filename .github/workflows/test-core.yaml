@@ -2,9 +2,9 @@ name: Test Core Microservice
 
 on:
   pull_request:
-    branches: [main, dev, "feature/INO-*"]
+    branches: [main, dev, "feature/**"]
   push:
-    branches: [main, dev, "feature/INO-*"]
+    branches: [main, dev, "feature/**"]
   workflow_dispatch:
 
 env:
@@ -37,4 +37,4 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run tests
-        run: npm run test --workspace=@innogram/core_microservice
+        run: npx jest --projects apps/core_microservice
