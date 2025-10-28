@@ -37,4 +37,4 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run tests
-        run: npx jest --projects apps/core_microservice
+        run: npx turbo run test --filter=@innogram/core_microservice
