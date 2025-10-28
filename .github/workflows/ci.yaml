@@ -35,16 +35,16 @@ jobs:
       matrix:
         include:
           - app-name: "Frontend"
-            directory: "@innogram/frontend"
+            workspace: "@innogram/frontend"
             foldder: frontend
             #- app-name: "Auth Microservice"
-            #  directory: "@innogram/auth_microservice"
+            #  workspace: "@innogram/auth_microservice"
             folder: auth_microservice
           - app-name: "Core Microservice"
-            directory: "@innogram/core_microservice"
+            workspace: "@innogram/core_microservice"
             folder: core_microservice
           - app-name: "Notifications Consumer"
-            directory: "@innogram/notifications_consumer_microservice"
+            workspace: "@innogram/notifications_consumer_microservice"
             folder: notifications_consumer_microservice
 
     steps:
@@ -70,16 +70,16 @@ jobs:
       matrix:
         include:
           - app-name: "Frontend"
-            directory: "@innogram/frontend"
+            workspace: "@innogram/frontend"
             foldder: frontend
-            #- app-name: "Auth Microservice"
-            #  directory: "@innogram/auth_microservice"
-            folder: auth_microservice
+            # - app-name: "Auth Microservice"
+            #   workspace: "@innogram/auth_microservice"
+            # folder: auth_microservice
           - app-name: "Core Microservice"
-            directory: "@innogram/core_microservice"
+            workspace: "@innogram/core_microservice"
             folder: core_microservice
           - app-name: "Notifications Consumer"
-            directory: "@innogram/notifications_consumer_microservice"
+            workspace: "@innogram/notifications_consumer_microservice"
             folder: notifications_consumer_microservice
 
     steps:
