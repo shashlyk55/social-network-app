@@ -2,9 +2,9 @@ name: Test Core Microservice
 
 on:
   pull_request:
-    branches: [main, dev]
+    branches: [main, dev, "feature/INO-*"]
   push:
-    branches: [main, dev]
+    branches: [main, dev, "feature/INO-*"]
   workflow_dispatch:
 
 env:
