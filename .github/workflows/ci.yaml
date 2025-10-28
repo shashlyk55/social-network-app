@@ -37,8 +37,8 @@ jobs:
           - app-name: "Frontend"
             workspace: "@innogram/frontend"
             foldder: frontend
-            #- app-name: "Auth Microservice"
-            #  workspace: "@innogram/auth_microservice"
+          - app-name: "Auth Microservice"
+            workspace: "@innogram/auth_microservice"
             folder: auth_microservice
           - app-name: "Core Microservice"
             workspace: "@innogram/core_microservice"
@@ -72,9 +72,9 @@ jobs:
           - app-name: "Frontend"
             workspace: "@innogram/frontend"
             foldder: frontend
-            # - app-name: "Auth Microservice"
-            #   workspace: "@innogram/auth_microservice"
-            # folder: auth_microservice
+          - app-name: "Auth Microservice"
+            workspace: "@innogram/auth_microservice"
+            folder: auth_microservice
           - app-name: "Core Microservice"
             workspace: "@innogram/core_microservice"
             folder: core_microservice
