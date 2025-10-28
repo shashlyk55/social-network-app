@@ -11,10 +11,9 @@ env:
   NODE_VERSION: "22"
 
 jobs:
-  test:
-    name: Test - Core Microservice
+  install-dependencies:
+    name: Install Dependencies
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -27,6 +26,15 @@ jobs:
 
       - name: Install all dependencies
         run: npm ci
+
+  test:
+    name: Test - Core Microservice
+    runs-on: ubuntu-latest
+    needs: install-dependencies
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Run tests
         run: npx turbo run test --filter=@innogram/core_microservice
