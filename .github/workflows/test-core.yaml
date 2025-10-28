@@ -33,8 +33,5 @@ jobs:
     needs: install-dependencies
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
       - name: Run tests
         run: npx turbo run test --filter=@innogram/core_microservice
