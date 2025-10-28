@@ -37,5 +37,5 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run tests
-        run: npm run test --workspace=@innogram/core_microservice
+        run: npm run test:core
         #run: npx turbo run test --filter=@innogram/core_microservice
