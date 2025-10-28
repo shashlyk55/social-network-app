@@ -35,17 +35,17 @@ jobs:
       matrix:
         include:
           - app-name: "Frontend"
-            directory: "apps/frontend"
+            directory: "frontend"
           # - app-name: "Auth Microservice"
-          #   directory: "apps/auth_microservice"
+          #   directory: "auth_microservice"
           - app-name: "Core Microservice"
-            directory: "apps/core_microservice"
+            directory: "core_microservice"
           - app-name: "Notifications Consumer"
-            directory: "apps/notifications_consumer_microservice"
+            directory: "notifications_consumer_microservice"
 
     defaults:
       run:
-        working-directory: ${{ matrix.directory }}
+        working-directory: apps/${{ matrix.directory }}
 
     steps:
       - name: Run ESLint
@@ -58,17 +58,17 @@ jobs:
       matrix:
         include:
           - app-name: "Frontend"
-            directory: "apps/frontend"
+            directory: "frontend"
           - app-name: "Auth Microservice"
-            directory: "apps/auth_microservice"
+            directory: "auth_microservice"
           - app-name: "Core Microservice"
-            directory: "apps/core_microservice"
+            directory: "core_microservice"
           - app-name: "Notifications Consumer"
-            directory: "apps/notifications_consumer_microservice"
+            directory: "notifications_consumer_microservice"
 
     defaults:
       run:
-        working-directory: ${{ matrix.directory }}
+        working-directory: apps/${{ matrix.directory }}
 
     steps:
       - name: Run Type Check
