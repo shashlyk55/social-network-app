@@ -49,8 +49,8 @@ jobs:
 
     steps:
       - name: Run ESLint
-        run: npm run lint
-
+        run: npm run lint --workspace=./${{ matrix.directory }}
+        
   type-check:
     name: Type Check - ${{ matrix.app-name }}
     runs-on: ubuntu-latest
