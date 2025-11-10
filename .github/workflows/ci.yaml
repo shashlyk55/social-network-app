@@ -1,0 +1,100 @@
+name: Lint and type check
+
+on:
+  pull_request:
+    branches: [main, dev, "feature/**"]
+  push:
+    branches: [main, dev, "feature/**"]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: "22"
+
+jobs:
+  install-dependencies:
+    name: Install Dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install all dependencies
+        run: npm ci
+
+  lint:
+    name: Lint - ${{ matrix.app-name }}
+    runs-on: ubuntu-latest
+    needs: install-dependencies
+    strategy:
+      matrix:
+        include:
+          - app-name: "Frontend"
+            workspace: "@innogram/frontend"
+            foldder: frontend
+          - app-name: "Auth Microservice"
+            workspace: "@innogram/auth_microservice"
+            folder: auth_microservice
+          - app-name: "Core Microservice"
+            workspace: "@innogram/core_microservice"
+            folder: core_microservice
+          - app-name: "Notifications Consumer"
+            workspace: "@innogram/notifications_consumer_microservice"
+            folder: notifications_consumer_microservice
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npx turbo run lint --filter=${{ matrix.workspace }}
+
+  type-check:
+    name: Type Check - ${{ matrix.app-name }}
+    runs-on: ubuntu-latest
+    needs: install-dependencies
+    strategy:
+      matrix:
+        include:
+          - app-name: "Frontend"
+            workspace: "@innogram/frontend"
+            foldder: frontend
+          - app-name: "Auth Microservice"
+            workspace: "@innogram/auth_microservice"
+            folder: auth_microservice
+          - app-name: "Core Microservice"
+            workspace: "@innogram/core_microservice"
+            folder: core_microservice
+          - app-name: "Notifications Consumer"
+            workspace: "@innogram/notifications_consumer_microservice"
+            folder: notifications_consumer_microservice
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Type Check
+        run: npx turbo run type-check --filter=${{ matrix.workspace }}

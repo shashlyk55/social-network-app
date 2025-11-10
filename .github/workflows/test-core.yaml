@@ -1,0 +1,48 @@
+name: Test Core Microservice
+
+on:
+  pull_request:
+    branches: [main, dev, "feature/**"]
+  push:
+    branches: [main, dev, "feature/**"]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: "22"
+
+jobs:
+  install-dependencies:
+    name: Install Dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install all dependencies
+        run: npm ci
+
+  test:
+    name: Test - Core Microservice
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install all dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npx turbo run test --filter=@innogram/core_microservice

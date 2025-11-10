@@ -1,0 +1,23 @@
+{
+  "name": "@innogram/auth_microservice",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node dist/index.js",
+    "build": "tsc",
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^5.1.0",
+    "@types/express": "^5.0.5",
+    "@types/node": "^24.10.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}
