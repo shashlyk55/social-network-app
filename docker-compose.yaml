@@ -4,14 +4,13 @@ services:
   postgres:
     image: postgres:15
     container_name: innogram-postgres
-    environment:
-      POSTGRES_DB: innogram
-      POSTGRES_USER: innogram_user
-      POSTGRES_PASSWORD: innogram_password
+    env_file:
+      - ./apps/core_microservice/core.env
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./packages/db/init-scripts:/docker-entrypoint-initdb.d
     networks:
       - innogram-network
 
@@ -42,6 +41,8 @@ services:
       context: ./apps/auth_microservice
       dockerfile: Dockerfile
     restart: always
+    env_file:
+      - ./apps/auth_microservice/auth.env
     depends_on:
       postgres:
         condition: service_healthy
@@ -57,6 +58,8 @@ services:
       context: ./apps/core_microservice
       dockerfile: Dockerfile
     restart: always
+    env_file:
+      - ./apps/core_microservice/core.env
     depends_on:
       postgres:
         condition: service_healthy
@@ -72,6 +75,8 @@ services:
       context: ./apps/notifications_consumer_microservice
       dockerfile: Dockerfile
     restart: always
+    env_file:
+      - ./apps/notifications_consumer_microservice/notifications-consumer.env
     depends_on:
       postgres:
         condition: service_healthy
