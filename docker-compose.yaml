@@ -4,8 +4,12 @@ services:
   postgres:
     image: postgres:15
     container_name: innogram-postgres
+    environment:
+      POSTGRES_USER: postgres_user
+      POSTGRES_DB: innogam_db
+      POSTGRES_PASSWORD: 123
     env_file:
-      - ./apps/core_microservice/core.env
+      - .env
     ports:
       - "5432:5432"
     volumes:
