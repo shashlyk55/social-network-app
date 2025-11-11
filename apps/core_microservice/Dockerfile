@@ -25,4 +25,4 @@ COPY --from=builder /app/dist ./dist
 
 EXPOSE 3000
 
-CMD ["pm2-runtime", "dist/main.js"]
+CMD ["pm2-runtime", "dist/src/main.js"]

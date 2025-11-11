@@ -4,14 +4,14 @@ set -e
 echo "Starting database initialization..."
 
 # Переменные из окружения или значения по умолчанию
-DB_NAME=${POSTGRES_DB:-innogram_core}
-DB_USER=${POSTGRES_USER:-postgres_user}
-DB_PASSWORD=${POSTGRES_PASSWORD:-123}
-DB_SCHEMA=${POSTGRES_SCHEMA:-main}
+DB_NAME=${POSTGRES_DB}
+DB_USER=${POSTGRES_USER}
+DB_PASSWORD=${POSTGRES_PASSWORD}
+DB_SCHEMA=${POSTGRES_SCHEMA}
 
 echo "Creating database: $DB_NAME"
 echo "Creating user: $DB_USER"
-echo "Using schema: $DB_SCHEMA"
+# echo "Using schema: $DB_SCHEMA"
 
 # Создаем пользователя
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<-EOSQL
@@ -28,33 +28,25 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$DB_NAME" <<-EOSQL
     CREATE SCHEMA IF NOT EXISTS core;
     CREATE SCHEMA IF NOT EXISTS auth;
     CREATE SCHEMA IF NOT EXISTS notification;
-    CREATE SCHEMA IF NOT EXISTS $DB_SCHEMA;
     
     -- Даем права на схемы
     GRANT ALL ON SCHEMA core TO $DB_USER;
     GRANT ALL ON SCHEMA auth TO $DB_USER;
     GRANT ALL ON SCHEMA notification TO $DB_USER;
-    GRANT ALL ON SCHEMA $DB_SCHEMA TO $DB_USER;
     
     -- Настраиваем default privileges для таблиц
     ALTER DEFAULT PRIVILEGES IN SCHEMA core GRANT ALL ON TABLES TO $DB_USER;
     ALTER DEFAULT PRIVILEGES IN SCHEMA auth GRANT ALL ON TABLES TO $DB_USER;
     ALTER DEFAULT PRIVILEGES IN SCHEMA notification GRANT ALL ON TABLES TO $DB_USER;
-    ALTER DEFAULT PRIVILEGES IN SCHEMA $DB_SCHEMA GRANT ALL ON TABLES TO $DB_USER;
     
     -- Настраиваем default privileges для последовательностей
     ALTER DEFAULT PRIVILEGES IN SCHEMA core GRANT ALL ON SEQUENCES TO $DB_USER;
     ALTER DEFAULT PRIVILEGES IN SCHEMA auth GRANT ALL ON SEQUENCES TO $DB_USER;
     ALTER DEFAULT PRIVILEGES IN SCHEMA notification GRANT ALL ON SEQUENCES TO $DB_USER;
-    ALTER DEFAULT PRIVILEGES IN SCHEMA $DB_SCHEMA GRANT ALL ON SEQUENCES TO $DB_USER;
-    
-    -- Устанавливаем search_path
-    ALTER USER $DB_USER SET search_path TO $DB_SCHEMA, core, auth, notification, public;
-    
+        
     -- Проверяем создание
     SELECT 'Database ' || '$DB_NAME' || ' created successfully!' AS status;
     SELECT 'User: ' || '$DB_USER' AS user_info;
-    SELECT 'Default schema: ' || '$DB_SCHEMA' AS schema_info;
 EOSQL
 
 echo "Database initialization completed successfully!"
