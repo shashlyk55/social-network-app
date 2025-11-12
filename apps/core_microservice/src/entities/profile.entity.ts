@@ -1,0 +1,50 @@
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToOne,
+  JoinColumn,
+  OneToMany,
+} from 'typeorm';
+import { User } from './user.entity';
+import { ProfileFollow } from './many-to-many/profile-follow.entity';
+import { ProfileToProfileConfiguration } from './many-to-many/profile-to-profile-configuration.entity';
+
+@Entity()
+export class Profile {
+  @PrimaryGeneratedColumn('increment')
+  id: number;
+
+  @Column()
+  name: string;
+
+  @Column({ nullable: true })
+  bio: string;
+
+  @Column({ nullable: true })
+  avatarId: string;
+
+  @Column()
+  userId: string;
+
+  @OneToOne(() => User, (user) => user.profile)
+  @JoinColumn()
+  user: User;
+
+  // Follow relationships
+  @OneToMany(() => ProfileFollow, (follow) => follow.follower)
+  following: ProfileFollow[];
+
+  @OneToMany(() => ProfileFollow, (follow) => follow.following)
+  followers: ProfileFollow[];
+
+  // Privacy configurations
+  @OneToMany(() => ProfileToProfileConfiguration, (config) => config.profile)
+  profileConfigurations: ProfileToProfileConfiguration[];
+
+  @OneToMany(
+    () => ProfileToProfileConfiguration,
+    (config) => config.targetProfile,
+  )
+  targetProfileConfigurations: ProfileToProfileConfiguration[];
+}
