@@ -20,23 +20,24 @@ export class ProfileToProfileConfiguration {
   @Column()
   targetProfileId: number;
 
-  @Column({ default: 'default' })
-  visibility: string; // 'default', 'visible', 'hidden', 'blocked'
+  @Column({
+    type: 'enum',
+    enum: ['visible', 'hidden', 'blocked'],
+    default: 'visible',
+  })
+  visibility: string;
 
   @Column({ default: false })
   canSeePosts: boolean;
 
   @Column({ default: false })
-  canSeeFriends: boolean;
+  canSeeFollowers: boolean;
 
   @Column({ default: false })
   canSendMessage: boolean;
 
   @Column({ default: false })
   canComment: boolean;
-
-  @Column({ type: 'jsonb', nullable: true })
-  customSettings: any;
 
   @CreateDateColumn()
   createdAt: Date;

@@ -32,18 +32,18 @@ export class Notification {
   @Column({ type: 'jsonb', nullable: true })
   metadata: any;
 
+  @CreateDateColumn()
+  createdAt: Date;
+
   @Column()
-  recipientId: string;
+  recipientId: number;
 
   @ManyToOne(() => User)
   recipient: User;
 
   @Column({ nullable: true })
-  senderId: string;
+  senderId: number;
 
   @ManyToOne(() => User, { nullable: true })
   sender: User;
-
-  @CreateDateColumn()
-  createdAt: Date;
 }

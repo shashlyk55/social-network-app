@@ -35,7 +35,7 @@ export class Chat {
   updatedAt: Date;
 
   @Column()
-  creatorId: string;
+  creatorId: number;
 
   @ManyToOne(() => User, (user) => user.createdChats)
   creator: User;

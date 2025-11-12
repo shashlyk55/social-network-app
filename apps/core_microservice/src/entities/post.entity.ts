@@ -36,7 +36,7 @@ export class Post {
   deletedAt: Date;
 
   @Column()
-  authorId: string;
+  authorId: number;
 
   @CreateDateColumn()
   createdAt: Date;
