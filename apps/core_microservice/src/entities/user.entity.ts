@@ -27,9 +27,6 @@ export class User {
   @Column({ unique: true })
   email: string;
 
-  @Column({ default: false })
-  isActive: boolean;
-
   @Column({
     type: 'enum',
     enum: ['user', 'admin'],

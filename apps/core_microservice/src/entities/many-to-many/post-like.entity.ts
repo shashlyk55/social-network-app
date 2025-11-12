@@ -22,7 +22,7 @@ export class PostLike {
 
   @Column({
     type: 'enum',
-    enum: ['like', 'love', 'haha', 'wow', 'sad', 'angry'],
+    enum: ['like', 'wow', 'sad', 'angry'],
     default: 'like',
   })
   reactionType: string;

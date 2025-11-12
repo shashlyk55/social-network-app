@@ -31,7 +31,7 @@ export class Message {
   isEdited: boolean;
 
   @Column({ nullable: true })
-  repliedToId: string;
+  repliedToId: number;
 
   @CreateDateColumn()
   createdAt: Date;
@@ -40,13 +40,13 @@ export class Message {
   updatedAt: Date;
 
   @Column()
-  senderId: string;
+  senderId: number;
 
   @ManyToOne(() => User, (user) => user.messages)
   sender: User;
 
   @Column()
-  chatId: string;
+  chatId: number;
 
   @ManyToOne(() => Chat, (chat) => chat.messages)
   chat: Chat;

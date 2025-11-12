@@ -21,8 +21,12 @@ export class ChatParticipant {
   @Column()
   userId: number;
 
-  @Column({ default: 'member' })
-  role: string; // 'member', 'admin', 'creator'
+  @Column({
+    type: 'enum',
+    enum: ['member', 'admin', 'creator'],
+    default: 'member',
+  })
+  role: string;
 
   @Column({ default: false })
   isMuted: boolean;

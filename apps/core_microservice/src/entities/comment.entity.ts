@@ -26,13 +26,13 @@ export class Comment {
   updatedAt: Date;
 
   @Column()
-  authorId: string;
+  authorId: number;
 
   @ManyToOne(() => User, (user) => user.comments)
   author: User;
 
   @Column()
-  postId: string;
+  postId: number;
 
   @ManyToOne(() => Post, (post) => post.comments)
   post: Post;

@@ -35,7 +35,7 @@ export class Account {
   providerId: string;
 
   @Column()
-  userId: string;
+  userId: number;
 
   @OneToOne(() => User, (user) => user.account)
   @JoinColumn()

@@ -42,7 +42,7 @@ export class Asset {
   uploadedAt: Date;
 
   @Column()
-  uploaderId: string;
+  uploaderId: number;
 
   @ManyToOne(() => User)
   uploader: User;

@@ -22,10 +22,10 @@ export class Profile {
   bio: string;
 
   @Column({ nullable: true })
-  avatarId: string;
+  avatarId: number;
 
   @Column()
-  userId: string;
+  userId: number;
 
   @OneToOne(() => User, (user) => user.profile)
   @JoinColumn()
