@@ -1,31 +1,29 @@
-export type CreateUserParams = {
-  email: string;
-  password: string;
-  name: string;
-  bio?: string;
-};
+import { User } from 'src/entities/user.entity';
 
-export type FindAllUsersParams = {
+export interface CreateUserParams {
+  role: string;
+  disabled?: boolean;
+  createdById: number;
+}
+
+export interface UpdateUserParams {
+  id: number;
+  role?: string;
+  disabled?: boolean;
+  updatedById?: number;
+}
+
+export interface FindUsersParams {
   page?: number;
   limit?: number;
-  search?: string;
-  role?: 'user' | 'admin';
-  sortBy?: string;
-  sortOrder?: 'ASC' | 'DESC';
-};
+  role?: string;
+  disabled?: boolean;
+}
 
-export type FindAllUsersResult = {
-  users: any[];
+export interface UserPaginationResult {
+  data: User[];
   total: number;
   page: number;
   limit: number;
   totalPages: number;
-};
-
-export type UpdateUserParams = {
-  email?: string;
-  name?: string;
-  bio?: string;
-  avatarId?: number;
-  role?: 'user' | 'admin' | string;
-};
+}
