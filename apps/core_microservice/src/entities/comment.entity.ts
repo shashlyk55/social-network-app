@@ -28,14 +28,22 @@ export class Comment {
   @Column()
   authorId: number;
 
-  @ManyToOne(() => User, (user) => user.comments)
+  @ManyToOne(() => User, (user) => user.comments, {
+    onDelete: 'CASCADE',
+  })
   author: User;
 
   @Column()
   postId: number;
 
-  @ManyToOne(() => Post, (post) => post.comments)
+  @ManyToOne(() => Post, (post) => post.comments, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
   post: Post;
+
+  @Column({ default: 0 })
+  likesCount: number;
 
   @OneToMany(() => CommentLike, (commentLike) => commentLike.comment, {
     cascade: true,

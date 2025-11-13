@@ -50,14 +50,10 @@ export class User {
   @OneToOne(() => Profile, (profile) => profile.user)
   profile: Profile;
 
-  @OneToMany(() => Post, (post) => post.author, {
-    onDelete: 'CASCADE',
-  })
+  @OneToMany(() => Post, (post) => post.author)
   posts: Post[];
 
-  @OneToMany(() => Comment, (comment) => comment.author, {
-    onDelete: 'CASCADE',
-  })
+  @OneToMany(() => Comment, (comment) => comment.author)
   comments: Comment[];
 
   @OneToMany(() => Chat, (chat) => chat.creator, {

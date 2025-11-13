@@ -20,13 +20,6 @@ export class CommentLike {
   @Column()
   userId: number;
 
-  @Column({
-    type: 'enum',
-    enum: ['like', 'love', 'haha', 'wow', 'sad', 'angry'],
-    default: 'like',
-  })
-  reactionType: string;
-
   @CreateDateColumn()
   likedAt: Date;
 
