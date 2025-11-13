@@ -1,59 +1,120 @@
+// src/posts/utils/mappers.ts
 import { CreatePostDto } from '../dto/create-post.dto';
 import { UpdatePostDto } from '../dto/update-post.dto';
+import { CreatePostLikeDto } from '../dto/create-post-like.dto';
+import { PostResponseDto } from '../dto/post-response.dto';
+import {
+  PaginationResponseDto,
+  PaginationMetaDto,
+} from '../../common/dto/pagination-response.dto';
 import {
   CreatePostParams,
-  FindAllPostsParams,
-  FindArchivedPostsParams,
   UpdatePostParams,
+  CreatePostLikeParams,
+  PostPaginationResult,
 } from '../types/post-service.types';
+import { Post } from 'src/entities/post.entity';
 
-export class PostsParamsMapper {
-  static toCreatePostParams(
-    userId: number,
-    dto: CreatePostDto,
-  ): CreatePostParams {
+export class PostMappers {
+  static toCreateParams(dto: CreatePostDto): CreatePostParams {
     return {
-      authorId: userId,
       content: dto.content,
-      location: dto.location,
+      profileId: dto.profileId,
+      isArchived: dto.isArchived || false,
+      createdById: dto.createdById,
+      assetIds: dto.assetIds || [],
+    };
+  }
+
+  static toUpdateParams(id: number, dto: UpdatePostDto): UpdatePostParams {
+    return {
+      id,
+      content: dto.content,
+      isArchived: dto.isArchived,
+      updatedById: dto.updatedById,
       assetIds: dto.assetIds,
     };
   }
 
-  static toFindAllPostsParams(query: any): FindAllPostsParams {
-    return {
-      page: query.page ? parseInt(query.page) : undefined,
-      limit: query.limit ? parseInt(query.limit) : undefined,
-      search: query.search,
-      authorId: query.authorId ? parseInt(query.authorId) : undefined,
-      sortBy: query.sortBy,
-      sortOrder: query.sortOrder,
-    };
-  }
-
-  static toUpdatePostParams(
-    userId: number,
+  static toCreatePostLikeParams(
     postId: number,
-    dto: UpdatePostDto,
-  ): UpdatePostParams {
+    dto: CreatePostLikeDto,
+  ): CreatePostLikeParams {
     return {
-      content: dto.content,
-      location: dto.location,
-      assetIds: dto.assetIds,
+      postId,
+      profileId: dto.profileId,
+      createdById: dto.createdById,
     };
   }
 
-  static toFindArchivedPostsParams(
-    userId: number,
-    query: any,
-  ): FindArchivedPostsParams {
+  static toPostResponse(post: Post): PostResponseDto {
+    const response: PostResponseDto = {
+      id: post.id,
+      content: post.content,
+      isArchived: post.isArchived,
+      createdAt: post.createdAt,
+      updatedAt: post.updatedAt,
+      profileId: post.profileId,
+      createdById: post.createdById,
+      updatedById: post.updatedById,
+      profile: {
+        id: post.profile.id,
+        username: post.profile.username,
+        displayName: post.profile.displayName,
+      },
+      createdBy: {
+        id: post.createdBy.id,
+        role: post.createdBy.role,
+      },
+      assets: [],
+      likes: [],
+      commentsCount: post.comments ? post.comments.length : 0,
+      likesCount: post.postLikes ? post.postLikes.length : 0,
+    };
+
+    if (post.updatedBy) {
+      response.updatedBy = {
+        id: post.updatedBy.id,
+        role: post.updatedBy.role,
+      };
+    }
+
+    if (post.postAssets) {
+      response.assets = post.postAssets.map((asset) => ({
+        id: asset.id,
+        assetId: asset.assetId,
+        orderIndex: asset.orderIndex,
+        createdAt: asset.createdAt,
+      }));
+    }
+
+    if (post.postLikes) {
+      response.likes = post.postLikes.map((like) => ({
+        id: like.id,
+        profileId: like.profileId,
+        createdAt: like.createdAt,
+        profile: {
+          id: like.profile.id,
+          username: like.profile.username,
+          displayName: like.profile.displayName,
+        },
+      }));
+    }
+
+    return response;
+  }
+
+  static toPaginationResponse(
+    result: PostPaginationResult,
+  ): PaginationResponseDto<PostResponseDto> {
     return {
-      userId,
-      page: query.page ? parseInt(query.page) : undefined,
-      limit: query.limit ? parseInt(query.limit) : undefined,
-      search: query.search,
-      sortBy: query.sortBy,
-      sortOrder: query.sortOrder,
+      data: result.data.map((post) => this.toPostResponse(post)),
+      meta: {
+        page: result.page,
+        limit: result.limit,
+        total: result.total,
+        totalPages: result.totalPages,
+      },
     };
   }
 }

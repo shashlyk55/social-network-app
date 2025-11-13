@@ -1,459 +1,209 @@
 import {
   Injectable,
+  Post,
   NotFoundException,
-  ForbiddenException,
-  InternalServerErrorException,
-  BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, FindOptionsWhere, ILike, In } from 'typeorm';
+import { PostLike } from 'src/entities/many-to-many/post-like.entity';
+import { Post as PostEntity } from 'src/entities/post.entity';
+import { Repository } from 'typeorm';
+import { IPostsService } from './interfaces/IPostsService';
 import {
   CreatePostParams,
-  FindAllPostsParams,
+  FindPostsParams,
+  PostPaginationResult,
   UpdatePostParams,
-  FindAllPostsResult,
-  PostIdParams,
-  UserPostParams,
-  LikePostResult,
-  ArchivePostParams,
-  FindArchivedPostsParams,
-  FindArchivedPostsResult,
+  CreatePostLikeParams,
 } from './types/post-service.types';
-import { Asset } from 'src/entities/asset.entity';
-import { PostAsset } from 'src/entities/many-to-many/post-asset.entity';
-import { Post } from 'src/entities/post.entity';
-import { User } from 'src/entities/user.entity';
-import { IPostsService } from './interfaces/IPostsService';
-import { PostLike } from 'src/entities/many-to-many/post-like.entity';
 
 @Injectable()
 export class PostsService implements IPostsService {
   constructor(
-    @InjectRepository(Post)
-    private readonly postRepository: Repository<Post>,
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
+    @InjectRepository(PostEntity)
+    private readonly postRepository: Repository<PostEntity>,
     @InjectRepository(PostLike)
     private readonly postLikeRepository: Repository<PostLike>,
-    @InjectRepository(PostAsset)
-    private readonly postAssetRepository: Repository<PostAsset>,
-    @InjectRepository(Asset)
-    private readonly assetRepository: Repository<Asset>,
-    private readonly dataSource: DataSource,
   ) {}
 
-  async create(params: CreatePostParams): Promise<Post> {
-    const { authorId, content, location, assetIds } = params;
-
-    const user = await this.userRepository.findOne({ where: { id: authorId } });
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    try {
-      const post = this.postRepository.create({
-        content,
-        location,
-        authorId,
-      });
-
-      const savedPost = await queryRunner.manager.save(post);
-
-      if (assetIds && assetIds.length > 0) {
-        const assets = await this.assetRepository.find({
-          where: {
-            id: In(assetIds.map((id) => id)),
-            uploaderId: authorId,
-          },
-        });
-
-        if (assets.length !== assetIds.length) {
-          throw new BadRequestException(
-            'Some assets not found or do not belong to you',
-          );
-        }
-
-        const postAssets = assetIds.map((assetId, index) => {
-          return this.postAssetRepository.create({
-            postId: savedPost.id,
-            assetId: assetId,
-            order: index,
-          });
-        });
-
-        await queryRunner.manager.save(postAssets);
-      }
-
-      await queryRunner.commitTransaction();
-
-      return await this.findOne({ postId: savedPost.id });
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-
-      if (error instanceof BadRequestException) {
-        throw error;
-      }
-
-      throw new InternalServerErrorException(
-        'Failed to create post: ' + error.message,
-      );
-    } finally {
-      await queryRunner.release();
-    }
-  }
-
-  async findAll(params: FindAllPostsParams): Promise<FindAllPostsResult> {
-    const {
-      page = 1,
-      limit = 10,
-      search,
-      authorId,
-      sortBy = 'createdAt',
-      sortOrder = 'DESC',
-    } = params;
-
-    const where: FindOptionsWhere<Post> = { isArchived: false };
-
-    if (search) {
-      where.content = ILike(`%${search}%`);
-    }
-
-    if (authorId) {
-      where.authorId = authorId;
-    }
-
-    const [posts, total] = await this.postRepository.findAndCount({
-      where,
-      relations: ['author', 'author.profile', 'postAssets', 'postAssets.asset'],
-      order: { [sortBy]: sortOrder },
-      skip: (page - 1) * limit,
-      take: limit,
+  async create(params: CreatePostParams): Promise<PostEntity> {
+    const post = this.postRepository.create({
+      content: params.content,
+      profileId: params.profileId,
+      isArchived: params.isArchived || false,
+      createdById: params.createdById,
     });
 
-    const totalPages: number = Math.ceil(total / limit);
+    const savedPost = await this.postRepository.save(post);
 
-    console.log(posts);
-
-    return { posts, total, page, limit, totalPages };
+    return await this.findOne(savedPost.id);
   }
 
-  async findByAuthor(
-    authorId: number,
-    params: FindAllPostsParams,
-  ): Promise<FindAllPostsResult> {
-    const user = await this.userRepository.findOne({ where: { id: authorId } });
-    if (!user) {
-      throw new NotFoundException('User not found');
+  async findAll(params: FindPostsParams): Promise<PostPaginationResult> {
+    const { page = 1, limit = 10, profileId, isArchived } = params;
+    const skip = (page - 1) * limit;
+
+    const queryBuilder = this.postRepository
+      .createQueryBuilder('post')
+      .leftJoinAndSelect('post.profile', 'profile')
+      .leftJoinAndSelect('post.createdBy', 'createdBy')
+      .leftJoinAndSelect('post.updatedBy', 'updatedBy')
+      .leftJoinAndSelect('post.postAssets', 'postAssets')
+      .leftJoinAndSelect('post.postLikes', 'postLikes')
+      .leftJoinAndSelect('postLikes.profile', 'likeProfile')
+      .leftJoinAndSelect('post.comments', 'comments')
+      .where('post.isArchived = :isArchived', { isArchived: false });
+
+    if (profileId) {
+      queryBuilder.andWhere('post.profileId = :profileId', { profileId });
     }
 
-    const authorParams: FindAllPostsParams = {
-      ...params,
-      authorId,
-    };
+    if (isArchived !== undefined) {
+      queryBuilder.andWhere('post.isArchived = :isArchived', { isArchived });
+    }
 
-    return this.findAll(authorParams);
+    const [data, total] = await queryBuilder
+      .skip(skip)
+      .take(limit)
+      .orderBy('post.createdAt', 'DESC')
+      .getManyAndCount();
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
-  async findOne(
-    params: PostIdParams & { currentUserId?: number },
-  ): Promise<Post> {
-    const { postId, currentUserId } = params;
-
+  async findOne(id: number): Promise<PostEntity> {
     const post = await this.postRepository.findOne({
-      where: { id: postId },
+      where: { id },
       relations: [
-        'author',
-        'author.profile',
+        'profile',
+        'createdBy',
+        'updatedBy',
         'postAssets',
-        'postAssets.asset',
+        'postLikes',
+        'postLikes.profile',
         'comments',
-        'comments.author',
-        'comments.author.profile',
       ],
     });
 
     if (!post) {
-      throw new NotFoundException(`Post with ID ${postId} not found`);
-    }
-
-    if (post.isArchived && post.authorId !== currentUserId) {
-      throw new ForbiddenException(
-        'You do not have permission to view this archived post',
-      );
+      throw new NotFoundException(`Post with ID ${id} not found`);
     }
 
     return post;
   }
 
-  async update(params: UserPostParams & UpdatePostParams): Promise<Post> {
-    const { userId, postId, ...updateData } = params;
+  async update(params: UpdatePostParams): Promise<PostEntity> {
+    const { id, assetIds, ...updateData } = params;
 
-    const post = await this.findOne({ postId });
-
-    if (post.authorId !== userId) {
-      throw new ForbiddenException('You can only update your own posts');
-    }
-
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    try {
-      const postUpdateData: Partial<Post> = {};
-      if (updateData.content !== undefined)
-        postUpdateData.content = updateData.content;
-      if (updateData.location !== undefined)
-        postUpdateData.location = updateData.location;
-
-      if (Object.keys(postUpdateData).length > 0) {
-        await queryRunner.manager.update(Post, postId, postUpdateData);
-      }
-
-      if (updateData.assetIds !== undefined) {
-        await queryRunner.manager.delete(PostAsset, { postId });
-
-        if (updateData.assetIds && updateData.assetIds.length > 0) {
-          const assets = await this.assetRepository.find({
-            where: {
-              id: In(updateData.assetIds.map((assetId) => assetId)),
-              uploaderId: userId,
-            },
-          });
-
-          if (assets.length !== updateData.assetIds.length) {
-            throw new BadRequestException(
-              'Some assets not found or do not belong to you',
-            );
-          }
-
-          const postAssets = updateData.assetIds.map((assetId, index) => {
-            return this.postAssetRepository.create({
-              postId,
-              assetId,
-              order: index,
-            });
-          });
-
-          await queryRunner.manager.save(postAssets);
-        }
-      }
-
-      await queryRunner.commitTransaction();
-
-      return await this.findOne({ postId });
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-
-      if (
-        error instanceof BadRequestException ||
-        error instanceof ForbiddenException
-      ) {
-        throw error;
-      }
-
-      throw new InternalServerErrorException(
-        'Failed to update post: ' + error.message,
-      );
-    } finally {
-      await queryRunner.release();
-    }
-  }
-
-  async remove(params: UserPostParams): Promise<void> {
-    const { userId, postId } = params;
-
-    const post = await this.findOne({ postId });
-
-    if (post.authorId !== userId) {
-      throw new ForbiddenException('You can only delete your own posts');
-    }
-
-    try {
-      await this.postRepository.delete(postId);
-    } catch (error) {
-      throw new InternalServerErrorException(
-        'Failed to delete post: ' + error.message,
-      );
-    }
-  }
-
-  async incrementCommentsCount(params: PostIdParams): Promise<void> {
-    const { postId } = params;
-    await this.postRepository.increment({ id: postId }, 'commentsCount', 1);
-  }
-
-  async decrementCommentsCount(params: PostIdParams): Promise<void> {
-    const { postId } = params;
-    await this.postRepository.decrement({ id: postId }, 'commentsCount', 1);
-  }
-
-  /**
-   * Like a post
-   */
-  async likePost(params: UserPostParams): Promise<LikePostResult> {
-    const { postId, userId } = params;
-    const post = await this.findOne({ postId });
+    const post = await this.findOne(id);
 
     if (!post) {
       throw new NotFoundException('Post not found');
     }
 
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    const updatePayload: Partial<PostEntity> = {};
 
-    try {
-      const existingLike = await queryRunner.manager.findOne(PostLike, {
-        where: { postId, userId },
-      });
+    if (updateData.content !== undefined)
+      updatePayload.content = updateData.content;
+    if (updateData.isArchived !== undefined)
+      updatePayload.isArchived = updateData.isArchived;
+    if (updateData.updatedById !== undefined)
+      updatePayload.updatedById = updateData.updatedById;
 
-      if (existingLike) {
-        await queryRunner.manager.delete(PostLike, {
-          postId,
-          userId,
-        });
-        await queryRunner.manager.decrement(
-          Post,
-          { id: postId },
-          'likesCount',
-          1,
-        );
-      } else {
-        const postLike = this.postLikeRepository.create({
-          postId,
-          userId,
-        });
-        await queryRunner.manager.save(postLike);
-        await queryRunner.manager.increment(
-          Post,
-          { id: postId },
-          'likesCount',
-          1,
-        );
-      }
+    await this.postRepository.update(id, updatePayload);
 
-      await queryRunner.commitTransaction();
-
-      const updatedPost = await this.postRepository.findOne({
-        where: { id: postId },
-        select: ['likesCount'],
-      });
-
-      if (!updatedPost) {
-        throw new NotFoundException('Liked Post not found');
-      }
-
-      return {
-        liked: !existingLike,
-        likesCount: updatedPost.likesCount,
-      };
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw new InternalServerErrorException(
-        'Failed to like post: ' + error.message,
-      );
-    } finally {
-      await queryRunner.release();
-    }
+    return await this.findOne(id);
   }
 
-  /**
-   * Archive or unarchive a post
-   */
-  async archivePost(params: ArchivePostParams): Promise<Post> {
-    const { postId, userId, archive } = params;
-
-    const post = await this.findOne({ postId });
-
-    // Проверяем права на архивацию
-    if (post.authorId !== userId) {
-      throw new ForbiddenException('You can only archive your own posts');
-    }
-
-    try {
-      if (archive) {
-        await this.postRepository.update(postId, {
-          isArchived: true,
-          archivedAt: new Date(),
-        });
-      } else {
-        await this.postRepository.update(postId, {
-          isArchived: false,
-          archivedAt: () => 'NULL',
-        });
-      }
-
-      return await this.findOne({ postId });
-    } catch (error) {
-      throw new InternalServerErrorException(
-        'Failed to archive post: ' + error.message,
-      );
-    }
+  async remove(id: number): Promise<void> {
+    const post = await this.findOne(id);
+    await this.postRepository.remove(post);
   }
 
-  /**
-   * Unarchive a post (alias for archivePost with archive=false)
-   */
-  async unarchivePost(params: UserPostParams): Promise<Post> {
-    const { postId, userId } = params;
-    return this.archivePost({ postId, userId, archive: false });
-  }
-
-  /**
-   * Find archived posts for a user
-   */
-  async findArchivedPosts(
-    params: FindArchivedPostsParams,
-  ): Promise<FindArchivedPostsResult> {
-    const {
-      userId,
-      page = 1,
-      limit = 10,
-      search,
-      sortBy = 'archivedAt',
-      sortOrder = 'DESC',
-    } = params;
-
-    const where: FindOptionsWhere<Post> = {
-      authorId: userId,
-      isArchived: true,
-    };
-
-    // Поиск по контенту
-    if (search) {
-      where.content = ILike(`%${search}%`);
-    }
-
-    const [posts, total] = await this.postRepository.findAndCount({
-      where,
-      relations: ['author', 'author.profile', 'postAssets', 'postAssets.asset'],
-      order: { [sortBy]: sortOrder },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
-
-    const totalPages: number = Math.ceil(total / limit);
-
-    return { posts, total, page, limit, totalPages };
-  }
-
-  /**
-   * Check if post is archived
-   */
-  async isPostArchived(postId: number): Promise<boolean> {
-    const post = await this.postRepository.findOne({
-      where: { id: postId },
-      select: ['id', 'isArchived'],
-    });
+  async archive(id: number, updatedById: number): Promise<PostEntity> {
+    const post = await this.findOne(id);
 
     if (!post) {
-      throw new NotFoundException(`Post with ID ${postId} not found`);
+      throw new NotFoundException('Post not found');
     }
 
-    return post.isArchived;
+    await this.postRepository.update(id, {
+      isArchived: true,
+      updatedById,
+    });
+
+    return await this.findOne(id);
+  }
+
+  async likePost(params: CreatePostLikeParams): Promise<PostLike> {
+    const { postId, profileId, createdById } = params;
+
+    const post = await this.findOne(postId);
+
+    if (!post) {
+      throw new NotFoundException('Post not found');
+    }
+
+    const existingLike = await this.postLikeRepository.findOne({
+      where: { postId, profileId },
+    });
+
+    if (existingLike) {
+      return await this.postLikeRepository.remove(existingLike);
+    }
+
+    const like = this.postLikeRepository.create({
+      postId,
+      profileId,
+      createdById,
+    });
+
+    return await this.postLikeRepository.save(like);
+  }
+
+  async findProfilePosts(
+    profileId: number,
+    params: FindPostsParams,
+  ): Promise<PostPaginationResult> {
+    const { page = 1, limit = 10, isArchived } = params;
+    const skip = (page - 1) * limit;
+
+    const queryBuilder = this.postRepository
+      .createQueryBuilder('post')
+      .leftJoinAndSelect('post.profile', 'profile')
+      .leftJoinAndSelect('post.createdBy', 'createdBy')
+      .leftJoinAndSelect('post.updatedBy', 'updatedBy')
+      .leftJoinAndSelect('post.postLikes', 'postLikes')
+      .leftJoinAndSelect('postLikes.profile', 'likeProfile')
+      .leftJoinAndSelect('post.comments', 'comments')
+      .where('post.profileId = :profileId', { profileId });
+
+    if (isArchived !== undefined) {
+      queryBuilder.andWhere('post.isArchived = :isArchived', { isArchived });
+    } else {
+      queryBuilder.andWhere('post.isArchived = :isArchived', {
+        isArchived: false,
+      });
+    }
+
+    const [data, total] = await queryBuilder
+      .skip(skip)
+      .take(limit)
+      .orderBy('post.createdAt', 'DESC')
+      .getManyAndCount();
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 }
