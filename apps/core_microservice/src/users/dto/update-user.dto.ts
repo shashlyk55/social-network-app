@@ -9,7 +9,11 @@ import {
 } from 'class-validator';
 
 export class UpdateUserDto {
-  @ApiPropertyOptional({ example: 'user', description: 'User role' })
+  @ApiPropertyOptional({
+    example: 'user',
+    description: 'User role',
+    enum: ['user', 'admin'],
+  })
   @IsEnum(['user', 'admin'])
   @IsOptional()
   role?: string;

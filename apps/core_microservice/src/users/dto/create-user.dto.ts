@@ -1,4 +1,3 @@
-// src/users/dto/create-user.dto.ts
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsBoolean,
@@ -10,7 +9,11 @@ import {
 } from 'class-validator';
 
 export class CreateUserDto {
-  @ApiProperty({ example: 'admin', description: 'User role' })
+  @ApiProperty({
+    example: 'admin',
+    description: 'User role',
+    enum: ['user', 'admin'],
+  })
   @IsEnum(['user', 'admin'])
   @IsNotEmpty()
   role: string;
