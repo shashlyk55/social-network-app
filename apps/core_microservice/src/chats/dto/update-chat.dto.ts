@@ -1,22 +1,34 @@
-import { PartialType } from '@nestjs/swagger';
-import { CreateChatDto } from './create-chat.dto';
-import { IsString, IsArray, IsNumber, IsOptional } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsString, IsOptional, MaxLength, IsEnum } from 'class-validator';
 
-export class UpdateChatDto extends PartialType(CreateChatDto) {
-  @ApiProperty({
-    description: 'Updated chat name',
-    required: false,
+export class UpdateChatDto {
+  @ApiPropertyOptional({
+    example: 'Updated Chat Name',
+    description: 'Chat name',
   })
   @IsString()
   @IsOptional()
+  @MaxLength(255)
   name?: string;
 
-  @ApiProperty({
-    description: 'Updated avatar asset ID',
-    required: false,
+  @ApiPropertyOptional({
+    example: 'Updated description',
+    description: 'Chat description',
   })
-  @IsNumber()
+  @IsString()
   @IsOptional()
-  avatarId?: number;
+  description?: string;
+
+  @ApiPropertyOptional({
+    example: 'group',
+    description: 'Chat type',
+    enum: ['private', 'group'],
+  })
+  @IsOptional()
+  @IsEnum(['private', 'group'])
+  type: string;
+
+  @ApiPropertyOptional({ description: 'ID of user updating the chat' })
+  @IsOptional()
+  updatedById?: number;
 }

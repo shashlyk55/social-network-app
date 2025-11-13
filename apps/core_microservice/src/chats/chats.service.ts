@@ -1,210 +1,159 @@
 import {
   Injectable,
   NotFoundException,
-  ForbiddenException,
-  InternalServerErrorException,
-  BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Chat } from 'src/entities/chat.entity';
-import { User } from 'src/entities/user.entity';
-import { Repository, DataSource } from 'typeorm';
-import { IChatsService } from './interfaces/IChatService';
+import { ChatParticipant } from 'src/entities/many-to-many/chat-participants.entity';
+import { Repository } from 'typeorm';
+import { IChatService } from './interfaces/IChatService';
 import {
   CreateChatParams,
-  FindAllChatsParams,
-  FindAllChatsResult,
-  UserChatParams,
+  FindChatsParams,
+  ChatPaginationResult,
   UpdateChatParams,
 } from './types/chat-service.types';
-import { ChatParticipant } from 'src/entities/many-to-many/chat-participants.entity';
 
 @Injectable()
-export class ChatsService implements IChatsService {
+export class ChatsService implements IChatService {
   constructor(
     @InjectRepository(Chat)
     private readonly chatRepository: Repository<Chat>,
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
     @InjectRepository(ChatParticipant)
-    private readonly chatParticipantsRepository: Repository<ChatParticipant>,
-    private readonly dataSource: DataSource,
+    private readonly chatParticipantRepository: Repository<ChatParticipant>,
   ) {}
 
   async create(params: CreateChatParams): Promise<Chat> {
-    const { creatorId, name, type, participantIds, adminIds, avatarId } =
-      params;
-
-    const creator = await this.userRepository.findOne({
-      where: { id: creatorId },
+    const chat = this.chatRepository.create({
+      name: params.name,
+      description: params.description,
+      type: params.type,
+      createdById: params.createdById,
     });
-    if (!creator) {
-      throw new NotFoundException('Creator user not found');
-    }
 
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    const savedChat = await this.chatRepository.save(chat);
 
-    try {
-      const chat = this.chatRepository.create({
-        name,
-        type,
-        creatorId,
-        avatarId,
-      });
+    // Create participants (including creator if their profile is in the list)
+    const participantPromises = params.participantProfileIds.map((profileId) =>
+      this.chatParticipantRepository.create({
+        chatId: savedChat.id,
+        profileId,
+        role: 'member',
+        createdById: params.createdById,
+      }),
+    );
 
-      const savedChat = await queryRunner.manager.save(chat);
+    await this.chatParticipantRepository.save(participantPromises);
 
-      const chatParticipants = this.chatParticipantsRepository.create({
-        chatId: chat.id,
-        userId: creatorId,
-        role: 'creator',
-      });
-
-      await queryRunner.manager.save(chatParticipants);
-
-      await queryRunner.commitTransaction();
-
-      return await this.findOne({ userId: creatorId, chatId: savedChat.id });
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-
-      if (error instanceof BadRequestException) {
-        throw error;
-      }
-
-      throw new InternalServerErrorException(
-        'Failed to create chat: ' + error.message,
-      );
-    } finally {
-      await queryRunner.release();
-    }
+    return await this.findOne(savedChat.id);
   }
 
-  async findAll(params: FindAllChatsParams): Promise<FindAllChatsResult> {
-    const {
-      page = 1,
-      limit = 10,
-      userId,
-      type,
-      search,
-      sortBy = 'updatedAt',
-      sortOrder = 'DESC',
-    } = params;
+  async findAll(params: FindChatsParams): Promise<ChatPaginationResult> {
+    const { page = 1, limit = 10, type } = params;
+    const skip = (page - 1) * limit;
 
     const queryBuilder = this.chatRepository
       .createQueryBuilder('chat')
-      .leftJoinAndSelect('chat.chatParticipants', 'participant')
-      .leftJoinAndSelect('participant.user', 'user')
-      .leftJoinAndSelect('user.profile', 'profile')
-      .leftJoinAndSelect('chat.creator', 'creator')
-      .leftJoinAndSelect('creator.profile', 'creatorProfile');
-
-    if (userId) {
-      queryBuilder.andWhere('participant.userId = :userId', { userId });
-    }
+      .leftJoinAndSelect('chat.createdBy', 'createdBy')
+      .leftJoinAndSelect('chat.updatedBy', 'updatedBy')
+      .leftJoinAndSelect('chat.participants', 'participants')
+      .leftJoinAndSelect('participants.createdBy', 'participantCreatedBy');
 
     if (type) {
       queryBuilder.andWhere('chat.type = :type', { type });
     }
 
-    if (search) {
-      queryBuilder.andWhere('chat.name ILIKE :search', {
-        search: `%${search}%`,
-      });
-    }
-
-    const [chats, total] = await queryBuilder
-      .orderBy(`chat.${sortBy}`, sortOrder)
-      .skip((page - 1) * limit)
+    const [data, total] = await queryBuilder
+      .skip(skip)
       .take(limit)
+      .orderBy('chat.updatedAt', 'DESC')
       .getManyAndCount();
 
-    const totalPages: number = Math.ceil(total / limit);
-
-    console.log(chats);
-
-    return { chats, total, page, limit, totalPages };
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
-  async findOne(params: UserChatParams): Promise<Chat> {
-    const { userId, chatId } = params;
-
+  async findOne(id: number): Promise<Chat> {
     const chat = await this.chatRepository.findOne({
-      where: { id: chatId },
+      where: { id },
       relations: [
-        'creator',
-        'creator.profile',
-        'chatParticipants',
-        'chatParticipants.user',
-        'chatParticipants.user.profile',
+        'createdBy',
+        'updatedBy',
+        'participants',
+        'participants.createdBy',
+        'participants.profile',
       ],
     });
 
     if (!chat) {
-      throw new NotFoundException(`Chat not found`);
-    }
-
-    const isParticipant = chat.chatParticipants.some(
-      (cp) => cp.userId === userId,
-    );
-    if (!isParticipant) {
-      throw new ForbiddenException('You are not a participant of this chat');
+      throw new NotFoundException(`Chat with ID ${id} not found`);
     }
 
     return chat;
   }
 
-  async update(params: UserChatParams & UpdateChatParams): Promise<Chat> {
-    const { userId, chatId, name, avatarId } = params;
+  async update(params: UpdateChatParams): Promise<Chat> {
+    const { id, ...updateData } = params;
 
-    const chat = await this.findOne({ userId, chatId });
+    await this.findOne(id);
 
-    if (!chat) {
-      throw new NotFoundException(`Chat not found`);
-    }
+    const updatePayload: Partial<Chat> = {};
+    if (updateData.name !== undefined) updatePayload.name = updateData.name;
+    if (updateData.description !== undefined)
+      updatePayload.description = updateData.description;
+    if (updateData.type !== undefined) updatePayload.type = updateData.type;
+    if (updateData.updatedById !== undefined)
+      updatePayload.updatedById = updateData.updatedById;
 
-    const participant = chat.chatParticipants.find(
-      (cp) => cp.userId === userId,
-    );
-    if (
-      !participant ||
-      (participant.role !== 'admin' && chat.creatorId !== userId)
-    ) {
-      throw new ForbiddenException('Only admins and creator can update chat');
-    }
+    await this.chatRepository.update(id, updatePayload);
 
-    try {
-      const updateData: Partial<Chat> = {};
-      if (name !== undefined) updateData.name = name;
-      if (avatarId !== undefined) updateData.avatarId = avatarId;
-
-      await this.chatRepository.update(chatId, updateData);
-
-      return await this.findOne({ userId, chatId });
-    } catch (error) {
-      throw new InternalServerErrorException(
-        'Failed to update chat: ' + error.message,
-      );
-    }
+    return await this.findOne(id);
   }
 
-  async remove(params: UserChatParams): Promise<void> {
-    const { userId, chatId } = params;
+  async remove(id: number, deletedById: number): Promise<void> {
+    const chat = await this.findOne(id);
+    await this.chatRepository.remove(chat);
+  }
 
-    const chat = await this.findOne({ userId, chatId });
+  async findUserChats(
+    profileId: number,
+    params: FindChatsParams,
+  ): Promise<ChatPaginationResult> {
+    const { page = 1, limit = 10, type } = params;
+    const skip = (page - 1) * limit;
 
-    if (chat.creatorId !== userId) {
-      throw new ForbiddenException('Only chat creator can delete the chat');
+    const queryBuilder = this.chatRepository
+      .createQueryBuilder('chat')
+      .innerJoin('chat.participants', 'participants')
+      .leftJoinAndSelect('chat.createdBy', 'createdBy')
+      .leftJoinAndSelect('chat.updatedBy', 'updatedBy')
+      .leftJoinAndSelect('chat.participants', 'chatParticipants')
+      .leftJoinAndSelect('chatParticipants.createdBy', 'participantCreatedBy')
+      .where('participants.profileId = :profileId', { profileId })
+      .andWhere('participants.leftAt IS NULL');
+
+    if (type) {
+      queryBuilder.andWhere('chat.type = :type', { type });
     }
 
-    try {
-      await this.chatRepository.delete(chatId);
-    } catch (error) {
-      throw new InternalServerErrorException(
-        'Failed to delete chat: ' + error.message,
-      );
-    }
+    const [data, total] = await queryBuilder
+      .skip(skip)
+      .take(limit)
+      .orderBy('chat.updatedAt', 'DESC')
+      .getManyAndCount();
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 }

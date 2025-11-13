@@ -2,16 +2,14 @@ import {
   Controller,
   Get,
   Post,
-  Body,
-  Patch,
-  Param,
+  Put,
   Delete,
+  Body,
+  Param,
   Query,
-  HttpCode,
+  ParseIntPipe,
   HttpStatus,
-  UseInterceptors,
-  ClassSerializerInterceptor,
-  Request,
+  HttpCode,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -19,180 +17,160 @@ import {
   ApiResponse,
   ApiParam,
   ApiQuery,
+  ApiBody,
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { ChatsService } from './chats.service';
-import { ChatResponseDto, ChatsListResponseDto } from './dto/chat-response.dto';
+import { ChatResponseDto } from './dto/chat-response.dto';
 import { CreateChatDto } from './dto/create-chat.dto';
 import { UpdateChatDto } from './dto/update-chat.dto';
-import { ChatsParamsMapper } from './utils/params-mapper.util';
-import { Chat } from 'src/entities/chat.entity';
-import { ChatParticipant } from 'src/entities/many-to-many/chat-participants.entity';
+import { ChatMappers } from './utils/params-mapper.util';
+import { PaginationResponseDto } from 'src/commo/dto/pagination-response.dto';
 
 @ApiTags('chats')
-@Controller('chats')
-@UseInterceptors(ClassSerializerInterceptor)
 @ApiBearerAuth()
+@Controller('chats')
 export class ChatsController {
-  constructor(private readonly chatsService: ChatsService) {}
+  constructor(private readonly chatService: ChatsService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Create a new chat' })
+  @ApiOperation({ summary: 'Create chat' })
   @ApiResponse({
     status: 201,
-    description: 'Chat successfully created',
+    description: 'Chat created successfully',
     type: ChatResponseDto,
   })
-  @ApiResponse({ status: 404, description: 'User or participants not found' })
-  @ApiResponse({ status: 400, description: 'Bad request' })
-  async create(
-    @Body() createChatDto: CreateChatDto,
-    @Request() req: any,
-  ): Promise<ChatResponseDto> {
-    // const userId = req.user.id;
-    const userId = 4; // just testin)
-    const params = ChatsParamsMapper.toCreateChatParams(userId, createChatDto);
-    const chat = await this.chatsService.create(params);
-    return this.mapToChatResponseDto(chat);
+  @ApiResponse({ status: 400, description: 'Invalid input data' })
+  @ApiBody({ type: CreateChatDto })
+  async create(@Body() createChatDto: CreateChatDto): Promise<ChatResponseDto> {
+    const params = ChatMappers.toCreateParams(createChatDto);
+    const chat = await this.chatService.create(params);
+    return ChatMappers.toChatResponse(chat);
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all user chats with pagination and filtering' })
-  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
-  @ApiQuery({ name: 'limit', required: false, type: Number, example: 20 })
-  @ApiQuery({ name: 'type', required: false, enum: ['private', 'group'] })
-  @ApiQuery({ name: 'search', required: false, type: String })
-  @ApiQuery({
-    name: 'sortBy',
-    required: false,
-    type: String,
-    example: 'updatedAt',
-  })
-  @ApiQuery({
-    name: 'sortOrder',
-    required: false,
-    enum: ['ASC', 'DESC'],
-    example: 'DESC',
-  })
+  @ApiOperation({ summary: 'Get chats list' })
   @ApiResponse({
     status: 200,
-    description: 'List of user chats',
-    type: ChatsListResponseDto,
+    description: 'Chats list retrieved successfully',
+    type: PaginationResponseDto<ChatResponseDto>,
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page',
+  })
+  @ApiQuery({
+    name: 'type',
+    required: false,
+    type: String,
+    description: 'Filter by chat type',
   })
   async findAll(
-    @Query() query: any,
-    @Request() req: any,
-  ): Promise<ChatsListResponseDto> {
-    // const userId = req.user.id;
-    const userId = 4; // just testing
-    const params = ChatsParamsMapper.toFindAllChatsParams({ ...query, userId });
-    const { chats, total, page, limit, totalPages } =
-      await this.chatsService.findAll(params);
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+    @Query('type') type?: string,
+  ): Promise<PaginationResponseDto<ChatResponseDto>> {
+    const params = { page, limit, type };
+    const result = await this.chatService.findAll(params);
+    return ChatMappers.toPaginationResponse(result);
+  }
 
-    return {
-      chats: chats.map((chat) => this.mapToChatResponseDto(chat)),
-      total,
-      page,
-      limit,
-      totalPages,
-    };
+  @Get('user/:profileId')
+  @ApiOperation({ summary: 'Get user chats' })
+  @ApiParam({ name: 'profileId', type: Number, description: 'Profile ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'User chats retrieved successfully',
+    type: PaginationResponseDto<ChatResponseDto>,
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page',
+  })
+  @ApiQuery({
+    name: 'type',
+    required: false,
+    type: String,
+    description: 'Filter by chat type',
+  })
+  async findUserChats(
+    @Param('profileId', ParseIntPipe) profileId: number,
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+    @Query('type') type?: string,
+  ): Promise<PaginationResponseDto<ChatResponseDto>> {
+    const params = { page, limit, type };
+    const result = await this.chatService.findUserChats(profileId, params);
+    return ChatMappers.toPaginationResponse(result);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get chat by ID' })
-  @ApiParam({ name: 'id', type: Number, example: 1 })
+  @ApiParam({ name: 'id', type: Number, description: 'Chat ID' })
   @ApiResponse({
     status: 200,
     description: 'Chat found',
     type: ChatResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Chat not found' })
-  @ApiResponse({ status: 403, description: 'Access denied' })
   async findOne(
-    @Param('id') id: number,
-    @Request() req: any,
+    @Param('id', ParseIntPipe) id: number,
   ): Promise<ChatResponseDto> {
-    const userId = req.user.id;
-    const params = { userId, chatId: id };
-    const chat = await this.chatsService.findOne(params);
-    return this.mapToChatResponseDto(chat);
+    const chat = await this.chatService.findOne(id);
+    return ChatMappers.toChatResponse(chat);
   }
 
-  @Patch(':id')
+  @Put(':id')
   @ApiOperation({ summary: 'Update chat' })
-  @ApiParam({ name: 'id', type: Number, example: 1 })
+  @ApiParam({ name: 'id', type: Number, description: 'Chat ID' })
   @ApiResponse({
     status: 200,
-    description: 'Chat updated',
+    description: 'Chat updated successfully',
     type: ChatResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Chat not found' })
-  @ApiResponse({ status: 403, description: 'Access denied' })
+  @ApiBody({ type: UpdateChatDto })
   async update(
-    @Param('id') id: number,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateChatDto: UpdateChatDto,
-    @Request() req: any,
   ): Promise<ChatResponseDto> {
-    // const userId = req.user.id;
-    const userId = 4; // just testing
-    const updateParams = ChatsParamsMapper.toUpdateChatParams(updateChatDto);
-    const params = { userId, chatId: id, ...updateParams };
-    const chat = await this.chatsService.update(params);
-    return this.mapToChatResponseDto(chat);
+    const params = ChatMappers.toUpdateParams(id, updateChatDto);
+    const chat = await this.chatService.update(params);
+    return ChatMappers.toChatResponse(chat);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Delete chat' })
-  @ApiParam({ name: 'id', type: Number, example: 1 })
-  @ApiResponse({ status: 204, description: 'Chat deleted' })
+  @ApiOperation({ summary: 'Delete chat permanently' })
+  @ApiParam({ name: 'id', type: Number, description: 'Chat ID' })
+  @ApiResponse({ status: 204, description: 'Chat deleted permanently' })
   @ApiResponse({ status: 404, description: 'Chat not found' })
-  @ApiResponse({ status: 403, description: 'Access denied' })
-  async remove(@Param('id') id: number, @Request() req: any): Promise<void> {
-    // const userId = req.user.id;
-    const userId = 4; // just testing
-    const params = { userId, chatId: id };
-    await this.chatsService.remove(params);
-  }
-
-  /**
-   * Map Chat entity to ChatResponseDto
-   */
-  private mapToChatResponseDto(chat: Chat): ChatResponseDto {
-    const adminIds =
-      chat.chatParticipants
-        ?.filter((cp: any) => cp.role === 'admin')
-        .map((cp: any) => cp.userId) || [];
-
-    const participantsCount = chat.chatParticipants?.length || 0;
-
-    return {
-      id: chat.id,
-      name: chat.name,
-      type: chat.type,
-      avatarId: chat.avatarId,
-      creatorId: chat.creatorId,
-      creator: {
-        id: chat.creator.id,
-        name: chat.creator.profile?.name || '',
-        email: chat.creator.email,
-      },
-      adminIds,
-      participants:
-        chat.chatParticipants?.map((cp: ChatParticipant) => ({
-          id: cp.id,
-          userId: cp.userId,
-          role: cp.role,
-          user: {
-            id: cp.user.id,
-            email: cp.user.email,
-            name: cp.user.profile?.name || '',
-            avatarId: cp.user.profile?.avatarId,
-          },
-        })) || [],
-      participantsCount,
-      createdAt: chat.createdAt,
-      updatedAt: chat.updatedAt,
-    };
+  @ApiQuery({
+    name: 'deletedById',
+    required: true,
+    type: Number,
+    description: 'ID of user performing deletion',
+  })
+  async remove(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('deletedById', ParseIntPipe) deletedById: number,
+  ): Promise<void> {
+    await this.chatService.remove(id, deletedById);
   }
 }

@@ -1,18 +1,20 @@
 import { Chat } from 'src/entities/chat.entity';
 import {
   CreateChatParams,
-  FindAllChatsParams,
-  FindAllChatsResult,
   UpdateChatParams,
-  UserChatParams,
-  ChatIdParams,
-  UserIdParams,
+  FindChatsParams,
+  ChatPaginationResult,
 } from '../types/chat-service.types';
 
-export interface IChatsService {
+export interface IChatService {
   create(params: CreateChatParams): Promise<Chat>;
-  findAll(params: FindAllChatsParams): Promise<FindAllChatsResult>;
-  findOne(params: UserChatParams): Promise<Chat>;
-  update(params: UserChatParams & UpdateChatParams): Promise<Chat>;
-  remove(params: UserChatParams): Promise<void>;
+  findAll(params: FindChatsParams): Promise<ChatPaginationResult>;
+  findOne(id: number): Promise<Chat>;
+  update(params: UpdateChatParams): Promise<Chat>;
+  remove(id: number, deletedById: number): Promise<void>;
+
+  findUserChats(
+    profileId: number,
+    params: FindChatsParams,
+  ): Promise<ChatPaginationResult>;
 }

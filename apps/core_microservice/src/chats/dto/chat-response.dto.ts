@@ -1,76 +1,94 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-class ParticipantDto {
-  @ApiProperty()
+class UserReferenceDto {
+  @ApiProperty({ example: 1, description: 'User ID' })
   id: number;
 
-  @ApiProperty()
-  userId: number;
+  @ApiProperty({
+    example: 'admin',
+    description: 'User role',
+    enum: ['member', 'admin', 'creator'],
+  })
+  role: string;
+}
 
-  @ApiProperty()
+class ParticipantResponseDto {
+  @ApiProperty({ example: 1, description: 'Participant ID' })
+  id: number;
+
+  @ApiProperty({ example: 1, description: 'Profile ID' })
+  profileId: number;
+
+  @ApiProperty({ example: 'member', description: 'Participant role' })
+  @ApiProperty({
+    example: 'member',
+    description: 'Participant role',
+    enum: ['member', 'admin', 'creator'],
+  })
   role: string;
 
-  @ApiProperty()
-  user: {
-    id: number;
-    email: string;
-    name: string;
-    avatarId?: number;
-  };
+  @ApiProperty({ description: 'Join date' })
+  joinedAt: Date;
+
+  @ApiProperty({ description: 'Left date', nullable: true })
+  leftAt: Date | null;
+
+  @ApiProperty({
+    type: UserReferenceDto,
+    description: 'User who created this participant',
+  })
+  createdBy: UserReferenceDto;
 }
 
 export class ChatResponseDto {
-  @ApiProperty()
+  @ApiProperty({ example: 1, description: 'Chat ID' })
   id: number;
 
-  @ApiProperty({ required: false })
-  name?: string;
+  @ApiProperty({ example: 'General Chat', description: 'Chat name' })
+  name: string;
 
-  @ApiProperty()
+  @ApiProperty({
+    example: 'General discussion chat',
+    description: 'Chat description',
+    nullable: true,
+  })
+  description: string | null;
+
+  @ApiProperty({
+    example: 'group',
+    description: 'Chat type',
+    enum: ['private', 'group'],
+  })
   type: string;
 
-  @ApiProperty({ required: false })
-  avatarId?: number;
-
-  @ApiProperty()
-  creatorId: number;
-
-  @ApiProperty()
-  creator: {
-    id: number;
-    name: string;
-    email: string;
-  };
-
-  @ApiProperty({ type: [ParticipantDto] })
-  participants: ParticipantDto[];
-
-  @ApiProperty({ type: [Number] })
-  adminIds: number[];
-
-  @ApiProperty()
-  participantsCount: number;
-
-  @ApiProperty()
+  @ApiProperty({ description: 'Creation date' })
   createdAt: Date;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Update date' })
   updatedAt: Date;
-}
 
-export class ChatsListResponseDto {
-  @ApiProperty({ type: [ChatResponseDto] })
-  chats: ChatResponseDto[];
+  @ApiProperty({ example: 1, description: 'Creator ID' })
+  createdById: number;
 
-  @ApiProperty()
-  total: number;
+  @ApiProperty({ example: 2, description: 'Updater ID', nullable: true })
+  updatedById: number | null;
 
-  @ApiProperty()
-  page: number;
+  @ApiProperty({
+    type: UserReferenceDto,
+    description: 'User who created this chat',
+  })
+  createdBy: UserReferenceDto;
 
-  @ApiProperty()
-  limit: number;
+  @ApiProperty({
+    type: UserReferenceDto,
+    description: 'User who updated this chat',
+    nullable: true,
+  })
+  updatedBy?: UserReferenceDto;
 
-  @ApiProperty()
-  totalPages: number;
+  @ApiProperty({
+    type: [ParticipantResponseDto],
+    description: 'Chat participants',
+  })
+  participants: ParticipantResponseDto[];
 }

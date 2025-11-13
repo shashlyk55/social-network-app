@@ -1,42 +1,87 @@
+import { Chat } from 'src/entities/chat.entity';
+import { PaginationResponseDto } from 'src/users/dto/pagination-response.dto';
+import { ChatResponseDto } from '../dto/chat-response.dto';
 import { CreateChatDto } from '../dto/create-chat.dto';
 import { UpdateChatDto } from '../dto/update-chat.dto';
 import {
   CreateChatParams,
-  FindAllChatsParams,
   UpdateChatParams,
+  ChatPaginationResult,
 } from '../types/chat-service.types';
 
-export class ChatsParamsMapper {
-  static toCreateChatParams(
-    userId: number,
-    dto: CreateChatDto,
-  ): CreateChatParams {
+export class ChatMappers {
+  static toCreateParams(dto: CreateChatDto): CreateChatParams {
     return {
-      creatorId: userId,
       name: dto.name,
+      description: dto.description,
       type: dto.type,
-      participantIds: dto.participantIds,
-      adminIds: dto.adminIds,
-      avatarId: dto.avatarId,
+      createdById: dto.createdById,
+      participantProfileIds: dto.participantProfileIds,
     };
   }
 
-  static toFindAllChatsParams(query: any): FindAllChatsParams {
+  static toUpdateParams(id: number, dto: UpdateChatDto): UpdateChatParams {
     return {
-      page: query.page ? parseInt(query.page) : undefined,
-      limit: query.limit ? parseInt(query.limit) : undefined,
-      userId: query.userId ? parseInt(query.userId) : undefined,
-      type: query.type,
-      search: query.search,
-      sortBy: query.sortBy,
-      sortOrder: query.sortOrder,
-    };
-  }
-
-  static toUpdateChatParams(dto: UpdateChatDto): UpdateChatParams {
-    return {
+      id,
       name: dto.name,
-      avatarId: dto.avatarId,
+      description: dto.description,
+      type: dto.type,
+      updatedById: dto.updatedById,
+    };
+  }
+
+  static toChatResponse(chat: Chat): ChatResponseDto {
+    const response: ChatResponseDto = {
+      id: chat.id,
+      name: chat.name,
+      description: chat.description,
+      type: chat.type,
+      createdAt: chat.createdAt,
+      updatedAt: chat.updatedAt,
+      createdById: chat.createdById,
+      updatedById: chat.updatedById,
+      createdBy: {
+        id: chat.createdBy.id,
+        role: chat.createdBy.role,
+      },
+      participants: [],
+    };
+
+    if (chat.updatedBy) {
+      response.updatedBy = {
+        id: chat.updatedBy.id,
+        role: chat.updatedBy.role,
+      };
+    }
+
+    if (chat.chatParticipants) {
+      response.participants = chat.chatParticipants.map((participant) => ({
+        id: participant.id,
+        profileId: participant.profileId,
+        role: participant.role,
+        joinedAt: participant.joinedAt,
+        leftAt: participant.leftAt,
+        createdBy: {
+          id: participant.createdBy.id,
+          role: participant.createdBy.role,
+        },
+      }));
+    }
+
+    return response;
+  }
+
+  static toPaginationResponse(
+    result: ChatPaginationResult,
+  ): PaginationResponseDto<ChatResponseDto> {
+    return {
+      data: result.data.map((chat) => this.toChatResponse(chat)),
+      meta: {
+        page: result.page,
+        limit: result.limit,
+        total: result.total,
+        totalPages: result.totalPages,
+      },
     };
   }
 }
