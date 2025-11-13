@@ -6,7 +6,7 @@ import {
   UserPaginationResult,
 } from '../types/user-service.types';
 
-export interface IUserService {
+export interface IUsersService {
   create(params: CreateUserParams): Promise<User>;
   findAll(params: FindUsersParams): Promise<UserPaginationResult>;
   findOne(id: number): Promise<User>;

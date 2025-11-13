@@ -27,6 +27,6 @@ export class CreateUserDto {
   disabled?: boolean;
 
   @ApiProperty({ description: 'ID of user creating the record' })
-  @IsNotEmpty()
-  createdById: number;
+  @IsOptional()
+  createdById?: number;
 }

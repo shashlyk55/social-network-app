@@ -3,7 +3,7 @@ import { User } from 'src/entities/user.entity';
 export interface CreateUserParams {
   role: string;
   disabled?: boolean;
-  createdById: number;
+  createdById?: number;
 }
 
 export interface UpdateUserParams {
