@@ -1,296 +1,247 @@
 import {
   Injectable,
   NotFoundException,
-  ForbiddenException,
-  InternalServerErrorException,
-  BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, FindOptionsWhere, ILike } from 'typeorm';
+import { Repository } from 'typeorm';
+import { Comment } from '../entities/comment.entity';
+import { CommentLike } from 'src/entities/many-to-many/comment-like.entity';
+import { ICommentsService } from './interfaces/ICommentsService';
 import {
   CreateCommentParams,
-  FindAllCommentsParams,
+  FindCommentsParams,
+  CommentPaginationResult,
   UpdateCommentParams,
-  UserCommentParams,
-  CommentIdParams,
-  PostIdParams,
-  FindAllCommentsResult,
-  LikeCommentParams,
-  LikeCommentResult,
+  CreateCommentLikeParams,
 } from './types/comment-service.types';
-
-import { PostsService } from '../posts/posts.service';
-import { CommentLike } from 'src/entities/many-to-many/comment-like.entity';
-import { Post } from 'src/entities/post.entity';
-import { User } from 'src/entities/user.entity';
-import { ICommentsService } from './interfaces/ICommentsService';
-import { Comment as CommentEntity } from 'src/entities/comment.entity';
 
 @Injectable()
 export class CommentsService implements ICommentsService {
   constructor(
-    @InjectRepository(CommentEntity)
-    private readonly commentRepository: Repository<CommentEntity>,
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
-    @InjectRepository(Post)
-    private readonly postRepository: Repository<Post>,
+    @InjectRepository(Comment)
+    private readonly commentRepository: Repository<Comment>,
     @InjectRepository(CommentLike)
     private readonly commentLikeRepository: Repository<CommentLike>,
-
-    private readonly postsService: PostsService,
-    private readonly dataSource: DataSource,
   ) {}
 
-  async create(params: CreateCommentParams): Promise<CommentEntity> {
-    const { authorId, postId, content } = params;
-
-    const user = await this.userRepository.findOne({ where: { id: authorId } });
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    const post = await this.postRepository.findOne({ where: { id: postId } });
-    if (!post) {
-      throw new NotFoundException('Post not found');
-    }
-
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    try {
-      const comment = this.commentRepository.create({
-        content,
-        authorId,
-        postId,
+  async create(params: CreateCommentParams): Promise<Comment> {
+    if (params.parentCommentId) {
+      const parentComment = await this.commentRepository.findOne({
+        where: { id: params.parentCommentId },
       });
-
-      const savedComment = await queryRunner.manager.save(comment);
-
-      // Увеличиваем счетчик комментариев в посте
-      await this.postsService.incrementCommentsCount({ postId });
-
-      await queryRunner.commitTransaction();
-
-      // Возвращаем комментарий с отношениями
-      return await this.findOne({ commentId: savedComment.id });
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-
-      if (error instanceof NotFoundException) {
-        throw error;
+      if (!parentComment) {
+        throw new NotFoundException(
+          `Parent comment with ID ${params.parentCommentId} not found`,
+        );
       }
-
-      throw new InternalServerErrorException(
-        'Failed to create comment: ' + error.message,
-      );
-    } finally {
-      await queryRunner.release();
-    }
-  }
-
-  async findAll(params: FindAllCommentsParams): Promise<FindAllCommentsResult> {
-    const {
-      page = 1,
-      limit = 10,
-      postId,
-      authorId,
-      sortBy = 'createdAt',
-      sortOrder = 'DESC',
-    } = params;
-
-    const where: FindOptionsWhere<CommentEntity> = {};
-
-    if (postId) {
-      where.postId = postId;
     }
 
-    if (authorId) {
-      where.authorId = authorId;
-    }
-
-    const [comments, total] = await this.commentRepository.findAndCount({
-      where,
-      relations: ['author', 'author.profile', 'commentLikes'],
-      order: { [sortBy]: sortOrder },
-      skip: (page - 1) * limit,
-      take: limit,
+    const comment = this.commentRepository.create({
+      content: params.content,
+      postId: params.postId,
+      profileId: params.profileId,
+      parentCommentId: params.parentCommentId,
+      createdById: params.createdById,
     });
 
-    const totalPages: number = Math.ceil(total / limit);
-
-    console.log(comments);
-
-    return { comments, total, page, limit, totalPages };
+    const savedComment = await this.commentRepository.save(comment);
+    return await this.findOne(savedComment.id);
   }
 
-  async findOne(params: CommentIdParams): Promise<CommentEntity> {
-    const { commentId } = params;
+  async findAll(params: FindCommentsParams): Promise<CommentPaginationResult> {
+    const { page = 1, limit = 10, postId, profileId, parentCommentId } = params;
+    const skip = (page - 1) * limit;
 
+    const queryBuilder = this.commentRepository
+      .createQueryBuilder('comment')
+      .leftJoinAndSelect('comment.profile', 'profile')
+      .leftJoinAndSelect('comment.createdBy', 'createdBy')
+      .leftJoinAndSelect('comment.updatedBy', 'updatedBy')
+      .leftJoinAndSelect('comment.commentLikes', 'commentLikes')
+      .leftJoinAndSelect('commentLikes.profile', 'likeProfile')
+      .leftJoinAndSelect('comment.replies', 'replies')
+      .where('comment.parentCommentId IS NULL');
+
+    if (postId) {
+      queryBuilder.andWhere('comment.postId = :postId', { postId });
+    }
+
+    if (profileId) {
+      queryBuilder.andWhere('comment.profileId = :profileId', { profileId });
+    }
+
+    if (parentCommentId !== undefined) {
+      if (parentCommentId === null) {
+        queryBuilder.andWhere('comment.parentCommentId IS NULL');
+      } else {
+        queryBuilder.andWhere('comment.parentCommentId = :parentCommentId', {
+          parentCommentId,
+        });
+      }
+    }
+
+    const [data, total] = await queryBuilder
+      .skip(skip)
+      .take(limit)
+      .orderBy('comment.createdAt', 'DESC')
+      .getManyAndCount();
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  async findOne(id: number): Promise<Comment> {
     const comment = await this.commentRepository.findOne({
-      where: { id: commentId },
+      where: { id },
       relations: [
-        'author',
-        'author.profile',
+        'profile',
+        'createdBy',
+        'updatedBy',
         'commentLikes',
-        'post',
-        'post.author',
+        'commentLikes.profile',
+        'replies',
+        'replies.profile',
+        'replies.commentLikes',
+        'parentComment',
       ],
     });
 
     if (!comment) {
-      throw new NotFoundException(`Comment with ID ${commentId} not found`);
+      throw new NotFoundException(`Comment with ID ${id} not found`);
     }
 
     return comment;
   }
 
-  async update(
-    params: UserCommentParams & UpdateCommentParams,
-  ): Promise<CommentEntity> {
-    const { userId, commentId, content } = params;
+  async update(params: UpdateCommentParams): Promise<Comment> {
+    const { id, ...updateData } = params;
 
-    const comment = await this.findOne({ commentId });
-
-    // Проверяем права на редактирование
-    if (comment.authorId !== userId) {
-      throw new ForbiddenException('You can only update your own comments');
-    }
-
-    try {
-      // Обновляем комментарий
-      await this.commentRepository.update(commentId, {
-        content,
-        updatedAt: new Date(),
-      });
-
-      // Возвращаем обновленный комментарий
-      return await this.findOne({ commentId });
-    } catch (error) {
-      throw new InternalServerErrorException(
-        'Failed to update comment: ' + error.message,
-      );
-    }
-  }
-
-  async remove(params: UserCommentParams): Promise<void> {
-    const { userId, commentId } = params;
-
-    const comment = await this.findOne({ commentId });
-
-    // Проверяем права на удаление
-    if (comment.authorId !== userId) {
-      throw new ForbiddenException('You can only delete your own comments');
-    }
-
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    try {
-      // Удаляем лайки комментария
-      await queryRunner.manager.delete(CommentLike, { commentId });
-
-      // Удаляем сам комментарий
-      await queryRunner.manager.delete(CommentEntity, { id: commentId });
-
-      // Уменьшаем счетчик комментариев в посте
-      await this.postsService.decrementCommentsCount({
-        postId: comment.postId,
-      });
-
-      await queryRunner.commitTransaction();
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw new InternalServerErrorException(
-        'Failed to delete comment: ' + error.message,
-      );
-    } finally {
-      await queryRunner.release();
-    }
-  }
-
-  async findByPost(
-    params: PostIdParams & FindAllCommentsParams,
-  ): Promise<FindAllCommentsResult> {
-    const { postId, ...findParams } = params;
-
-    const post = await this.postRepository.findOne({ where: { id: postId } });
-    if (!post) {
-      throw new NotFoundException('Post not found');
-    }
-
-    const postCommentsParams: FindAllCommentsParams = {
-      ...findParams,
-      postId,
-    };
-
-    return this.findAll(postCommentsParams);
-  }
-
-  async likeComment(params: LikeCommentParams): Promise<LikeCommentResult> {
-    const { commentId, userId } = params;
-
-    const comment = await this.findOne({ commentId });
+    const comment = await this.findOne(id);
 
     if (!comment) {
       throw new NotFoundException('Comment not found');
     }
 
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    const updatePayload: Partial<Comment> = {};
+    if (updateData.content !== undefined)
+      updatePayload.content = updateData.content;
+    if (updateData.updatedById !== undefined)
+      updatePayload.updatedById = updateData.updatedById;
 
-    try {
-      const existingLike = await queryRunner.manager.findOne(CommentLike, {
-        where: { commentId, userId },
-      });
+    await this.commentRepository.update(id, updatePayload);
 
-      if (existingLike) {
-        await queryRunner.manager.delete(CommentLike, { commentId, userId });
-        await this.decrementLikesCount({ commentId });
-      } else {
-        const commentLike = this.commentLikeRepository.create({
-          commentId,
-          userId,
-        });
-        await queryRunner.manager.save(commentLike);
-        await this.incrementLikesCount({ commentId });
-      }
+    return await this.findOne(id);
+  }
 
-      await queryRunner.commitTransaction();
+  async remove(id: number): Promise<void> {
+    const comment = await this.findOne(id);
 
-      const updatedComment = await this.commentRepository.findOne({
-        where: { id: commentId },
-        select: ['id', 'likesCount'],
-      });
-
-      if (!updatedComment) {
-        throw new NotFoundException('Liked Comment not found');
-      }
-
-      return {
-        liked: !existingLike,
-        likesCount: updatedComment.likesCount || 0,
-      };
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw new InternalServerErrorException(
-        'Failed to like comment: ' + error.message,
-      );
-    } finally {
-      await queryRunner.release();
+    if (comment.replies && comment.replies.length > 0) {
+      throw new ConflictException('Cannot delete comment with replies');
     }
+
+    await this.commentRepository.remove(comment);
   }
 
-  async incrementLikesCount(params: CommentIdParams): Promise<void> {
-    const { commentId } = params;
-    await this.commentRepository.increment({ id: commentId }, 'likesCount', 1);
+  async likeComment(params: CreateCommentLikeParams): Promise<CommentLike> {
+    const { commentId, profileId, createdById } = params;
+
+    const comment = await this.findOne(commentId);
+
+    if (!comment) {
+      throw new NotFoundException('Comment not found');
+    }
+
+    const existingLike = await this.commentLikeRepository.findOne({
+      where: { commentId, profileId },
+    });
+
+    if (existingLike) {
+      return await this.commentLikeRepository.remove(existingLike);
+    }
+
+    const like = this.commentLikeRepository.create({
+      commentId,
+      profileId,
+      createdById,
+    });
+
+    return await this.commentLikeRepository.save(like);
   }
 
-  async decrementLikesCount(params: CommentIdParams): Promise<void> {
-    const { commentId } = params;
-    await this.commentRepository.decrement({ id: commentId }, 'likesCount', 1);
+  async findPostComments(
+    postId: number,
+    params: FindCommentsParams,
+  ): Promise<CommentPaginationResult> {
+    const { page = 1, limit = 10 } = params;
+    const skip = (page - 1) * limit;
+
+    const queryBuilder = this.commentRepository
+      .createQueryBuilder('comment')
+      .leftJoinAndSelect('comment.profile', 'profile')
+      .leftJoinAndSelect('comment.createdBy', 'createdBy')
+      .leftJoinAndSelect('comment.updatedBy', 'updatedBy')
+      .leftJoinAndSelect('comment.commentLikes', 'commentLikes')
+      .leftJoinAndSelect('commentLikes.profile', 'likeProfile')
+      .leftJoinAndSelect('comment.replies', 'replies')
+      .where('comment.postId = :postId', { postId })
+      .andWhere('comment.parentCommentId IS NULL');
+
+    const [data, total] = await queryBuilder
+      .skip(skip)
+      .take(limit)
+      .orderBy('comment.createdAt', 'DESC')
+      .getManyAndCount();
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  async findCommentReplies(
+    commentId: number,
+    params: FindCommentsParams,
+  ): Promise<CommentPaginationResult> {
+    const { page = 1, limit = 10 } = params;
+    const skip = (page - 1) * limit;
+
+    const comment = await this.findOne(commentId);
+
+    if (!comment) {
+      throw new NotFoundException('Comment not found');
+    }
+
+    const queryBuilder = this.commentRepository
+      .createQueryBuilder('comment')
+      .leftJoinAndSelect('comment.profile', 'profile')
+      .leftJoinAndSelect('comment.createdBy', 'createdBy')
+      .leftJoinAndSelect('comment.updatedBy', 'updatedBy')
+      .leftJoinAndSelect('comment.commentLikes', 'commentLikes')
+      .leftJoinAndSelect('commentLikes.profile', 'likeProfile')
+      .where('comment.parentCommentId = :commentId', { commentId });
+
+    const [data, total] = await queryBuilder
+      .skip(skip)
+      .take(limit)
+      .orderBy('comment.createdAt', 'ASC')
+      .getManyAndCount();
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 }

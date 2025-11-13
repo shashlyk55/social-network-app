@@ -1,29 +1,29 @@
-import {
-  IsString,
-  IsNotEmpty,
-  MinLength,
-  MaxLength,
-  IsOptional,
-} from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsString, IsNotEmpty, IsOptional, IsNumber } from 'class-validator';
 
 export class CreateCommentDto {
-  @ApiProperty({
-    description: 'Content of the comment',
-    example: 'This is a great post!',
-    minLength: 1,
-    maxLength: 1000,
-  })
+  @ApiProperty({ example: 'This is a comment', description: 'Comment content' })
   @IsString()
   @IsNotEmpty()
-  @MinLength(1)
-  @MaxLength(1000)
   content: string;
 
-  @ApiProperty({
-    description: 'ID of the post to comment on',
-    example: 1,
-  })
+  @ApiProperty({ description: 'Post ID' })
+  @IsNumber()
   @IsNotEmpty()
   postId: number;
+
+  @ApiProperty({ description: 'Profile ID of the comment author' })
+  @IsNumber()
+  @IsNotEmpty()
+  profileId: number;
+
+  @ApiPropertyOptional({ description: 'Parent comment ID for replies' })
+  @IsNumber()
+  @IsOptional()
+  parentCommentId?: number;
+
+  @ApiProperty({ description: 'ID of user creating the comment' })
+  @IsNumber()
+  @IsNotEmpty()
+  createdById: number;
 }

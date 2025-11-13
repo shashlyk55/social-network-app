@@ -1,50 +1,37 @@
+import { Comment } from 'src/entities/comment.entity';
+
 export type CreateCommentParams = {
-  authorId: number;
-  postId: number;
   content: string;
+  postId: number;
+  profileId: number;
+  parentCommentId?: number;
+  createdById: number;
 };
 
-export type FindAllCommentsParams = {
+export type UpdateCommentParams = {
+  id: number;
+  content?: string;
+  updatedById?: number;
+};
+
+export type FindCommentsParams = {
   page?: number;
   limit?: number;
   postId?: number;
-  authorId?: number;
-  sortBy?: string;
-  sortOrder?: 'ASC' | 'DESC';
+  profileId?: number;
+  parentCommentId?: number | null;
 };
 
-export type FindAllCommentsResult = {
-  comments: any[];
+export type CreateCommentLikeParams = {
+  commentId: number;
+  profileId: number;
+  createdById: number;
+};
+
+export type CommentPaginationResult = {
+  data: Comment[];
   total: number;
   page: number;
   limit: number;
   totalPages: number;
-};
-
-export type UpdateCommentParams = {
-  content?: string;
-};
-
-// Basic types
-export type UserCommentParams = {
-  userId: number;
-  commentId: number;
-};
-
-export type CommentIdParams = {
-  commentId: number;
-};
-
-export type PostIdParams = {
-  postId: number;
-};
-
-export type LikeCommentParams = {
-  commentId: number;
-  userId: number;
-};
-
-export type LikeCommentResult = {
-  liked: boolean;
-  likesCount: number;
 };
