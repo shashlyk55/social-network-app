@@ -1,56 +1,47 @@
+// src/chats/dto/create-chat.dto.ts
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsString,
-  IsArray,
-  IsEnum,
+  IsNotEmpty,
   IsOptional,
-  IsNumber,
-  ArrayMinSize,
+  IsArray,
+  MaxLength,
+  IsEnum,
 } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateChatDto {
-  @ApiProperty({
-    description: 'Chat name (for group chats)',
-    example: 'Innowise Group',
-    required: false,
+  @ApiProperty({ example: 'General Chat', description: 'Chat name' })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(255)
+  name: string;
+
+  @ApiPropertyOptional({
+    example: 'General discussion chat',
+    description: 'Chat description',
   })
   @IsString()
   @IsOptional()
-  name?: string;
+  description?: string;
 
   @ApiProperty({
+    example: 'private',
     description: 'Chat type',
     enum: ['private', 'group'],
-    example: 'group',
   })
   @IsEnum(['private', 'group'])
+  @IsNotEmpty()
   type: string;
 
-  @ApiProperty({
-    description: 'Array of participant user IDs',
-    example: [2, 3, 4],
-    minItems: 1,
-  })
-  @IsArray()
-  @IsNumber({}, { each: true })
-  @ArrayMinSize(1)
-  participantIds: number[];
+  @ApiProperty({ description: 'ID of user creating the chat' })
+  @IsNotEmpty()
+  createdById: number;
 
   @ApiProperty({
-    description: 'Array of admin user IDs',
-    example: [1, 2],
-    required: false,
+    example: [1, 2, 3],
+    description: 'Array of profile IDs to add as participants',
   })
   @IsArray()
-  @IsNumber({}, { each: true })
-  @IsOptional()
-  adminIds?: number[];
-
-  @ApiProperty({
-    description: 'Avatar asset ID',
-    required: false,
-  })
-  @IsNumber()
-  @IsOptional()
-  avatarId?: number;
+  @IsNotEmpty()
+  participantProfileIds: number[];
 }

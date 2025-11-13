@@ -1,45 +1,32 @@
-export type CreateChatParams = {
-  creatorId: number;
-  name?: string;
-  type: string;
-  participantIds: number[];
-  adminIds?: number[];
-  avatarId?: number;
-};
+import { Chat } from 'src/entities/chat.entity';
 
-export type FindAllChatsParams = {
+export interface CreateChatParams {
+  name: string;
+  description?: string;
+  type: string;
+  createdById: number;
+  participantProfileIds: number[];
+}
+
+export interface UpdateChatParams {
+  id: number;
+  name?: string;
+  description?: string;
+  type?: string;
+  updatedById?: number;
+}
+
+export interface FindChatsParams {
   page?: number;
   limit?: number;
-  userId?: number;
   type?: string;
-  search?: string;
-  sortBy?: string;
-  sortOrder?: 'ASC' | 'DESC';
-};
+  profileId?: number;
+}
 
-export type FindAllChatsResult = {
-  chats: any[];
+export interface ChatPaginationResult {
+  data: Chat[];
   total: number;
   page: number;
   limit: number;
   totalPages: number;
-};
-
-export type UpdateChatParams = {
-  name?: string;
-  avatarId?: number;
-};
-
-// Basic types
-export type UserChatParams = {
-  userId: number;
-  chatId: number;
-};
-
-export type ChatIdParams = {
-  chatId: number;
-};
-
-export type UserIdParams = {
-  userId: number;
-};
+}
