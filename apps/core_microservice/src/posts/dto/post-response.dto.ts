@@ -52,6 +52,12 @@ export class PostResponseDto {
   @ApiProperty({ required: false })
   location?: string;
 
+  @ApiProperty()
+  isArchived: boolean;
+
+  @ApiProperty({ required: false })
+  archivedAt?: Date;
+
   @ApiProperty({ required: false })
   deletedAt?: Date;
 

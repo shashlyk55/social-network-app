@@ -26,6 +26,7 @@ import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { PostResponseDto, PostsListResponseDto } from './dto/post-response.dto';
 import { PostsParamsMapper } from './utils/params-mapper.util';
+import { ArchivePostDto } from './dto/archive-post.dto';
 
 @ApiTags('posts')
 @Controller('posts')
@@ -45,7 +46,8 @@ export class PostsController {
     @Body() createPostDto: CreatePostDto,
     @Request() req: any,
   ): Promise<PostResponseDto> {
-    const userId = req.user.id;
+    //const userId = req.user.id;
+    const userId = 3; // just testing
     const params = PostsParamsMapper.toCreatePostParams(userId, createPostDto);
     const post = await this.postsService.create(params);
     return this.mapToPostResponseDto(post);
@@ -57,11 +59,6 @@ export class PostsController {
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
   @ApiQuery({ name: 'search', required: false, type: String })
   @ApiQuery({ name: 'authorId', required: false, type: Number })
-  @ApiQuery({
-    name: 'privacy',
-    required: false,
-    enum: ['public', 'friends', 'private'],
-  })
   @ApiQuery({
     name: 'sortBy',
     required: false,
@@ -111,7 +108,7 @@ export class PostsController {
     type: PostsListResponseDto,
   })
   async findByAuthor(
-    @Param('userId') authorId: string,
+    @Param('userId') authorId: number,
     @Query() query: any,
     @Request() req: any,
   ): Promise<PostsListResponseDto> {
@@ -143,8 +140,16 @@ export class PostsController {
     description: 'Post found',
     type: PostResponseDto,
   })
-  async findOne(@Param('id') postId: number): Promise<PostResponseDto> {
-    const post = await this.postsService.findOne(postId);
+  async findOne(
+    @Param('id') postId: number,
+    @Request() req: any,
+  ): Promise<PostResponseDto> {
+    const currentUserId = req.user?.id;
+    const params = {
+      postId: +postId,
+      currentUserId,
+    };
+    const post = await this.postsService.findOne(params);
     return this.mapToPostResponseDto(post);
   }
 
@@ -162,7 +167,13 @@ export class PostsController {
     @Request() req: any,
   ): Promise<PostResponseDto> {
     const userId = req.user.id;
-    const post = await this.postsService.update(postId, userId, updatePostDto);
+    const updateParams = PostsParamsMapper.toUpdatePostParams(
+      userId,
+      +postId,
+      updatePostDto,
+    );
+    const params = { userId, postId: +postId, ...updateParams };
+    const post = await this.postsService.update(params);
     return this.mapToPostResponseDto(post);
   }
 
@@ -175,8 +186,121 @@ export class PostsController {
     @Param('id') postId: number,
     @Request() req: any,
   ): Promise<void> {
-    const userId = req.user.id;
-    await this.postsService.remove(postId, userId);
+    //const userId = req.user.id;
+    const userId = 3; // just testing
+    const params = { userId, postId };
+    await this.postsService.remove(params);
+  }
+
+  @Post(':id/like')
+  @ApiOperation({ summary: 'Like or unlike a post' })
+  @ApiParam({ name: 'id', type: Number, example: 1 })
+  @ApiResponse({ status: 200, description: 'Like status updated' })
+  @ApiResponse({ status: 404, description: 'Post not found' })
+  async likePost(
+    @Param('id') id: number,
+    @Request() req: any,
+  ): Promise<{ liked: boolean; likesCount: number }> {
+    // const userId = req.user.id;
+    const userId = 3; // just testing
+    const params = { userId, postId: id };
+    return await this.postsService.likePost(params);
+  }
+
+  @Post(':id/archive')
+  @ApiOperation({ summary: 'Archive or unarchive a post' })
+  @ApiParam({ name: 'id', type: Number, example: 1 })
+  @ApiResponse({
+    status: 200,
+    description: 'Post archived/unarchived successfully',
+    type: PostResponseDto,
+  })
+  @ApiResponse({ status: 404, description: 'Post not found' })
+  @ApiResponse({ status: 403, description: 'Access denied' })
+  async archivePost(
+    @Param('id') id: number,
+    @Body() archivePostDto: ArchivePostDto,
+    @Request() req: any,
+  ): Promise<PostResponseDto> {
+    //const userId = req.user.id;
+    const userId = 3; // just testing
+    const params = {
+      postId: id,
+      userId,
+      archive: archivePostDto.archive,
+    };
+    const post = await this.postsService.archivePost(params);
+    return this.mapToPostResponseDto(post);
+  }
+
+  @Post(':id/unarchive')
+  @ApiOperation({ summary: 'Unarchive a post' })
+  @ApiParam({ name: 'id', type: Number, example: 1 })
+  @ApiResponse({
+    status: 200,
+    description: 'Post unarchived successfully',
+    type: PostResponseDto,
+  })
+  @ApiResponse({ status: 404, description: 'Post not found' })
+  @ApiResponse({ status: 403, description: 'Access denied' })
+  async unarchivePost(
+    @Param('id') id: number,
+    @Request() req: any,
+  ): Promise<PostResponseDto> {
+    // const userId = req.user.id;
+    const userId = 3; // just testing
+    const params = { postId: id, userId };
+    const post = await this.postsService.unarchivePost(params);
+    return this.mapToPostResponseDto(post);
+  }
+
+  @Get('archived/my')
+  @ApiOperation({ summary: 'Get my archived posts' })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    type: String,
+    example: 'archivedAt',
+  })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    enum: ['ASC', 'DESC'],
+    example: 'DESC',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of archived posts',
+    type: PostsListResponseDto,
+  })
+  async findMyArchivedPosts(
+    @Query() query: any,
+    @Request() req: any,
+  ): Promise<PostsListResponseDto> {
+    // const userId = req.user.id;
+    const userId = 3; // just testing
+    const params = {
+      userId,
+      page: query.page ? parseInt(query.page) : undefined,
+      limit: query.limit ? parseInt(query.limit) : undefined,
+      search: query.search,
+      sortBy: query.sortBy,
+      sortOrder: query.sortOrder,
+    };
+
+    const { posts, total, page, limit, totalPages } =
+      await this.postsService.findArchivedPosts(params);
+
+    return {
+      posts: posts.map((post) => this.mapToPostResponseDto(post)),
+      total,
+      page,
+      limit,
+      totalPages,
+    };
   }
 
   private mapToPostResponseDto(post: any): PostResponseDto {
@@ -187,6 +311,8 @@ export class PostsController {
       commentsCount: post.commentsCount,
       sharesCount: post.sharesCount,
       location: post.location,
+      isArchived: post.isArchived,
+      archivedAt: post.archivedAt,
       authorId: post.authorId,
       author: {
         id: post.author.id,

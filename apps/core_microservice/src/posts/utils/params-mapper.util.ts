@@ -3,6 +3,7 @@ import { UpdatePostDto } from '../dto/update-post.dto';
 import {
   CreatePostParams,
   FindAllPostsParams,
+  FindArchivedPostsParams,
   UpdatePostParams,
 } from '../types/post-service.types';
 
@@ -39,6 +40,20 @@ export class PostsParamsMapper {
       content: dto.content,
       location: dto.location,
       assetIds: dto.assetIds,
+    };
+  }
+
+  static toFindArchivedPostsParams(
+    userId: number,
+    query: any,
+  ): FindArchivedPostsParams {
+    return {
+      userId,
+      page: query.page ? parseInt(query.page) : undefined,
+      limit: query.limit ? parseInt(query.limit) : undefined,
+      search: query.search,
+      sortBy: query.sortBy,
+      sortOrder: query.sortOrder,
     };
   }
 }

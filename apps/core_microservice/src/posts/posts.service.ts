@@ -4,7 +4,6 @@ import {
   ForbiddenException,
   InternalServerErrorException,
   BadRequestException,
-  //Post,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, FindOptionsWhere, ILike, In } from 'typeorm';
@@ -13,12 +12,19 @@ import {
   FindAllPostsParams,
   UpdatePostParams,
   FindAllPostsResult,
+  PostIdParams,
+  UserPostParams,
+  LikePostResult,
+  ArchivePostParams,
+  FindArchivedPostsParams,
+  FindArchivedPostsResult,
 } from './types/post-service.types';
 import { Asset } from 'src/entities/asset.entity';
 import { PostAsset } from 'src/entities/many-to-many/post-asset.entity';
 import { Post } from 'src/entities/post.entity';
 import { User } from 'src/entities/user.entity';
 import { IPostsService } from './interfaces/IPostsService';
+import { PostLike } from 'src/entities/many-to-many/post-like.entity';
 
 @Injectable()
 export class PostsService implements IPostsService {
@@ -27,6 +33,8 @@ export class PostsService implements IPostsService {
     private readonly postRepository: Repository<Post>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(PostLike)
+    private readonly postLikeRepository: Repository<PostLike>,
     @InjectRepository(PostAsset)
     private readonly postAssetRepository: Repository<PostAsset>,
     @InjectRepository(Asset)
@@ -37,7 +45,6 @@ export class PostsService implements IPostsService {
   async create(params: CreatePostParams): Promise<Post> {
     const { authorId, content, location, assetIds } = params;
 
-    // Verify user exists
     const user = await this.userRepository.findOne({ where: { id: authorId } });
     if (!user) {
       throw new NotFoundException('User not found');
@@ -48,7 +55,6 @@ export class PostsService implements IPostsService {
     await queryRunner.startTransaction();
 
     try {
-      // Create post
       const post = this.postRepository.create({
         content,
         location,
@@ -57,7 +63,6 @@ export class PostsService implements IPostsService {
 
       const savedPost = await queryRunner.manager.save(post);
 
-      // Handle attached assets
       if (assetIds && assetIds.length > 0) {
         const assets = await this.assetRepository.find({
           where: {
@@ -85,7 +90,7 @@ export class PostsService implements IPostsService {
 
       await queryRunner.commitTransaction();
 
-      return await this.findOne(savedPost.id);
+      return await this.findOne({ postId: savedPost.id });
     } catch (error) {
       await queryRunner.rollbackTransaction();
 
@@ -111,7 +116,7 @@ export class PostsService implements IPostsService {
       sortOrder = 'DESC',
     } = params;
 
-    const where: FindOptionsWhere<Post> = {};
+    const where: FindOptionsWhere<Post> = { isArchived: false };
 
     if (search) {
       where.content = ILike(`%${search}%`);
@@ -153,7 +158,11 @@ export class PostsService implements IPostsService {
     return this.findAll(authorParams);
   }
 
-  async findOne(postId: number): Promise<Post> {
+  async findOne(
+    params: PostIdParams & { currentUserId?: number },
+  ): Promise<Post> {
+    const { postId, currentUserId } = params;
+
     const post = await this.postRepository.findOne({
       where: { id: postId },
       relations: [
@@ -171,17 +180,19 @@ export class PostsService implements IPostsService {
       throw new NotFoundException(`Post with ID ${postId} not found`);
     }
 
+    if (post.isArchived && post.authorId !== currentUserId) {
+      throw new ForbiddenException(
+        'You do not have permission to view this archived post',
+      );
+    }
+
     return post;
   }
 
-  async update(
-    postId: number,
-    userId: number,
-    params: UpdatePostParams,
-  ): Promise<Post> {
-    const { ...updateData } = params;
+  async update(params: UserPostParams & UpdatePostParams): Promise<Post> {
+    const { userId, postId, ...updateData } = params;
 
-    const post = await this.findOne(postId);
+    const post = await this.findOne({ postId });
 
     if (post.authorId !== userId) {
       throw new ForbiddenException('You can only update your own posts');
@@ -192,7 +203,6 @@ export class PostsService implements IPostsService {
     await queryRunner.startTransaction();
 
     try {
-      // Update post fields
       const postUpdateData: Partial<Post> = {};
       if (updateData.content !== undefined)
         postUpdateData.content = updateData.content;
@@ -203,7 +213,6 @@ export class PostsService implements IPostsService {
         await queryRunner.manager.update(Post, postId, postUpdateData);
       }
 
-      // Handle asset updates
       if (updateData.assetIds !== undefined) {
         await queryRunner.manager.delete(PostAsset, { postId });
 
@@ -235,7 +244,7 @@ export class PostsService implements IPostsService {
 
       await queryRunner.commitTransaction();
 
-      return await this.findOne(postId);
+      return await this.findOne({ postId });
     } catch (error) {
       await queryRunner.rollbackTransaction();
 
@@ -254,8 +263,10 @@ export class PostsService implements IPostsService {
     }
   }
 
-  async remove(postId: number, userId: number): Promise<void> {
-    const post = await this.findOne(postId);
+  async remove(params: UserPostParams): Promise<void> {
+    const { userId, postId } = params;
+
+    const post = await this.findOne({ postId });
 
     if (post.authorId !== userId) {
       throw new ForbiddenException('You can only delete your own posts');
@@ -268,5 +279,181 @@ export class PostsService implements IPostsService {
         'Failed to delete post: ' + error.message,
       );
     }
+  }
+
+  async incrementCommentsCount(params: PostIdParams): Promise<void> {
+    const { postId } = params;
+    await this.postRepository.increment({ id: postId }, 'commentsCount', 1);
+  }
+
+  async decrementCommentsCount(params: PostIdParams): Promise<void> {
+    const { postId } = params;
+    await this.postRepository.decrement({ id: postId }, 'commentsCount', 1);
+  }
+
+  /**
+   * Like a post
+   */
+  async likePost(params: UserPostParams): Promise<LikePostResult> {
+    const { postId, userId } = params;
+    const post = await this.findOne({ postId });
+
+    if (!post) {
+      throw new NotFoundException('Post not found');
+    }
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const existingLike = await queryRunner.manager.findOne(PostLike, {
+        where: { postId, userId },
+      });
+
+      if (existingLike) {
+        await queryRunner.manager.delete(PostLike, {
+          postId,
+          userId,
+        });
+        await queryRunner.manager.decrement(
+          Post,
+          { id: postId },
+          'likesCount',
+          1,
+        );
+      } else {
+        const postLike = this.postLikeRepository.create({
+          postId,
+          userId,
+        });
+        await queryRunner.manager.save(postLike);
+        await queryRunner.manager.increment(
+          Post,
+          { id: postId },
+          'likesCount',
+          1,
+        );
+      }
+
+      await queryRunner.commitTransaction();
+
+      const updatedPost = await this.postRepository.findOne({
+        where: { id: postId },
+        select: ['likesCount'],
+      });
+
+      if (!updatedPost) {
+        throw new NotFoundException('Liked Post not found');
+      }
+
+      return {
+        liked: !existingLike,
+        likesCount: updatedPost.likesCount,
+      };
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw new InternalServerErrorException(
+        'Failed to like post: ' + error.message,
+      );
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  /**
+   * Archive or unarchive a post
+   */
+  async archivePost(params: ArchivePostParams): Promise<Post> {
+    const { postId, userId, archive } = params;
+
+    const post = await this.findOne({ postId });
+
+    // Проверяем права на архивацию
+    if (post.authorId !== userId) {
+      throw new ForbiddenException('You can only archive your own posts');
+    }
+
+    try {
+      if (archive) {
+        await this.postRepository.update(postId, {
+          isArchived: true,
+          archivedAt: new Date(),
+        });
+      } else {
+        await this.postRepository.update(postId, {
+          isArchived: false,
+          archivedAt: () => 'NULL',
+        });
+      }
+
+      return await this.findOne({ postId });
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Failed to archive post: ' + error.message,
+      );
+    }
+  }
+
+  /**
+   * Unarchive a post (alias for archivePost with archive=false)
+   */
+  async unarchivePost(params: UserPostParams): Promise<Post> {
+    const { postId, userId } = params;
+    return this.archivePost({ postId, userId, archive: false });
+  }
+
+  /**
+   * Find archived posts for a user
+   */
+  async findArchivedPosts(
+    params: FindArchivedPostsParams,
+  ): Promise<FindArchivedPostsResult> {
+    const {
+      userId,
+      page = 1,
+      limit = 10,
+      search,
+      sortBy = 'archivedAt',
+      sortOrder = 'DESC',
+    } = params;
+
+    const where: FindOptionsWhere<Post> = {
+      authorId: userId,
+      isArchived: true,
+    };
+
+    // Поиск по контенту
+    if (search) {
+      where.content = ILike(`%${search}%`);
+    }
+
+    const [posts, total] = await this.postRepository.findAndCount({
+      where,
+      relations: ['author', 'author.profile', 'postAssets', 'postAssets.asset'],
+      order: { [sortBy]: sortOrder },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    const totalPages: number = Math.ceil(total / limit);
+
+    return { posts, total, page, limit, totalPages };
+  }
+
+  /**
+   * Check if post is archived
+   */
+  async isPostArchived(postId: number): Promise<boolean> {
+    const post = await this.postRepository.findOne({
+      where: { id: postId },
+      select: ['id', 'isArchived'],
+    });
+
+    if (!post) {
+      throw new NotFoundException(`Post with ID ${postId} not found`);
+    }
+
+    return post.isArchived;
   }
 }
