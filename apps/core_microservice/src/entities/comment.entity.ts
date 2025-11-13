@@ -2,52 +2,69 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  ManyToOne,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne,
   OneToMany,
+  JoinColumn,
 } from 'typeorm';
-import { User } from './user.entity';
-import { Post } from './post.entity';
 import { CommentLike } from './many-to-many/comment-like.entity';
+import { Post } from './post.entity';
+import { Profile } from './profile.entity';
+import { User } from './user.entity';
 
-@Entity()
+@Entity('comments')
 export class Comment {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @Column('text')
-  content: string;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
-
-  @Column()
-  authorId: number;
-
-  @ManyToOne(() => User, (user) => user.comments, {
-    onDelete: 'CASCADE',
-  })
-  author: User;
-
-  @Column()
+  @Column({ name: 'post_id' })
   postId: number;
 
-  @ManyToOne(() => Post, (post) => post.comments, {
-    cascade: true,
-    onDelete: 'CASCADE',
-  })
+  @ManyToOne(() => Post, (post) => post.comments)
+  @JoinColumn({ name: 'post_id' })
   post: Post;
 
-  @Column({ default: 0 })
-  likesCount: number;
+  @Column({ name: 'profile_id' })
+  profileId: number;
 
-  @OneToMany(() => CommentLike, (commentLike) => commentLike.comment, {
-    cascade: true,
-    onDelete: 'CASCADE',
-  })
+  @ManyToOne(() => Profile)
+  @JoinColumn({ name: 'profile_id' })
+  profile: Profile;
+
+  @Column({ name: 'parent_comment_id', nullable: true })
+  parentCommentId: number;
+
+  @ManyToOne(() => Comment, (comment) => comment.replies, { nullable: true })
+  @JoinColumn({ name: 'parent_comment_id' })
+  parentComment: Comment;
+
+  @Column({ type: 'text' })
+  content: string;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+
+  @Column({ name: 'created_by' })
+  createdById: number;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'created_by' })
+  createdBy: User;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
+
+  @Column({ name: 'updated_by', nullable: true })
+  updatedById: number;
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'updated_by' })
+  updatedBy: User;
+
+  @OneToMany(() => Comment, (comment) => comment.parentComment)
+  replies: Comment[];
+
+  @OneToMany(() => CommentLike, (commentLike) => commentLike.comment)
   commentLikes: CommentLike[];
 }
