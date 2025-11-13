@@ -9,7 +9,7 @@ import {
 } from 'typeorm';
 import { Profile } from '../profile.entity';
 import { User } from '../user.entity';
-import { ProfileConfiguration } from '../profile-configuration.entityt';
+import { ProfileConfiguration } from '../profile-configuration.entity';
 
 @Entity('profiles_to_profiles_configurations')
 export class ProfileToProfileConfiguration {

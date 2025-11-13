@@ -12,28 +12,10 @@ import { Profile } from '../profile.entity';
 import { User } from '../user.entity';
 
 @Entity('profiles_follows')
-@Check('"followerProfileId" != "followedProfileId"')
+@Check('"follower_profile_id" != "followed_profile_id"')
 export class ProfileFollow {
   @PrimaryGeneratedColumn('increment')
   id: number;
-
-  @Column({ name: 'follower_profile_id' })
-  followerProfileId: number;
-
-  @ManyToOne(() => Profile, (profile) => profile.following, {
-    onDelete: 'CASCADE',
-  })
-  @JoinColumn({ name: 'follower_profile_id' })
-  followerProfile: Profile;
-
-  @Column({ name: 'followed_profile_id' })
-  followedProfileId: number;
-
-  @ManyToOne(() => Profile, (profile) => profile.followers, {
-    onDelete: 'CASCADE',
-  })
-  @JoinColumn({ name: 'followed_profile_id' })
-  followedProfile: Profile;
 
   @Column({ nullable: true })
   accepted: boolean;
@@ -57,4 +39,16 @@ export class ProfileFollow {
   @ManyToOne(() => User, { nullable: true })
   @JoinColumn({ name: 'updated_by' })
   updatedBy: User;
+
+  @ManyToOne(() => Profile, (profile) => profile.following, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'follower_profile_id' })
+  followerProfile: Profile;
+
+  @ManyToOne(() => Profile, (profile) => profile.followers, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'followed_profile_id' })
+  followedProfile: Profile;
 }
