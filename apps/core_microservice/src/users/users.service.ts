@@ -1,20 +1,26 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Account } from 'src/entities/account.entity';
 import { Profile } from 'src/entities/profile.entity';
 import { User } from 'src/entities/user.entity';
 import { Repository, DataSource, FindOptionsWhere, ILike } from 'typeorm';
 import bcrypt from 'bcrypt';
+import { IUserService } from './interfaces/IUsersService';
+import {
+  CreateUserParams,
+  FindAllUsersParams,
+  FindAllUsersResult,
+  UpdateUserParams,
+} from './types/user-service.types';
 
 @Injectable()
-export class UsersService {
+export class UsersService implements IUserService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
@@ -28,9 +34,11 @@ export class UsersService {
   /**
    * Create a new user with profile and account
    */
-  async create(createUserDto: CreateUserDto): Promise<User> {
+  async create(params: CreateUserParams): Promise<User> {
+    const { name, email, bio, password } = params;
+
     const existingUser = await this.userRepository.findOne({
-      where: { email: createUserDto.email },
+      where: { email },
     });
 
     if (existingUser) {
@@ -43,25 +51,22 @@ export class UsersService {
 
     try {
       const user = this.userRepository.create({
-        email: createUserDto.email,
+        email,
         role: 'user',
       });
 
       const savedUser = await queryRunner.manager.save(user);
 
       const profile = this.profileRepository.create({
-        name: createUserDto.name,
-        bio: createUserDto.bio,
+        name,
+        bio,
         userId: savedUser.id,
       });
 
       await queryRunner.manager.save(profile);
 
       const saltRounds = 10;
-      const passwordHash = await bcrypt.hash(
-        createUserDto.password,
-        saltRounds,
-      );
+      const passwordHash = await bcrypt.hash(password, saltRounds);
 
       const account = this.accountRepository.create({
         passwordHash,
@@ -92,16 +97,15 @@ export class UsersService {
   /**
    * Find all users with pagination and filtering
    */
-  async findAll(query: any): Promise<{ users: User[]; total: number }> {
+  async findAll(params: FindAllUsersParams): Promise<FindAllUsersResult> {
     const {
       page = 1,
       limit = 10,
       search,
-      isActive,
       role,
       sortBy = 'createdAt',
       sortOrder = 'DESC',
-    } = query;
+    } = params;
 
     const where: FindOptionsWhere<User> = {};
 
@@ -121,7 +125,11 @@ export class UsersService {
       take: limit,
     });
 
-    return { users, total };
+    const totalPages: number = Math.ceil(total / limit);
+
+    console.log(users);
+
+    return { users, total, page, limit, totalPages };
   }
 
   /**
@@ -159,59 +167,60 @@ export class UsersService {
   /**
    * Update user and profile
    */
-  async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
-    const user = await this.findOne(id);
+  async update(userId: number, params: UpdateUserParams): Promise<User> {
+    const user = await this.findOne(userId);
+    const { ...updateData } = params;
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     try {
-      if (updateUserDto.email && updateUserDto.email !== user.email) {
+      if (updateData.email && updateData.email !== user.email) {
         const existingUser = await this.userRepository.findOne({
-          where: { email: updateUserDto.email },
+          where: { email: updateData.email },
         });
 
         if (existingUser) {
           throw new ConflictException('User with this email already exists');
         }
 
-        await queryRunner.manager.update(User, id, {
-          email: updateUserDto.email,
+        await queryRunner.manager.update(User, userId, {
+          email: updateData.email,
         });
       }
 
       const userUpdateData: Partial<User> = {};
-      if (updateUserDto.role) {
-        userUpdateData.role = updateUserDto.role;
+      if (updateData.role) {
+        userUpdateData.role = updateData.role;
       }
 
       if (Object.keys(userUpdateData).length > 0) {
-        await queryRunner.manager.update(User, id, userUpdateData);
+        await queryRunner.manager.update(User, userId, userUpdateData);
       }
 
       const profileUpdateData: Partial<Profile> = {};
-      if (updateUserDto.name) {
-        profileUpdateData.name = updateUserDto.name;
+      if (updateData.name) {
+        profileUpdateData.name = updateData.name;
       }
-      if (updateUserDto.bio !== undefined) {
-        profileUpdateData.bio = updateUserDto.bio;
+      if (updateData.bio !== undefined) {
+        profileUpdateData.bio = updateData.bio;
       }
-      if (updateUserDto.avatarId !== undefined) {
-        profileUpdateData.avatarId = updateUserDto.avatarId;
+      if (updateData.avatarId !== undefined) {
+        profileUpdateData.avatarId = updateData.avatarId;
       }
 
       if (Object.keys(profileUpdateData).length > 0) {
         await queryRunner.manager.update(
           Profile,
-          { userId: id },
+          { userId },
           profileUpdateData,
         );
       }
 
       await queryRunner.commitTransaction();
 
-      return await this.findOne(id);
+      return await this.findOne(userId);
     } catch (error) {
       await queryRunner.rollbackTransaction();
 
@@ -231,17 +240,32 @@ export class UsersService {
   }
 
   /**
-   * Soft delete user (deactivate)
+   *  Delete user
    */
-  async remove(id: number): Promise<void> {
-    const user = await this.findOne(id);
+  async remove(userId: number): Promise<void> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
     try {
-      await this.userRepository.delete({ id });
+      await this.userRepository.delete({ id: userId });
+
+      await queryRunner.commitTransaction();
     } catch (error) {
+      await queryRunner.rollbackTransaction();
+
+      if (error.code === '23503') {
+        throw new BadRequestException(
+          'Cannot delete user. There might be related records that prevent deletion. ' +
+            'Please ensure all user data is properly handled before deletion.',
+        );
+      }
+
       throw new InternalServerErrorException(
         'Failed to delete user: ' + error.message,
       );
+    } finally {
+      await queryRunner.release();
     }
   }
 }

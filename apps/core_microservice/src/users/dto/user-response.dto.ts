@@ -28,3 +28,20 @@ export class UserResponseDto {
   @ApiProperty()
   updatedAt: Date;
 }
+
+export class UsersListResponseDto {
+  @ApiProperty({ type: [UserResponseDto] })
+  users: UserResponseDto[];
+
+  @ApiProperty()
+  total: number;
+
+  @ApiProperty()
+  page: number;
+
+  @ApiProperty()
+  limit: number;
+
+  @ApiProperty()
+  totalPages: number;
+}
