@@ -1,21 +1,12 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  InternalServerErrorException,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Account } from 'src/entities/account.entity';
-import { Profile } from 'src/entities/profile.entity';
-import { User } from 'src/entities/user.entity';
-import { Repository, DataSource, FindOptionsWhere, ILike } from 'typeorm';
-import bcrypt from 'bcrypt';
+import { Repository } from 'typeorm';
+import { User } from '../entities/user.entity';
 import { IUserService } from './interfaces/IUsersService';
 import {
   CreateUserParams,
-  FindAllUsersParams,
-  FindAllUsersResult,
+  FindUsersParams,
+  UserPaginationResult,
   UpdateUserParams,
 } from './types/user-service.types';
 
@@ -24,121 +15,55 @@ export class UsersService implements IUserService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    @InjectRepository(Profile)
-    private readonly profileRepository: Repository<Profile>,
-    @InjectRepository(Account)
-    private readonly accountRepository: Repository<Account>,
-    private readonly dataSource: DataSource,
   ) {}
 
-  /**
-   * Create a new user with profile and account
-   */
   async create(params: CreateUserParams): Promise<User> {
-    const { name, email, bio, password } = params;
-
-    const existingUser = await this.userRepository.findOne({
-      where: { email },
+    const user = this.userRepository.create({
+      role: params.role,
+      disabled: params.disabled || false,
+      createdById: params.createdById,
     });
 
-    if (existingUser) {
-      throw new ConflictException('User with this email already exists');
-    }
-
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    try {
-      const user = this.userRepository.create({
-        email,
-        role: 'user',
-      });
-
-      const savedUser = await queryRunner.manager.save(user);
-
-      const profile = this.profileRepository.create({
-        name,
-        bio,
-        userId: savedUser.id,
-      });
-
-      await queryRunner.manager.save(profile);
-
-      const saltRounds = 10;
-      const passwordHash = await bcrypt.hash(password, saltRounds);
-
-      const account = this.accountRepository.create({
-        passwordHash,
-        userId: savedUser.id,
-        provider: 'local',
-      });
-
-      await queryRunner.manager.save(account);
-
-      await queryRunner.commitTransaction();
-
-      return await this.findOne(savedUser.id);
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-
-      if (error instanceof ConflictException) {
-        throw error;
-      }
-
-      throw new InternalServerErrorException(
-        'Failed to create user: ' + error.message,
-      );
-    } finally {
-      await queryRunner.release();
-    }
+    return await this.userRepository.save(user);
   }
 
-  /**
-   * Find all users with pagination and filtering
-   */
-  async findAll(params: FindAllUsersParams): Promise<FindAllUsersResult> {
-    const {
-      page = 1,
-      limit = 10,
-      search,
-      role,
-      sortBy = 'createdAt',
-      sortOrder = 'DESC',
-    } = params;
+  async findAll(params: FindUsersParams): Promise<UserPaginationResult> {
+    const { page = 1, limit = 10, role, disabled } = params;
+    const skip = (page - 1) * limit;
 
-    const where: FindOptionsWhere<User> = {};
-
-    if (search) {
-      where.email = ILike(`%${search}%`);
-    }
+    const queryBuilder = this.userRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.createdBy', 'createdBy')
+      .leftJoinAndSelect('user.updatedBy', 'updatedBy')
+      .where('user.disabled = :disabled', { disabled: false });
 
     if (role) {
-      where.role = role;
+      queryBuilder.andWhere('user.role = :role', { role });
     }
 
-    const [users, total] = await this.userRepository.findAndCount({
-      where,
-      relations: ['profile', 'account'],
-      order: { [sortBy]: sortOrder },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
+    if (disabled !== undefined) {
+      queryBuilder.andWhere('user.disabled = :disabled', { disabled });
+    }
 
-    const totalPages: number = Math.ceil(total / limit);
+    const [data, total] = await queryBuilder
+      .skip(skip)
+      .take(limit)
+      .orderBy('user.createdAt', 'DESC')
+      .getManyAndCount();
 
-    console.log(users);
-
-    return { users, total, page, limit, totalPages };
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
-  /**
-   * Find one user by ID
-   */
   async findOne(id: number): Promise<User> {
     const user = await this.userRepository.findOne({
       where: { id },
-      relations: ['profile', 'account'],
+      relations: ['createdBy', 'updatedBy'],
     });
 
     if (!user) {
@@ -148,187 +73,34 @@ export class UsersService implements IUserService {
     return user;
   }
 
-  /**
-   * Find user by email
-   */
-  async findByEmail(email: string): Promise<User> {
-    const user = await this.userRepository.findOne({
-      where: { email },
-      relations: ['profile', 'account'],
+  async update(params: UpdateUserParams): Promise<User> {
+    const { id, ...updateData } = params;
+
+    await this.findOne(id);
+
+    const updatePayload: Partial<User> = {};
+    if (updateData.role !== undefined) updatePayload.role = updateData.role;
+    if (updateData.disabled !== undefined)
+      updatePayload.disabled = updateData.disabled;
+    if (updateData.updatedById !== undefined)
+      updatePayload.updatedById = updateData.updatedById;
+
+    await this.userRepository.update(id, updatePayload);
+
+    return await this.findOne(id);
+  }
+
+  async remove(id: number): Promise<void> {
+    const user = await this.findOne(id);
+    await this.userRepository.remove(user);
+  }
+
+  async softRemove(id: number, deletedById: number): Promise<void> {
+    await this.findOne(id);
+
+    await this.userRepository.update(id, {
+      disabled: true,
+      updatedById: deletedById,
     });
-
-    if (!user) {
-      throw new NotFoundException(`User with email ${email} not found`);
-    }
-
-    return user;
   }
-
-  /**
-   * Update user and profile
-   */
-  async update(userId: number, params: UpdateUserParams): Promise<User> {
-    const user = await this.findOne(userId);
-    const { ...updateData } = params;
-
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    try {
-      if (updateData.email && updateData.email !== user.email) {
-        const existingUser = await this.userRepository.findOne({
-          where: { email: updateData.email },
-        });
-
-        if (existingUser) {
-          throw new ConflictException('User with this email already exists');
-        }
-
-        await queryRunner.manager.update(User, userId, {
-          email: updateData.email,
-        });
-      }
-
-      const userUpdateData: Partial<User> = {};
-      if (updateData.role) {
-        userUpdateData.role = updateData.role;
-      }
-
-      if (Object.keys(userUpdateData).length > 0) {
-        await queryRunner.manager.update(User, userId, userUpdateData);
-      }
-
-      const profileUpdateData: Partial<Profile> = {};
-      if (updateData.name) {
-        profileUpdateData.name = updateData.name;
-      }
-      if (updateData.bio !== undefined) {
-        profileUpdateData.bio = updateData.bio;
-      }
-      if (updateData.avatarId !== undefined) {
-        profileUpdateData.avatarId = updateData.avatarId;
-      }
-
-      if (Object.keys(profileUpdateData).length > 0) {
-        await queryRunner.manager.update(
-          Profile,
-          { userId },
-          profileUpdateData,
-        );
-      }
-
-      await queryRunner.commitTransaction();
-
-      return await this.findOne(userId);
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-
-      if (
-        error instanceof ConflictException ||
-        error instanceof NotFoundException
-      ) {
-        throw error;
-      }
-
-      throw new InternalServerErrorException(
-        'Failed to update user: ' + error.message,
-      );
-    } finally {
-      await queryRunner.release();
-    }
-  }
-
-  /**
-   *  Delete user
-   */
-  async remove(userId: number): Promise<void> {
-    const user = await this.userRepository.findOne({
-      where: { id: userId },
-      // relations: [
-      //   'account',
-      //   'profile',
-      //   'posts',
-      //   'posts.comments',
-      //   'posts.postLikes',
-      //   'posts.postAssets',
-      //   'comments',
-      //   'comments.commentLikes',
-      //   'messages',
-      //   'messages.messageAssets',
-      //   'createdChats',
-      //   'createdChats.messages',
-      //   'createdChats.chatParticipants',
-      //   'postLikes',
-      //   'commentLikes',
-      //   'chatParticipants',
-      //   'receivedNotifications',
-      //   'sentNotifications',
-      //   'uploadedAssets',
-      //   'uploadedAssets.postAssets',
-      //   'uploadedAssets.messageAssets',
-      // ],
-    });
-
-    if (!user) {
-      throw new NotFoundException(`User with ID ${userId} not found`);
-    }
-
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    try {
-      // TODO: get chats where user not creator and delete this chats before deleting user
-
-      await queryRunner.manager.delete(User, { id: userId });
-
-      await queryRunner.commitTransaction();
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-
-      console.error('Delete user error:', error);
-
-      if (error.code === '23503') {
-        const constraint = error.constraint;
-        throw new BadRequestException(
-          `Cannot delete user due to foreign key constraint: ${constraint}. ` +
-            'There are still related records in the database.',
-        );
-      }
-
-      throw new InternalServerErrorException(
-        'Failed to delete user: ' + error.message,
-      );
-    } finally {
-      await queryRunner.release();
-    }
-  }
-
-  // async remove(userId: number): Promise<void> {
-  //   const queryRunner = this.dataSource.createQueryRunner();
-  //   await queryRunner.connect();
-  //   await queryRunner.startTransaction();
-
-  //   try {
-  //     await this.userRepository.delete({ id: userId });
-
-  //     await queryRunner.commitTransaction();
-  //   } catch (error) {
-  //     await queryRunner.rollbackTransaction();
-
-  //     if (error.code === '23503') {
-  //       throw new BadRequestException(
-  //         'Cannot delete user. There might be related records that prevent deletion. ' +
-  //           'Please ensure all user data is properly handled before deletion.',
-  //       );
-  //     }
-
-  //     throw new InternalServerErrorException(
-  //       'Failed to delete user: ' + error.message,
-  //     );
-  //   } finally {
-  //     await queryRunner.release();
-  //   }
-  // }
 }

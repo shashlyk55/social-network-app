@@ -1,47 +1,47 @@
+// src/users/dto/user-response.dto.ts
 import { ApiProperty } from '@nestjs/swagger';
 
-export class UserResponseDto {
-  @ApiProperty()
+class UserReferenceDto {
+  @ApiProperty({ example: 1, description: 'User ID' })
   id: number;
 
-  @ApiProperty()
-  email: string;
-
-  @ApiProperty()
-  name: string;
-
-  @ApiProperty({ required: false })
-  bio?: string;
-
-  @ApiProperty()
+  @ApiProperty({ example: 'admin', description: 'User role' })
   role: string;
-
-  @ApiProperty({ required: false })
-  avatarId?: number;
-
-  @ApiProperty()
-  lastOnlineAt?: Date;
-
-  @ApiProperty()
-  createdAt: Date;
-
-  @ApiProperty()
-  updatedAt: Date;
 }
 
-export class UsersListResponseDto {
-  @ApiProperty({ type: [UserResponseDto] })
-  users: UserResponseDto[];
+export class UserResponseDto {
+  @ApiProperty({ example: 1, description: 'User ID' })
+  id: number;
 
-  @ApiProperty()
-  total: number;
+  @ApiProperty({ example: 'admin', description: 'User role' })
+  role: string;
 
-  @ApiProperty()
-  page: number;
+  @ApiProperty({ example: false, description: 'Whether user is disabled' })
+  disabled: boolean;
 
-  @ApiProperty()
-  limit: number;
+  @ApiProperty({ description: 'Creation date' })
+  createdAt: Date;
 
-  @ApiProperty()
-  totalPages: number;
+  @ApiProperty({ description: 'Update date' })
+  updatedAt: Date;
+
+  @ApiProperty({ example: 1, description: 'Creator ID' })
+  createdById: number;
+
+  @ApiProperty({ example: 2, description: 'Updater ID', nullable: true })
+  updatedById: number | null;
+
+  @ApiProperty({
+    type: UserReferenceDto,
+    description: 'User who created this record',
+    nullable: true,
+  })
+  createdBy?: UserReferenceDto;
+
+  @ApiProperty({
+    type: UserReferenceDto,
+    description: 'User who updated this record',
+    nullable: true,
+  })
+  updatedBy?: UserReferenceDto;
 }

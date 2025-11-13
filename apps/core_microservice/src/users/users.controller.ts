@@ -1,16 +1,16 @@
+// src/users/controllers/user.controller.ts
 import {
   Controller,
   Get,
   Post,
-  Body,
-  Patch,
-  Param,
+  Put,
   Delete,
+  Body,
+  Param,
   Query,
-  HttpCode,
+  ParseIntPipe,
   HttpStatus,
-  UseInterceptors,
-  ClassSerializerInterceptor,
+  HttpCode,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -18,152 +18,154 @@ import {
   ApiResponse,
   ApiParam,
   ApiQuery,
+  ApiBody,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
-import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
+import { PaginationResponseDto } from './dto/pagination-response.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserResponseDto } from './dto/user-response.dto';
-import { User } from 'src/entities/user.entity';
+import { UserMappers } from './utils/params-mapper.util';
+import { UsersService } from './users.service';
 
 @ApiTags('users')
+@ApiBearerAuth()
 @Controller('users')
-@UseInterceptors(ClassSerializerInterceptor)
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly userService: UsersService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Create a new user' })
+  @ApiOperation({ summary: 'Create user' })
   @ApiResponse({
     status: 201,
-    description: 'User successfully created',
+    description: 'User created successfully',
     type: UserResponseDto,
   })
-  @ApiResponse({
-    status: 409,
-    description: 'User with this email already exists',
-  })
-  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 400, description: 'Invalid input data' })
+  @ApiBody({ type: CreateUserDto })
   async create(@Body() createUserDto: CreateUserDto): Promise<UserResponseDto> {
-    const user = await this.usersService.create(createUserDto);
-    return this.mapToUserResponseDto(user);
+    const params = UserMappers.toCreateParams(createUserDto);
+    const user = await this.userService.create(params);
+    return UserMappers.toResponse(user);
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all users with pagination and filtering' })
-  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
-  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
-  @ApiQuery({ name: 'search', required: false, type: String })
-  @ApiQuery({ name: 'isActive', required: false, type: Boolean })
-  @ApiQuery({ name: 'role', required: false, enum: ['user', 'admin'] })
-  @ApiQuery({
-    name: 'sortBy',
-    required: false,
-    type: String,
-    example: 'createdAt',
-  })
-  @ApiQuery({
-    name: 'sortOrder',
-    required: false,
-    enum: ['ASC', 'DESC'],
-    example: 'DESC',
-  })
+  @ApiOperation({ summary: 'Get users list' })
   @ApiResponse({
     status: 200,
-    description: 'List of users',
-    type: [UserResponseDto],
+    description: 'Users list retrieved successfully',
+    type: PaginationResponseDto<UserResponseDto>,
   })
-  async findAll(@Query() query: any): Promise<{
-    users: UserResponseDto[];
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  }> {
-    const { users, total } = await this.usersService.findAll(query);
-
-    const page = parseInt(query.page) || 1;
-    const limit = parseInt(query.limit) || 10;
-    const totalPages = Math.ceil(total / limit);
-
-    return {
-      users: users.map((user) => this.mapToUserResponseDto(user)),
-      total,
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page',
+  })
+  @ApiQuery({
+    name: 'role',
+    required: false,
+    type: String,
+    description: 'Filter by role',
+  })
+  @ApiQuery({
+    name: 'disabled',
+    required: false,
+    type: Boolean,
+    description: 'Filter by disabled status',
+  })
+  async findAll(
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+    @Query('role') role?: string,
+    @Query('disabled') disabled?: boolean,
+  ): Promise<PaginationResponseDto<UserResponseDto>> {
+    const params = {
       page,
       limit,
-      totalPages,
+      role,
+      disabled: disabled === undefined ? undefined : Boolean(disabled),
     };
+    const result = await this.userService.findAll(params);
+    return UserMappers.toPaginationResponse(result);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get user by ID' })
-  @ApiParam({ name: 'id', type: Number, example: 1 })
+  @ApiParam({ name: 'id', type: Number, description: 'User ID' })
   @ApiResponse({
     status: 200,
     description: 'User found',
     type: UserResponseDto,
   })
   @ApiResponse({ status: 404, description: 'User not found' })
-  async findOne(@Param('id') id: number): Promise<UserResponseDto> {
-    const user = await this.usersService.findOne(+id);
-    return this.mapToUserResponseDto(user);
+  async findOne(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<UserResponseDto> {
+    const user = await this.userService.findOne(id);
+    return UserMappers.toResponse(user);
   }
 
-  @Get('email/:email')
-  @ApiOperation({ summary: 'Get user by email' })
-  @ApiParam({ name: 'email', type: String, example: 'user@example.com' })
-  @ApiResponse({
-    status: 200,
-    description: 'User found',
-    type: UserResponseDto,
-  })
-  @ApiResponse({ status: 404, description: 'User not found' })
-  async findByEmail(@Param('email') email: string): Promise<UserResponseDto> {
-    const user = await this.usersService.findByEmail(email);
-    return this.mapToUserResponseDto(user);
-  }
-
-  @Patch(':id')
+  @Put(':id')
   @ApiOperation({ summary: 'Update user' })
-  @ApiParam({ name: 'id', type: Number, example: 1 })
+  @ApiParam({ name: 'id', type: Number, description: 'User ID' })
   @ApiResponse({
     status: 200,
-    description: 'User updated',
+    description: 'User updated successfully',
     type: UserResponseDto,
   })
   @ApiResponse({ status: 404, description: 'User not found' })
-  @ApiResponse({ status: 409, description: 'Email already exists' })
+  @ApiBody({ type: UpdateUserDto })
   async update(
-    @Param('id') id: number,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateUserDto: UpdateUserDto,
   ): Promise<UserResponseDto> {
-    const user = await this.usersService.update(id, updateUserDto);
-    return this.mapToUserResponseDto(user);
+    const params = UserMappers.toUpdateParams(id, updateUserDto);
+    const user = await this.userService.update(params);
+    return UserMappers.toResponse(user);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Delete user (soft delete)' })
-  @ApiParam({ name: 'id', type: Number, example: 1 })
-  @ApiResponse({ status: 204, description: 'User deleted' })
+  @ApiOperation({ summary: 'Delete user permanently' })
+  @ApiParam({ name: 'id', type: Number, description: 'User ID' })
+  @ApiResponse({ status: 204, description: 'User deleted permanently' })
   @ApiResponse({ status: 404, description: 'User not found' })
-  async remove(@Param('id') id: number): Promise<void> {
-    await this.usersService.remove(+id);
+  @ApiQuery({
+    name: 'deletedById',
+    required: true,
+    type: Number,
+    description: 'ID of user performing deletion',
+  })
+  async remove(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('deletedById', ParseIntPipe) deletedById: number,
+  ): Promise<void> {
+    await this.userService.remove(id);
   }
 
-  /**
-   * Map User entity to UserResponseDto
-   */
-  private mapToUserResponseDto(user: User): UserResponseDto {
-    return {
-      id: user.id,
-      email: user.email,
-      name: user.profile?.name || '',
-      bio: user.profile?.bio,
-      role: user.role,
-      avatarId: user.profile?.avatarId,
-      lastOnlineAt: user.lastOnlineAt,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-    };
+  @Delete(':id/soft')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Soft delete user' })
+  @ApiParam({ name: 'id', type: Number, description: 'User ID' })
+  @ApiResponse({ status: 204, description: 'User disabled successfully' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiQuery({
+    name: 'deletedById',
+    required: true,
+    type: Number,
+    description: 'ID of user performing deletion',
+  })
+  async softRemove(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('deletedById', ParseIntPipe) deletedById: number,
+  ): Promise<void> {
+    await this.userService.softRemove(id, deletedById);
   }
 }
