@@ -1,5 +1,4 @@
 import { Chat } from 'src/entities/chat.entity';
-import { PaginationResponseDto } from 'src/users/dto/pagination-response.dto';
 import { ChatResponseDto } from '../dto/chat-response.dto';
 import { CreateChatDto } from '../dto/create-chat.dto';
 import { UpdateChatDto } from '../dto/update-chat.dto';
@@ -8,6 +7,7 @@ import {
   UpdateChatParams,
   ChatPaginationResult,
 } from '../types/chat-service.types';
+import { PaginationResponseDto } from 'src/common/dto/pagination-response.dto';
 
 export class ChatMappers {
   static toCreateParams(dto: CreateChatDto): CreateChatParams {
