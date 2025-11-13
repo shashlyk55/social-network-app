@@ -4,9 +4,6 @@ import {
   FindAllUsersParams,
   FindAllUsersResult,
   UpdateUserParams,
-  ChangePasswordParams,
-  ValidatePasswordParams,
-  UserStatusParams,
 } from '../types/user-service.types';
 
 export interface IUserService {

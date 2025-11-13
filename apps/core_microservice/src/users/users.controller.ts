@@ -136,7 +136,7 @@ export class UsersController {
     @Param('id') id: number,
     @Body() updateUserDto: UpdateUserDto,
   ): Promise<UserResponseDto> {
-    const user = await this.usersService.update(+id, updateUserDto);
+    const user = await this.usersService.update(id, updateUserDto);
     return this.mapToUserResponseDto(user);
   }
 
