@@ -11,7 +11,7 @@ export interface IChatService {
   findAll(params: FindChatsParams): Promise<ChatPaginationResult>;
   findOne(id: number): Promise<Chat>;
   update(params: UpdateChatParams): Promise<Chat>;
-  remove(id: number, deletedById: number): Promise<void>;
+  remove(id: number): Promise<void>;
 
   findUserChats(
     profileId: number,

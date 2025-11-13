@@ -116,7 +116,7 @@ export class ChatsService implements IChatService {
     return await this.findOne(id);
   }
 
-  async remove(id: number, deletedById: number): Promise<void> {
+  async remove(id: number): Promise<void> {
     const chat = await this.findOne(id);
     await this.chatRepository.remove(chat);
   }

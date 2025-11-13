@@ -171,6 +171,6 @@ export class ChatsController {
     @Param('id', ParseIntPipe) id: number,
     @Query('deletedById', ParseIntPipe) deletedById: number,
   ): Promise<void> {
-    await this.chatService.remove(id, deletedById);
+    await this.chatService.remove(id);
   }
 }
