@@ -1,30 +1,26 @@
-import { Comment as CommentEntity } from 'src/entities/comment.entity';
+import { Comment } from 'src/entities/comment.entity';
 import {
-  CommentIdParams,
   CreateCommentParams,
-  FindAllCommentsParams,
-  FindAllCommentsResult,
-  LikeCommentParams,
-  LikeCommentResult,
-  PostIdParams,
   UpdateCommentParams,
-  UserCommentParams,
+  FindCommentsParams,
+  CreateCommentLikeParams,
+  CommentPaginationResult,
 } from '../types/comment-service.types';
+import { CommentLike } from 'src/entities/many-to-many/comment-like.entity';
 
-export interface ICommentsService {
-  create(params: CreateCommentParams): Promise<CommentEntity>;
-  findAll(params: FindAllCommentsParams): Promise<FindAllCommentsResult>;
-  findOne(params: CommentIdParams): Promise<CommentEntity>;
-  update(
-    params: UserCommentParams & UpdateCommentParams,
-  ): Promise<CommentEntity>;
-  remove(params: UserCommentParams): Promise<void>;
-
-  findByPost(
-    params: PostIdParams & FindAllCommentsParams,
-  ): Promise<FindAllCommentsResult>;
-
-  likeComment(params: LikeCommentParams): Promise<LikeCommentResult>;
-  incrementLikesCount(params: CommentIdParams): Promise<void>;
-  decrementLikesCount(params: CommentIdParams): Promise<void>;
-}
+export type ICommentsService = {
+  create(params: CreateCommentParams): Promise<Comment>;
+  findAll(params: FindCommentsParams): Promise<CommentPaginationResult>;
+  findOne(id: number): Promise<Comment>;
+  update(params: UpdateCommentParams): Promise<Comment>;
+  remove(id: number): Promise<void>;
+  likeComment(params: CreateCommentLikeParams): Promise<CommentLike>;
+  findPostComments(
+    postId: number,
+    params: FindCommentsParams,
+  ): Promise<CommentPaginationResult>;
+  findCommentReplies(
+    commentId: number,
+    params: FindCommentsParams,
+  ): Promise<CommentPaginationResult>;
+};
