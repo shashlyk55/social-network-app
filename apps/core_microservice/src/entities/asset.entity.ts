@@ -47,9 +47,15 @@ export class Asset {
   @ManyToOne(() => User)
   uploader: User;
 
-  @OneToMany(() => PostAsset, (postAsset) => postAsset.asset)
+  @OneToMany(() => PostAsset, (postAsset) => postAsset.asset, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
   postAssets: PostAsset[];
 
-  @OneToMany(() => MessageAsset, (messageAsset) => messageAsset.asset)
+  @OneToMany(() => MessageAsset, (messageAsset) => messageAsset.asset, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
   messageAssets: MessageAsset[];
 }

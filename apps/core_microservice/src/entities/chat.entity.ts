@@ -37,13 +37,21 @@ export class Chat {
   @Column()
   creatorId: number;
 
-  @ManyToOne(() => User, (user) => user.createdChats)
+  @ManyToOne(() => User, (user) => user.createdChats, {
+    onDelete: 'CASCADE',
+  })
   creator: User;
 
-  @OneToMany(() => ChatParticipant, (participant) => participant.chat)
+  @OneToMany(() => ChatParticipant, (participant) => participant.chat, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
   chatParticipants: ChatParticipant[];
 
-  @OneToMany(() => Message, (message) => message.chat)
+  @OneToMany(() => Message, (message) => message.chat, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
   messages: Message[];
 
   @ManyToMany(() => User)

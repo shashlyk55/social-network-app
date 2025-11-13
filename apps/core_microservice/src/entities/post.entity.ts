@@ -32,9 +32,6 @@ export class Post {
   @Column({ nullable: true })
   location: string;
 
-  @Column({ nullable: true })
-  deletedAt: Date;
-
   @Column()
   authorId: number;
 
@@ -47,16 +44,25 @@ export class Post {
   @ManyToOne(() => User, (user) => user.posts)
   author: User;
 
-  @OneToMany(() => Comment, (comment) => comment.post)
+  @OneToMany(() => Comment, (comment) => comment.post, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
   comments: Comment[];
 
   @ManyToMany(() => User)
   @JoinTable()
   shares: User[];
 
-  @OneToMany(() => PostAsset, (postAsset) => postAsset.post)
+  @OneToMany(() => PostAsset, (postAsset) => postAsset.post, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
   postAssets: PostAsset[];
 
-  @OneToMany(() => PostLike, (postLike) => postLike.post)
+  @OneToMany(() => PostLike, (postLike) => postLike.post, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
   postLikes: PostLike[];
 }

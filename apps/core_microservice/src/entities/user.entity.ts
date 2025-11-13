@@ -18,6 +18,7 @@ import { Message } from './message.entity';
 import { ChatParticipant } from './many-to-many/chat-participants.entity';
 import { CommentLike } from './many-to-many/comment-like.entity';
 import { PostLike } from './many-to-many/post-like.entity';
+import { Notification } from './notification.entity';
 
 @Entity()
 export class User {
@@ -49,24 +50,53 @@ export class User {
   @OneToOne(() => Profile, (profile) => profile.user)
   profile: Profile;
 
-  @OneToMany(() => Post, (post) => post.author)
+  @OneToMany(() => Post, (post) => post.author, {
+    onDelete: 'CASCADE',
+  })
   posts: Post[];
 
-  @OneToMany(() => Comment, (comment) => comment.author)
+  @OneToMany(() => Comment, (comment) => comment.author, {
+    onDelete: 'CASCADE',
+  })
   comments: Comment[];
 
-  @OneToMany(() => Chat, (chat) => chat.creator)
+  @OneToMany(() => Chat, (chat) => chat.creator, {
+    onDelete: 'CASCADE',
+  })
   createdChats: Chat[];
 
-  @OneToMany(() => Message, (message) => message.sender)
+  @OneToMany(() => Message, (message) => message.sender, {
+    onDelete: 'CASCADE',
+  })
   messages: Message[];
 
-  @OneToMany(() => PostLike, (postLike) => postLike.user)
+  @OneToMany(() => PostLike, (postLike) => postLike.user, {
+    onDelete: 'CASCADE',
+  })
   postLikes: PostLike[];
 
-  @OneToMany(() => CommentLike, (commentLike) => commentLike.user)
+  @OneToMany(() => CommentLike, (commentLike) => commentLike.user, {
+    onDelete: 'CASCADE',
+  })
   commentLikes: CommentLike[];
 
-  @OneToMany(() => ChatParticipant, (chatParticipant) => chatParticipant.user)
+  @OneToMany(() => ChatParticipant, (chatParticipant) => chatParticipant.user, {
+    onDelete: 'CASCADE',
+  })
   chatParticipants: ChatParticipant[];
+
+  @OneToMany(() => Notification, (notification) => notification.recipient, {
+    onDelete: 'CASCADE',
+  })
+  receivedNotifications: Notification[];
+
+  @OneToMany(() => Notification, (notification) => notification.sender, {
+    onDelete: 'CASCADE',
+  })
+  sentNotifications: Notification[];
+
+  @OneToMany(() => Asset, (asset) => asset.uploader, {
+    onDelete: 'CASCADE',
+  })
+  uploadedAssets: Asset[];
 }

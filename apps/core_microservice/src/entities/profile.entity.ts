@@ -27,24 +27,40 @@ export class Profile {
   @Column()
   userId: number;
 
-  @OneToOne(() => User, (user) => user.profile)
+  @OneToOne(() => User, (user) => user.profile, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
   @JoinColumn()
   user: User;
 
   // Follow relationships
-  @OneToMany(() => ProfileFollow, (follow) => follow.follower)
+  @OneToMany(() => ProfileFollow, (follow) => follow.follower, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
   following: ProfileFollow[];
 
-  @OneToMany(() => ProfileFollow, (follow) => follow.following)
+  @OneToMany(() => ProfileFollow, (follow) => follow.following, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
   followers: ProfileFollow[];
 
   // Privacy configurations
-  @OneToMany(() => ProfileToProfileConfiguration, (config) => config.profile)
+  @OneToMany(() => ProfileToProfileConfiguration, (config) => config.profile, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
   profileConfigurations: ProfileToProfileConfiguration[];
 
   @OneToMany(
     () => ProfileToProfileConfiguration,
     (config) => config.targetProfile,
+    {
+      cascade: true,
+      onDelete: 'CASCADE',
+    },
   )
   targetProfileConfigurations: ProfileToProfileConfiguration[];
 }

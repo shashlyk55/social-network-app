@@ -37,6 +37,9 @@ export class Comment {
   @ManyToOne(() => Post, (post) => post.comments)
   post: Post;
 
-  @OneToMany(() => CommentLike, (commentLike) => commentLike.comment)
+  @OneToMany(() => CommentLike, (commentLike) => commentLike.comment, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
   commentLikes: CommentLike[];
 }
