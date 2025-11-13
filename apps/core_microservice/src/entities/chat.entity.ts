@@ -21,11 +21,11 @@ export class Chat {
   @Column({ nullable: true })
   name: string;
 
-  @Column({ type: 'enum', enum: ['private', 'group'], default: 'private' })
+  @Column({ type: 'enum', enum: ['private', 'group'], default: 'group' })
   type: string;
 
   @Column({ nullable: true })
-  avatarId: string;
+  avatarId: number;
 
   @CreateDateColumn()
   createdAt: Date;
