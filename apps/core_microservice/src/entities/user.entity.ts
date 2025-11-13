@@ -1,32 +1,21 @@
 import {
+  Entity,
+  PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
-  Entity,
-  JoinColumn,
+  UpdateDateColumn,
   OneToMany,
   OneToOne,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import { Account } from './account.entity';
 import { Profile } from './profile.entity';
-import { Asset } from './asset.entity';
-import { Post } from './post.entity';
-import { Comment } from './comment.entity';
-import { Chat } from './chat.entity';
-import { Message } from './message.entity';
-import { ChatParticipant } from './many-to-many/chat-participants.entity';
-import { CommentLike } from './many-to-many/comment-like.entity';
-import { PostLike } from './many-to-many/post-like.entity';
-import { Notification } from './notification.entity';
 
-@Entity()
+@Entity('users')
 export class User {
   @PrimaryGeneratedColumn('increment')
   id: number;
-
-  @Column({ unique: true })
-  email: string;
 
   @Column({
     type: 'enum',
@@ -35,14 +24,27 @@ export class User {
   })
   role: string;
 
-  @Column({ nullable: true })
-  lastOnlineAt: Date;
-
-  @CreateDateColumn()
+  @Column({ default: false })
+  disabled: boolean;
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @Column({ name: 'created_by', nullable: true })
+  createdById: number;
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'created_by' })
+  createdBy: User;
+
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
+
+  @Column({ name: 'updated_by', nullable: true })
+  updatedById: number;
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'updated_by' })
+  updatedBy: User;
 
   @OneToOne(() => Account, (account) => account.user)
   account: Account;
@@ -50,49 +52,9 @@ export class User {
   @OneToOne(() => Profile, (profile) => profile.user)
   profile: Profile;
 
-  @OneToMany(() => Post, (post) => post.author)
-  posts: Post[];
+  @OneToMany(() => User, (user) => user.createdBy)
+  createdUsers: User[];
 
-  @OneToMany(() => Comment, (comment) => comment.author)
-  comments: Comment[];
-
-  @OneToMany(() => Chat, (chat) => chat.creator, {
-    onDelete: 'CASCADE',
-  })
-  createdChats: Chat[];
-
-  @OneToMany(() => Message, (message) => message.sender, {
-    onDelete: 'CASCADE',
-  })
-  messages: Message[];
-
-  @OneToMany(() => PostLike, (postLike) => postLike.user, {
-    onDelete: 'CASCADE',
-  })
-  postLikes: PostLike[];
-
-  @OneToMany(() => CommentLike, (commentLike) => commentLike.user, {
-    onDelete: 'CASCADE',
-  })
-  commentLikes: CommentLike[];
-
-  @OneToMany(() => ChatParticipant, (chatParticipant) => chatParticipant.user, {
-    onDelete: 'CASCADE',
-  })
-  chatParticipants: ChatParticipant[];
-
-  @OneToMany(() => Notification, (notification) => notification.recipient, {
-    onDelete: 'CASCADE',
-  })
-  receivedNotifications: Notification[];
-
-  @OneToMany(() => Notification, (notification) => notification.sender, {
-    onDelete: 'CASCADE',
-  })
-  sentNotifications: Notification[];
-
-  @OneToMany(() => Asset, (asset) => asset.uploader, {
-    onDelete: 'CASCADE',
-  })
-  uploadedAssets: Asset[];
+  @OneToMany(() => User, (user) => user.updatedBy)
+  updatedUsers: User[];
 }

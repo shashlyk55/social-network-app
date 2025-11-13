@@ -1,25 +1,36 @@
 import {
   Entity,
   PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
   ManyToOne,
   JoinColumn,
-  CreateDateColumn,
-  Column,
-  UpdateDateColumn,
 } from 'typeorm';
 import { Chat } from '../chat.entity';
+import { Profile } from '../profile.entity';
 import { User } from '../user.entity';
 
-@Entity()
+@Entity('chats_participants')
 export class ChatParticipant {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @Column()
+  @Column({ name: 'profile_id' })
+  profileId: number;
+
+  @ManyToOne(() => Profile, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'profile_id' })
+  profile: Profile;
+
+  @Column({ name: 'chat_id' })
   chatId: number;
 
-  @Column()
-  userId: number;
+  @ManyToOne(() => Chat, (chat) => chat.chatParticipants, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'chat_id' })
+  chat: Chat;
 
   @Column({
     type: 'enum',
@@ -28,30 +39,29 @@ export class ChatParticipant {
   })
   role: string;
 
-  @Column({ default: false })
-  isMuted: boolean;
-
-  @Column({ nullable: true })
-  mutedUntil: Date;
-
-  @Column({ default: null })
-  lastReadMessageId: number;
-
-  @CreateDateColumn()
+  @Column({ name: 'joined_at', default: () => 'CURRENT_TIMESTAMP' })
   joinedAt: Date;
 
-  @UpdateDateColumn()
+  @Column({ name: 'left_at', nullable: true })
+  leftAt: Date;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+
+  @Column({ name: 'created_by' })
+  createdById: number;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'created_by' })
+  createdBy: User;
+
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
-  @ManyToOne(() => Chat, (chat) => chat.chatParticipants, {
-    onDelete: 'CASCADE',
-  })
-  @JoinColumn({ name: 'chatId' })
-  chat: Chat;
+  @Column({ name: 'updated_by', nullable: true })
+  updatedById: number;
 
-  @ManyToOne(() => User, (user) => user.chatParticipants, {
-    onDelete: 'CASCADE',
-  })
-  @JoinColumn({ name: 'userId' })
-  user: User;
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'updated_by' })
+  updatedBy: User;
 }

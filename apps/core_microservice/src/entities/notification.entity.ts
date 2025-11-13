@@ -1,23 +1,18 @@
-// entities/notification.entity.ts
 import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  ManyToOne,
   CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import { User } from './user.entity';
 
-@Entity()
+@Entity('notifications')
 export class Notification {
   @PrimaryGeneratedColumn('increment')
   id: number;
-
-  @Column()
-  title: string;
-
-  @Column('text')
-  message: string;
 
   @Column({
     type: 'enum',
@@ -26,24 +21,38 @@ export class Notification {
   })
   type: string;
 
-  @Column({ default: false })
-  isRead: boolean;
+  @Column()
+  title: string;
+
+  @Column({ type: 'text' })
+  message: string;
 
   @Column({ type: 'jsonb', nullable: true })
-  metadata: any;
+  data: any;
 
-  @CreateDateColumn()
+  @Column({ name: 'is_read', default: false })
+  isRead: boolean;
+
+  @Column({ name: 'read_at', nullable: true })
+  readAt: Date;
+
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @Column()
-  recipientId: number;
+  @Column({ name: 'created_by' })
+  createdById: number;
 
   @ManyToOne(() => User)
-  recipient: User;
+  @JoinColumn({ name: 'created_by' })
+  createdBy: User;
 
-  @Column({ nullable: true })
-  senderId: number;
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
+
+  @Column({ name: 'updated_by', nullable: true })
+  updatedById: number;
 
   @ManyToOne(() => User, { nullable: true })
-  sender: User;
+  @JoinColumn({ name: 'updated_by' })
+  updatedBy: User;
 }

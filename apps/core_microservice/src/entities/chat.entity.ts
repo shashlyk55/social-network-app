@@ -2,58 +2,53 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  ManyToOne,
-  OneToMany,
-  ManyToMany,
-  JoinTable,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne,
+  OneToMany,
+  JoinColumn,
 } from 'typeorm';
-import { User } from './user.entity';
-import { Message } from './message.entity';
 import { ChatParticipant } from './many-to-many/chat-participants.entity';
+import { Message } from './message.entity';
+import { User } from './user.entity';
 
-@Entity()
+@Entity('chats')
 export class Chat {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @Column({ nullable: true })
+  @Column()
   name: string;
+
+  @Column({ type: 'text', nullable: true })
+  description: string;
 
   @Column({ type: 'enum', enum: ['private', 'group'], default: 'group' })
   type: string;
 
-  @Column({ nullable: true })
-  avatarId: number;
-
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @Column({ name: 'created_by' })
+  createdById: number;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'created_by' })
+  createdBy: User;
+
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
-  @Column()
-  creatorId: number;
+  @Column({ name: 'updated_by', nullable: true })
+  updatedById: number;
 
-  @ManyToOne(() => User, (user) => user.createdChats, {
-    onDelete: 'CASCADE',
-  })
-  creator: User;
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'updated_by' })
+  updatedBy: User;
 
-  @OneToMany(() => ChatParticipant, (participant) => participant.chat, {
-    cascade: true,
-    onDelete: 'CASCADE',
-  })
+  @OneToMany(() => ChatParticipant, (participant) => participant.chat)
   chatParticipants: ChatParticipant[];
 
-  @OneToMany(() => Message, (message) => message.chat, {
-    cascade: true,
-    onDelete: 'CASCADE',
-  })
+  @OneToMany(() => Message, (message) => message.chat)
   messages: Message[];
-
-  @ManyToMany(() => User)
-  @JoinTable()
-  admins: User[];
 }

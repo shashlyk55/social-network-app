@@ -1,59 +1,58 @@
 import {
   Entity,
   PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
   ManyToOne,
   JoinColumn,
-  CreateDateColumn,
-  Column,
-  UpdateDateColumn,
 } from 'typeorm';
 import { Profile } from '../profile.entity';
+import { User } from '../user.entity';
+import { ProfileConfiguration } from '../profile-configuration.entityt';
 
-@Entity()
+@Entity('profiles_to_profiles_configurations')
 export class ProfileToProfileConfiguration {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @Column()
+  @Column({ name: 'profile_id' })
   profileId: number;
-
-  @Column()
-  targetProfileId: number;
-
-  @Column({
-    type: 'enum',
-    enum: ['visible', 'hidden', 'blocked'],
-    default: 'visible',
-  })
-  visibility: string;
-
-  @Column({ default: false })
-  canSeePosts: boolean;
-
-  @Column({ default: false })
-  canSeeFollowers: boolean;
-
-  @Column({ default: false })
-  canSendMessage: boolean;
-
-  @Column({ default: false })
-  canComment: boolean;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 
   @ManyToOne(() => Profile, (profile) => profile.profileConfigurations, {
     onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'profileId' })
+  @JoinColumn({ name: 'profile_id' })
   profile: Profile;
 
-  @ManyToOne(() => Profile, (profile) => profile.targetProfileConfigurations, {
-    onDelete: 'CASCADE',
-  })
-  @JoinColumn({ name: 'targetProfileId' })
-  targetProfile: Profile;
+  @Column({ name: 'profile_configuration_id' })
+  profileConfigurationId: number;
+
+  @ManyToOne(
+    () => ProfileConfiguration,
+    (config) => config.profileToProfileConfigurations,
+    { onDelete: 'CASCADE' },
+  )
+  @JoinColumn({ name: 'profile_configuration_id' })
+  profileConfiguration: ProfileConfiguration;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+
+  @Column({ name: 'created_by' })
+  createdById: number;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'created_by' })
+  createdBy: User;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
+
+  @Column({ name: 'updated_by', nullable: true })
+  updatedById: number;
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'updated_by' })
+  updatedBy: User;
 }

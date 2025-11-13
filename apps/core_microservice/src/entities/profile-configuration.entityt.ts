@@ -4,42 +4,23 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  OneToOne,
-  JoinColumn,
   ManyToOne,
+  JoinColumn,
+  OneToMany,
 } from 'typeorm';
 import { User } from './user.entity';
+import { ProfileToProfileConfiguration } from './many-to-many/profile-to-profile-configuration.entity';
 
-@Entity('accounts')
-export class Account {
+@Entity('profile_configurations')
+export class ProfileConfiguration {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @Column({ name: 'user_id' })
-  userId: number;
+  @Column({ name: 'config_key', length: 100 })
+  configKey: string;
 
-  @OneToOne(() => User, (user) => user.account)
-  @JoinColumn({ name: 'user_id' })
-  user: User;
-
-  @Column({ unique: true })
-  email: string;
-
-  @Column({ name: 'password_hash' })
-  passwordHash: string;
-
-  @Column({
-    type: 'enum',
-    enum: ['local', 'google', 'facebook'],
-    default: 'local',
-  })
-  provider: string;
-
-  @Column({ name: 'provider_id', nullable: true })
-  providerId: string;
-
-  @Column({ name: 'last_login_at', nullable: true })
-  lastLoginAt: Date;
+  @Column({ name: 'is_admin_accessible_only', default: false })
+  isAdminAccessibleOnly: boolean;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
@@ -60,4 +41,10 @@ export class Account {
   @ManyToOne(() => User, { nullable: true })
   @JoinColumn({ name: 'updated_by' })
   updatedBy: User;
+
+  @OneToMany(
+    () => ProfileToProfileConfiguration,
+    (config) => config.profileConfiguration,
+  )
+  profileToProfileConfigurations: ProfileToProfileConfiguration[];
 }

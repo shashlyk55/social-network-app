@@ -3,59 +3,63 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  UpdateDateColumn,
   ManyToOne,
   OneToMany,
+  JoinColumn,
 } from 'typeorm';
-import { User } from './user.entity';
-import { Post } from './post.entity';
 import { MessageAsset } from './many-to-many/message-asset.entity';
 import { PostAsset } from './many-to-many/post-asset.entity';
+import { User } from './user.entity';
 
-@Entity()
+@Entity('assets')
 export class Asset {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @Column()
-  filename: string;
+  @Column({ name: 'file_name' })
+  fileName: string;
 
-  @Column()
-  originalName: string;
-
-  @Column()
-  mimetype: string;
-
-  @Column()
-  size: number;
-
-  @Column()
-  url: string;
+  @Column({ name: 'file_path' })
+  filePath: string;
 
   @Column({
     type: 'enum',
-    enum: ['image', 'video', 'audio', 'document'],
+    enum: ['image', 'video', 'audio'],
     default: 'image',
   })
-  type: string;
+  fileType: string;
 
-  @CreateDateColumn()
-  uploadedAt: Date;
+  @Column({ name: 'file_size' })
+  fileSize: number;
 
-  @Column()
-  uploaderId: number;
+  @Column({ name: 'order_index', default: 0 })
+  orderIndex: number;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+
+  @Column({ name: 'created_by' })
+  createdById: number;
 
   @ManyToOne(() => User)
-  uploader: User;
+  @JoinColumn({ name: 'created_by' })
+  createdBy: User;
 
-  @OneToMany(() => PostAsset, (postAsset) => postAsset.asset, {
-    cascade: true,
-    onDelete: 'CASCADE',
-  })
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
+
+  @Column({ name: 'updated_by', nullable: true })
+  updatedById: number;
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'updated_by' })
+  updatedBy: User;
+
+  // Relations
+  @OneToMany(() => PostAsset, (postAsset) => postAsset.asset)
   postAssets: PostAsset[];
 
-  @OneToMany(() => MessageAsset, (messageAsset) => messageAsset.asset, {
-    cascade: true,
-    onDelete: 'CASCADE',
-  })
+  @OneToMany(() => MessageAsset, (messageAsset) => messageAsset.asset)
   messageAssets: MessageAsset[];
 }

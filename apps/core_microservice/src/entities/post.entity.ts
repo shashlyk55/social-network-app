@@ -2,72 +2,64 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  ManyToOne,
-  OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne,
+  OneToMany,
   ManyToMany,
   JoinTable,
+  JoinColumn,
 } from 'typeorm';
-import { User } from './user.entity';
-import { Comment } from './comment.entity';
-import { Asset } from './asset.entity';
 import { PostAsset } from './many-to-many/post-asset.entity';
 import { PostLike } from './many-to-many/post-like.entity';
+import { Profile } from './profile.entity';
+import { User } from './user.entity';
+import { Comment } from './comment.entity';
 
-@Entity()
+@Entity('posts')
 export class Post {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @Column('text')
+  @Column({ name: 'profile_id' })
+  profileId: number;
+
+  @ManyToOne(() => Profile, (profile) => profile.posts)
+  @JoinColumn({ name: 'profile_id' })
+  profile: Profile;
+
+  @Column({ type: 'text' })
   content: string;
 
-  @Column({ default: 0 })
-  likesCount: number;
-
-  @Column({ default: 0 })
-  commentsCount: number;
-
-  @Column({ nullable: true })
-  location: string;
-
-  @Column({ default: false })
+  @Column({ name: 'is_archived', default: false })
   isArchived: boolean;
 
-  @Column({ nullable: true })
-  archivedAt: Date;
-
-  @Column()
-  authorId: number;
-
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @Column({ name: 'created_by' })
+  createdById: number;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'created_by' })
+  createdBy: User;
+
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
-  @ManyToOne(() => User, (user) => user.posts, {
-    onDelete: 'CASCADE',
-  })
-  author: User;
+  @Column({ name: 'updated_by', nullable: true })
+  updatedById: number;
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'updated_by' })
+  updatedBy: User;
 
   @OneToMany(() => Comment, (comment) => comment.post)
   comments: Comment[];
 
-  @ManyToMany(() => User)
-  @JoinTable()
-  shares: User[];
-
-  @OneToMany(() => PostAsset, (postAsset) => postAsset.post, {
-    cascade: true,
-    onDelete: 'CASCADE',
-  })
+  @OneToMany(() => PostAsset, (postAsset) => postAsset.post)
   postAssets: PostAsset[];
 
-  @OneToMany(() => PostLike, (postLike) => postLike.post, {
-    cascade: true,
-    onDelete: 'CASCADE',
-  })
+  @OneToMany(() => PostLike, (postLike) => postLike.post)
   postLikes: PostLike[];
 }
