@@ -1,75 +1,36 @@
+import { Post } from 'src/entities/post.entity';
+
 export type CreatePostParams = {
-  authorId: number;
   content: string;
-  location?: string;
+  profileId: number;
+  isArchived?: boolean;
+  createdById: number;
   assetIds?: number[];
-};
-
-export type FindAllPostsParams = {
-  page?: number;
-  limit?: number;
-  search?: string;
-  authorId?: number;
-  sortBy?: string;
-  sortOrder?: 'ASC' | 'DESC';
-};
-
-export type FindAllPostsResult = {
-  posts: any[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
 };
 
 export type UpdatePostParams = {
+  id: number;
   content?: string;
-  location?: string;
-  deletedAt?: Date;
+  isArchived?: boolean;
+  updatedById?: number;
   assetIds?: number[];
 };
 
-export type LikePostParams = {
-  postId: number;
-  userId: number;
-};
-
-export type LikePostResult = {
-  liked: boolean;
-  likesCount: number;
-};
-
-// Basic types
-export type UserPostParams = {
-  userId: number;
-  postId: number;
-};
-
-export type UserIdParams = {
-  userId: number;
-};
-
-export type PostIdParams = {
-  postId: number;
-};
-
-export type ArchivePostParams = {
-  postId: number;
-  userId: number;
-  archive: boolean;
-};
-
-export type FindArchivedPostsParams = {
-  userId: number;
+export type FindPostsParams = {
   page?: number;
   limit?: number;
-  search?: string;
-  sortBy?: string;
-  sortOrder?: 'ASC' | 'DESC';
+  profileId?: number;
+  isArchived?: boolean;
 };
 
-export type FindArchivedPostsResult = {
-  posts: any[];
+export type CreatePostLikeParams = {
+  postId: number;
+  profileId: number;
+  createdById: number;
+};
+
+export type PostPaginationResult = {
+  data: Post[];
   total: number;
   page: number;
   limit: number;

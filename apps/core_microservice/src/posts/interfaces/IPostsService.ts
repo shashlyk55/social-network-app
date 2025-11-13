@@ -1,37 +1,23 @@
+import { PostLike } from 'src/entities/many-to-many/post-like.entity';
 import { Post } from 'src/entities/post.entity';
 import {
-  ArchivePostParams,
   CreatePostParams,
-  FindAllPostsParams,
-  FindAllPostsResult,
-  FindArchivedPostsParams,
-  FindArchivedPostsResult,
-  LikePostResult,
-  PostIdParams,
+  FindPostsParams,
+  PostPaginationResult,
   UpdatePostParams,
-  UserPostParams,
+  CreatePostLikeParams,
 } from '../types/post-service.types';
 
 export interface IPostsService {
   create(params: CreatePostParams): Promise<Post>;
-  findAll(params: FindAllPostsParams): Promise<FindAllPostsResult>;
-  findByAuthor(
-    authorId: number,
-    params: FindAllPostsParams,
-  ): Promise<FindAllPostsResult>;
-  findOne(params: PostIdParams & { currentUserId?: number }): Promise<Post>;
-  update(params: UserPostParams & UpdatePostParams): Promise<Post>;
-  remove(params: UserPostParams): Promise<void>;
-
-  incrementCommentsCount(params: PostIdParams): Promise<void>;
-  decrementCommentsCount(params: PostIdParams): Promise<void>;
-
-  likePost(params: UserPostParams): Promise<LikePostResult>;
-
-  archivePost(params: ArchivePostParams): Promise<Post>;
-  unarchivePost(params: UserPostParams): Promise<Post>;
-  findArchivedPosts(
-    params: FindArchivedPostsParams,
-  ): Promise<FindArchivedPostsResult>;
-  isPostArchived(postId: number): Promise<boolean>;
+  findAll(params: FindPostsParams): Promise<PostPaginationResult>;
+  findOne(id: number): Promise<Post>;
+  update(params: UpdatePostParams): Promise<Post>;
+  remove(id: number): Promise<void>;
+  archive(id: number, updatedById: number): Promise<Post>;
+  likePost(params: CreatePostLikeParams): Promise<PostLike>;
+  findProfilePosts(
+    profileId: number,
+    params: FindPostsParams,
+  ): Promise<PostPaginationResult>;
 }

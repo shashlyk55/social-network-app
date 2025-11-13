@@ -1,95 +1,111 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-class AuthorDto {
-  @ApiProperty()
+class UserReferenceDto {
+  @ApiProperty({ example: 1, description: 'User ID' })
   id: number;
 
-  @ApiProperty()
-  email: string;
-
-  @ApiProperty()
-  name: string;
-
-  @ApiProperty({ required: false })
-  avatarId?: number;
+  @ApiProperty({ example: 'admin', description: 'User role' })
+  role: string;
 }
 
-class PostAssetDto {
-  @ApiProperty()
+class ProfileReferenceDto {
+  @ApiProperty({ example: 1, description: 'Profile ID' })
   id: number;
 
-  @ApiProperty()
+  @ApiProperty({ example: 'john_doe', description: 'Username' })
+  username: string;
+
+  @ApiProperty({ example: 'John Doe', description: 'Display name' })
+  displayName: string;
+}
+
+class PostAssetResponseDto {
+  @ApiProperty({ example: 1, description: 'Post asset ID' })
+  id: number;
+
+  @ApiProperty({ example: 1, description: 'Asset ID' })
   assetId: number;
 
-  @ApiProperty()
-  order: number;
+  @ApiProperty({ example: 0, description: 'Order index' })
+  orderIndex: number;
 
-  @ApiProperty()
-  asset: {
-    id: number;
-    url: string;
-    type: string;
-    filename: string;
-  };
+  @ApiProperty({ description: 'Creation date' })
+  createdAt: Date;
+}
+
+class PostLikeResponseDto {
+  @ApiProperty({ example: 1, description: 'Post like ID' })
+  id: number;
+
+  @ApiProperty({ example: 1, description: 'Profile ID' })
+  profileId: number;
+
+  @ApiProperty({ description: 'Creation date' })
+  createdAt: Date;
+
+  @ApiProperty({
+    type: ProfileReferenceDto,
+    description: 'Profile that liked the post',
+  })
+  profile: ProfileReferenceDto;
 }
 
 export class PostResponseDto {
-  @ApiProperty()
+  @ApiProperty({ example: 1, description: 'Post ID' })
   id: number;
 
-  @ApiProperty()
+  @ApiProperty({
+    example: 'This is a post content',
+    description: 'Post content',
+  })
   content: string;
 
-  @ApiProperty()
-  likesCount: number;
-
-  @ApiProperty()
-  commentsCount: number;
-
-  @ApiProperty()
-  sharesCount: number;
-
-  @ApiProperty({ required: false })
-  location?: string;
-
-  @ApiProperty()
+  @ApiProperty({ example: false, description: 'Whether post is archived' })
   isArchived: boolean;
 
-  @ApiProperty({ required: false })
-  archivedAt?: Date;
-
-  @ApiProperty({ required: false })
-  deletedAt?: Date;
-
-  @ApiProperty()
-  authorId: number;
-
-  @ApiProperty()
-  author: AuthorDto;
-
-  @ApiProperty({ type: [PostAssetDto] })
-  postAssets: PostAssetDto[];
-
-  @ApiProperty()
+  @ApiProperty({ description: 'Creation date' })
   createdAt: Date;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Update date' })
   updatedAt: Date;
-}
 
-export class PostsListResponseDto {
-  @ApiProperty({ type: [PostResponseDto] })
-  posts: PostResponseDto[];
+  @ApiProperty({ example: 1, description: 'Profile ID' })
+  profileId: number;
 
-  @ApiProperty()
-  total: number;
+  @ApiProperty({ example: 1, description: 'Creator ID' })
+  createdById: number;
 
-  @ApiProperty()
-  page: number;
+  @ApiProperty({ example: 2, description: 'Updater ID', nullable: true })
+  updatedById: number | null;
 
-  @ApiProperty()
-  limit: number;
+  @ApiProperty({
+    type: ProfileReferenceDto,
+    description: 'Post author profile',
+  })
+  profile: ProfileReferenceDto;
 
-  @ApiProperty()
-  totalPages: number;
+  @ApiProperty({
+    type: UserReferenceDto,
+    description: 'User who created this post',
+  })
+  createdBy: UserReferenceDto;
+
+  @ApiProperty({
+    type: UserReferenceDto,
+    description: 'User who updated this post',
+    nullable: true,
+  })
+  updatedBy?: UserReferenceDto;
+
+  @ApiProperty({ type: [PostAssetResponseDto], description: 'Post assets' })
+  assets: PostAssetResponseDto[];
+
+  @ApiProperty({ type: [PostLikeResponseDto], description: 'Post likes' })
+  likes: PostLikeResponseDto[];
+
+  @ApiProperty({ example: 5, description: 'Number of comments' })
+  commentsCount: number;
+
+  @ApiProperty({ example: 10, description: 'Number of likes' })
+  likesCount: number;
 }
