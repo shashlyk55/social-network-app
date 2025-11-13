@@ -1,11 +1,8 @@
-// src/users/utils/mappers.ts
+import { PaginationResponseDto } from 'src/common/dto/pagination-response.dto';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { UserResponseDto } from '../dto/user-response.dto';
-import {
-  PaginationResponseDto,
-  PaginationMetaDto,
-} from '../dto/pagination-response.dto';
+
 import {
   CreateUserParams,
   UpdateUserParams,
