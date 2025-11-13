@@ -32,6 +32,12 @@ export class Post {
   @Column({ nullable: true })
   location: string;
 
+  @Column({ default: false })
+  isArchived: boolean;
+
+  @Column({ nullable: true })
+  archivedAt: Date;
+
   @Column()
   authorId: number;
 
@@ -41,13 +47,12 @@ export class Post {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @ManyToOne(() => User, (user) => user.posts)
-  author: User;
-
-  @OneToMany(() => Comment, (comment) => comment.post, {
-    cascade: true,
+  @ManyToOne(() => User, (user) => user.posts, {
     onDelete: 'CASCADE',
   })
+  author: User;
+
+  @OneToMany(() => Comment, (comment) => comment.post)
   comments: Comment[];
 
   @ManyToMany(() => User)
