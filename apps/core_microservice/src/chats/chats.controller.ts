@@ -25,7 +25,7 @@ import { ChatResponseDto } from './dto/chat-response.dto';
 import { CreateChatDto } from './dto/create-chat.dto';
 import { UpdateChatDto } from './dto/update-chat.dto';
 import { ChatMappers } from './utils/params-mapper.util';
-import { PaginationResponseDto } from 'src/commo/dto/pagination-response.dto';
+import { PaginationResponseDto } from 'src/common/dto/pagination-response.dto';
 
 @ApiTags('chats')
 @ApiBearerAuth()

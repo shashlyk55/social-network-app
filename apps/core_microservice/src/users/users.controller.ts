@@ -22,11 +22,11 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { CreateUserDto } from './dto/create-user.dto';
-import { PaginationResponseDto } from './dto/pagination-response.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserResponseDto } from './dto/user-response.dto';
 import { UserMappers } from './utils/params-mapper.util';
 import { UsersService } from './users.service';
+import { PaginationResponseDto } from 'src/common/dto/pagination-response.dto';
 
 @ApiTags('users')
 @ApiBearerAuth()
