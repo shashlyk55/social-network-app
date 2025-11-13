@@ -51,9 +51,12 @@ export class Message {
   @ManyToOne(() => Chat, (chat) => chat.messages)
   chat: Chat;
 
-  @ManyToOne(() => Message, { nullable: true })
+  @ManyToOne(() => Message, { nullable: true, onDelete: 'CASCADE' })
   repliedTo: Message;
 
-  @OneToMany(() => MessageAsset, (messageAsset) => messageAsset.message)
+  @OneToMany(() => MessageAsset, (messageAsset) => messageAsset.message, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
   messageAssets: MessageAsset[];
 }

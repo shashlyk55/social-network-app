@@ -243,21 +243,57 @@ export class UsersService implements IUserService {
    *  Delete user
    */
   async remove(userId: number): Promise<void> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      // relations: [
+      //   'account',
+      //   'profile',
+      //   'posts',
+      //   'posts.comments',
+      //   'posts.postLikes',
+      //   'posts.postAssets',
+      //   'comments',
+      //   'comments.commentLikes',
+      //   'messages',
+      //   'messages.messageAssets',
+      //   'createdChats',
+      //   'createdChats.messages',
+      //   'createdChats.chatParticipants',
+      //   'postLikes',
+      //   'commentLikes',
+      //   'chatParticipants',
+      //   'receivedNotifications',
+      //   'sentNotifications',
+      //   'uploadedAssets',
+      //   'uploadedAssets.postAssets',
+      //   'uploadedAssets.messageAssets',
+      // ],
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     try {
-      await this.userRepository.delete({ id: userId });
+      // TODO: get chats where user not creator and delete this chats before deleting user
+
+      await queryRunner.manager.delete(User, { id: userId });
 
       await queryRunner.commitTransaction();
     } catch (error) {
       await queryRunner.rollbackTransaction();
 
+      console.error('Delete user error:', error);
+
       if (error.code === '23503') {
+        const constraint = error.constraint;
         throw new BadRequestException(
-          'Cannot delete user. There might be related records that prevent deletion. ' +
-            'Please ensure all user data is properly handled before deletion.',
+          `Cannot delete user due to foreign key constraint: ${constraint}. ` +
+            'There are still related records in the database.',
         );
       }
 
@@ -268,4 +304,31 @@ export class UsersService implements IUserService {
       await queryRunner.release();
     }
   }
+
+  // async remove(userId: number): Promise<void> {
+  //   const queryRunner = this.dataSource.createQueryRunner();
+  //   await queryRunner.connect();
+  //   await queryRunner.startTransaction();
+
+  //   try {
+  //     await this.userRepository.delete({ id: userId });
+
+  //     await queryRunner.commitTransaction();
+  //   } catch (error) {
+  //     await queryRunner.rollbackTransaction();
+
+  //     if (error.code === '23503') {
+  //       throw new BadRequestException(
+  //         'Cannot delete user. There might be related records that prevent deletion. ' +
+  //           'Please ensure all user data is properly handled before deletion.',
+  //       );
+  //     }
+
+  //     throw new InternalServerErrorException(
+  //       'Failed to delete user: ' + error.message,
+  //     );
+  //   } finally {
+  //     await queryRunner.release();
+  //   }
+  // }
 }

@@ -37,7 +37,10 @@ export class Account {
   @Column()
   userId: number;
 
-  @OneToOne(() => User, (user) => user.account)
+  @OneToOne(() => User, (user) => user.account, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
   @JoinColumn()
   user: User;
 }
