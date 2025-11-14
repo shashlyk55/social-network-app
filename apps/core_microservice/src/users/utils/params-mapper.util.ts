@@ -16,6 +16,16 @@ export class UserMappers {
       role: dto.role,
       disabled: dto.disabled || false,
       createdById: dto.createdById,
+      // Profile data
+      username: dto.username,
+      displayName: dto.displayName,
+      birthday: dto.birthday,
+      bio: dto.bio,
+      avatarUrl: dto.avatarUrl,
+      isPublic: dto.isPublic !== undefined ? dto.isPublic : true,
+      // Account data
+      email: dto.email,
+      password: dto.password,
     };
   }
 
@@ -25,6 +35,13 @@ export class UserMappers {
       role: dto.role,
       disabled: dto.disabled,
       updatedById: dto.updatedById,
+      // Profile data
+      username: dto.username,
+      displayName: dto.displayName,
+      birthday: dto.birthday,
+      bio: dto.bio,
+      avatarUrl: dto.avatarUrl,
+      isPublic: dto.isPublic,
     };
   }
 
@@ -50,6 +67,30 @@ export class UserMappers {
       response.updatedBy = {
         id: user.updatedBy.id,
         role: user.updatedBy.role,
+      };
+    }
+
+    // Add profile data to response
+    if (user.profile) {
+      response.profile = {
+        id: user.profile.id,
+        username: user.profile.username,
+        displayName: user.profile.displayName,
+        birthday: user.profile.birthday,
+        bio: user.profile.bio,
+        avatarUrl: user.profile.avatarUrl,
+        isPublic: user.profile.isPublic,
+        createdAt: user.profile.createdAt,
+      };
+    }
+
+    // Add account data to response
+    if (user.account) {
+      response.account = {
+        id: user.account.id,
+        email: user.account.email,
+        provider: user.account.provider,
+        lastLoginAt: user.account.lastLoginAt,
       };
     }
 
