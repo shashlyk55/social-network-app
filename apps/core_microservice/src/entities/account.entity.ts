@@ -18,7 +18,7 @@ export class Account {
   @Column({ name: 'user_id' })
   userId: number;
 
-  @OneToOne(() => User, (user) => user.account)
+  @OneToOne(() => User, (user) => user.account, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user: User;
 
@@ -47,7 +47,7 @@ export class Account {
   @Column({ name: 'created_by' })
   createdById: number;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'created_by' })
   createdBy: User;
 
