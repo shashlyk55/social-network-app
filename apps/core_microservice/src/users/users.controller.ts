@@ -42,10 +42,20 @@ export class UsersController {
     type: UserResponseDto,
   })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
+  @ApiQuery({
+    name: 'createdById',
+    required: true,
+    type: Number,
+    description: 'Id of user creator',
+  })
   @ApiBody({ type: CreateUserDto })
-  async create(@Body() createUserDto: CreateUserDto): Promise<UserResponseDto> {
+  async create(
+    @Body() createUserDto: CreateUserDto,
+    @Query('createdById', new ParseIntPipe({ optional: false }))
+    createdById: number,
+  ): Promise<UserResponseDto> {
     const params = UserMappers.toCreateParams(createUserDto);
-    const user = await this.userService.create(params);
+    const user = await this.userService.create(params, createdById);
     return UserMappers.toResponse(user);
   }
 

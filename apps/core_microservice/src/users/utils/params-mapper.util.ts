@@ -15,7 +15,7 @@ export class UserMappers {
     return {
       role: dto.role,
       disabled: dto.disabled || false,
-      createdById: dto.createdById,
+      // createdById: dto.createdById || undefined,
       // Profile data
       username: dto.username,
       displayName: dto.displayName,
