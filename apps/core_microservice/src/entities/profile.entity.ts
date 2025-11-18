@@ -22,7 +22,7 @@ export class Profile {
   @Column({ name: 'user_id' })
   userId: number;
 
-  @OneToOne(() => User, (user) => user.profile)
+  @OneToOne(() => User, (user) => user.profile, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user: User;
 
@@ -50,7 +50,7 @@ export class Profile {
   @Column({ name: 'created_by' })
   createdById: number;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'created_by' })
   createdBy: User;
 
@@ -60,7 +60,7 @@ export class Profile {
   @Column({ name: 'updated_by', nullable: true })
   updatedById: number;
 
-  @ManyToOne(() => User, { nullable: true })
+  @ManyToOne(() => User, { nullable: true, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'updated_by' })
   updatedBy: User;
 

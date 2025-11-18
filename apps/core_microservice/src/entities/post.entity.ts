@@ -24,7 +24,7 @@ export class Post {
   @Column({ name: 'profile_id' })
   profileId: number;
 
-  @ManyToOne(() => Profile, (profile) => profile.posts)
+  @ManyToOne(() => Profile, (profile) => profile.posts, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'profile_id' })
   profile: Profile;
 

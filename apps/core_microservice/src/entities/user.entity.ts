@@ -33,7 +33,7 @@ export class User {
   @Column({ name: 'created_by', nullable: true })
   createdById: number;
 
-  @ManyToOne(() => User, { nullable: true })
+  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'created_by' })
   createdBy: User;
 
@@ -43,7 +43,7 @@ export class User {
   @Column({ name: 'updated_by', nullable: true })
   updatedById: number;
 
-  @ManyToOne(() => User, { nullable: true })
+  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'updated_by' })
   updatedBy: User;
 
