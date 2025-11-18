@@ -6,7 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Chat } from 'src/entities/chat.entity';
 import { ChatParticipant } from 'src/entities/many-to-many/chat-participants.entity';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { IChatService } from './interfaces/IChatService';
 import {
   CreateChatParams,
@@ -22,31 +22,45 @@ export class ChatsService implements IChatService {
     private readonly chatRepository: Repository<Chat>,
     @InjectRepository(ChatParticipant)
     private readonly chatParticipantRepository: Repository<ChatParticipant>,
+    private readonly dataSource: DataSource,
   ) {}
 
   async create(params: CreateChatParams): Promise<Chat> {
-    const chat = this.chatRepository.create({
-      name: params.name,
-      description: params.description,
-      type: params.type,
-      createdById: params.createdById,
-    });
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    const savedChat = await this.chatRepository.save(chat);
-
-    // Create participants (including creator if their profile is in the list)
-    const participantPromises = params.participantProfileIds.map((profileId) =>
-      this.chatParticipantRepository.create({
-        chatId: savedChat.id,
-        profileId,
-        role: 'member',
+    try {
+      const chat = this.chatRepository.create({
+        name: params.name,
+        description: params.description,
+        type: params.type,
         createdById: params.createdById,
-      }),
-    );
+      });
 
-    await this.chatParticipantRepository.save(participantPromises);
+      const savedChat = await queryRunner.manager.save(Chat, chat);
 
-    return await this.findOne(savedChat.id);
+      const participantPromises = params.participantProfileIds.map(
+        (profileId) =>
+          this.chatParticipantRepository.create({
+            chatId: savedChat.id,
+            profileId,
+            role: 'member',
+            createdById: params.createdById,
+          }),
+      );
+
+      await queryRunner.manager.save(ChatParticipant, participantPromises);
+
+      await queryRunner.commitTransaction();
+
+      return await this.findOne(savedChat.id);
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   async findAll(params: FindChatsParams): Promise<ChatPaginationResult> {
@@ -103,17 +117,30 @@ export class ChatsService implements IChatService {
 
     await this.findOne(id);
 
-    const updatePayload: Partial<Chat> = {};
-    if (updateData.name !== undefined) updatePayload.name = updateData.name;
-    if (updateData.description !== undefined)
-      updatePayload.description = updateData.description;
-    if (updateData.type !== undefined) updatePayload.type = updateData.type;
-    if (updateData.updatedById !== undefined)
-      updatePayload.updatedById = updateData.updatedById;
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    await this.chatRepository.update(id, updatePayload);
+    try {
+      const updatePayload: Partial<Chat> = {};
+      if (updateData.name !== undefined) updatePayload.name = updateData.name;
+      if (updateData.description !== undefined)
+        updatePayload.description = updateData.description;
+      if (updateData.type !== undefined) updatePayload.type = updateData.type;
+      if (updateData.updatedById !== undefined)
+        updatePayload.updatedById = updateData.updatedById;
 
-    return await this.findOne(id);
+      await queryRunner.manager.update(Chat, id, updatePayload);
+
+      await queryRunner.commitTransaction();
+
+      return await this.findOne(id);
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   async remove(id: number): Promise<void> {

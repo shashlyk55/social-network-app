@@ -30,7 +30,7 @@ export class Account {
 
   @Column({
     type: 'enum',
-    enum: ['local', 'google', 'facebook'],
+    enum: ['local', 'google', 'facebook', 'github', 'twitter'],
     default: 'local',
   })
   provider: string;
