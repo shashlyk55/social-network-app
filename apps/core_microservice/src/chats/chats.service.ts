@@ -40,17 +40,16 @@ export class ChatsService implements IChatService {
 
       const savedChat = await queryRunner.manager.save(Chat, chat);
 
-      const participantPromises = params.participantProfileIds.map(
-        (profileId) =>
-          this.chatParticipantRepository.create({
-            chatId: savedChat.id,
-            profileId,
-            role: 'member',
-            createdById: params.createdById,
-          }),
+      const chatParticipants = params.participantProfileIds.map((profileId) =>
+        this.chatParticipantRepository.create({
+          chatId: savedChat.id,
+          profileId,
+          role: 'member',
+          createdById: params.createdById,
+        }),
       );
 
-      await queryRunner.manager.save(ChatParticipant, participantPromises);
+      await queryRunner.manager.save(ChatParticipant, chatParticipants);
 
       await queryRunner.commitTransaction();
 
@@ -145,7 +144,24 @@ export class ChatsService implements IChatService {
 
   async remove(id: number): Promise<void> {
     const chat = await this.findOne(id);
-    await this.chatRepository.remove(chat);
+
+    if (!chat) {
+      throw new NotFoundException('Chat not found');
+    }
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      await queryRunner.manager.delete(Chat, id);
+      await queryRunner.commitTransaction();
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   async findUserChats(

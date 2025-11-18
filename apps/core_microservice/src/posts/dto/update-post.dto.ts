@@ -16,13 +16,13 @@ export class UpdatePostDto {
   @IsOptional()
   content?: string;
 
-  @ApiPropertyOptional({
-    example: true,
-    description: 'Whether post is archived',
-  })
-  @IsBoolean()
-  @IsOptional()
-  isArchived?: boolean;
+  // @ApiPropertyOptional({
+  //   example: true,
+  //   description: 'Whether post is archived',
+  // })
+  // @IsBoolean()
+  // @IsOptional()
+  // isArchived?: boolean;
 
   @ApiPropertyOptional({ description: 'ID of user updating the post' })
   @IsNumber()
