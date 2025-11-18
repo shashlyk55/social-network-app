@@ -232,8 +232,6 @@ export class UsersService implements IUsersService {
     await queryRunner.startTransaction();
 
     try {
-      await queryRunner.manager.delete(Account, { userId: id });
-      await queryRunner.manager.delete(Profile, { userId: id });
       await queryRunner.manager.delete(User, id);
 
       await queryRunner.commitTransaction();
@@ -265,6 +263,37 @@ export class UsersService implements IUsersService {
       await queryRunner.manager.update(Profile, user.profile.id, {
         deleted: true,
         updatedById: deletedById,
+      });
+
+      await queryRunner.commitTransaction();
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  async restore(id: number, restoredById: number) {
+    const user = await this.findOne(id);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      await queryRunner.manager.update(User, id, {
+        disabled: false,
+        updatedById: restoredById,
+      });
+
+      await queryRunner.manager.update(Profile, user.profile.id, {
+        deleted: false,
+        updatedById: restoredById,
       });
 
       await queryRunner.commitTransaction();
