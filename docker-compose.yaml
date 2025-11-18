@@ -12,6 +12,11 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./packages/db/init-scripts:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d innogram_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     networks:
       - innogram-network
 
@@ -22,6 +27,11 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d innogram_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     networks:
       - innogram-network
 
@@ -34,10 +44,15 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d innogram_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     networks:
       - innogram-network
 
-  auth_microservice:
+  auth-microservice:
     build:
       context: ./apps/auth_microservice
       dockerfile: Dockerfile
@@ -54,7 +69,7 @@ services:
     networks:
       - innogram-network
 
-  core_microservice:
+  core-microservice:
     build:
       context: ./apps/core_microservice
       dockerfile: Dockerfile
@@ -71,7 +86,7 @@ services:
     networks:
       - innogram-network
 
-  notifications_consumer_microservice:
+  notifications-consumer-microservice:
     build:
       context: ./apps/notifications_consumer_microservice
       dockerfile: Dockerfile
