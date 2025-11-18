@@ -3,7 +3,7 @@ import { User } from 'src/entities/user.entity';
 export type CreateUserParams = {
   role: string;
   disabled?: boolean;
-  createdById?: number;
+  // createdById?: number;
   // Profile data
   username: string;
   displayName: string;

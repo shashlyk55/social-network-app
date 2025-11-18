@@ -28,9 +28,9 @@ export class CreateUserDto {
   @IsOptional()
   disabled?: boolean;
 
-  @ApiProperty({ description: 'ID of user creating the record' })
-  @IsOptional()
-  createdById?: number;
+  // @ApiProperty({ description: 'ID of user creating the record' })
+  // @IsOptional()
+  // createdById?: number;
 
   // Profile fields
   @ApiProperty({ example: 'john_doe', description: 'Username for profile' })

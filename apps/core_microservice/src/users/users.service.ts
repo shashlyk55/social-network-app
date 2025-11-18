@@ -29,7 +29,7 @@ export class UsersService implements IUsersService {
     private readonly dataSource: DataSource,
   ) {}
 
-  async create(params: CreateUserParams): Promise<User> {
+  async create(params: CreateUserParams, createdById?: number): Promise<User> {
     const existingProfile = await this.profileRepository.findOne({
       where: { username: params.username },
     });
@@ -54,7 +54,7 @@ export class UsersService implements IUsersService {
       const user = this.userRepository.create({
         role: params.role,
         disabled: params.disabled || false,
-        createdById: params.createdById,
+        createdById: createdById || undefined,
       });
 
       const savedUser = await queryRunner.manager.save(User, user);
