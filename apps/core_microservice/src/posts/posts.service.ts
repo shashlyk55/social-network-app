@@ -1,13 +1,13 @@
 import {
   Injectable,
-  Post,
   NotFoundException,
   ConflictException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PostLike } from 'src/entities/many-to-many/post-like.entity';
-import { Post as PostEntity } from 'src/entities/post.entity';
-import { Repository } from 'typeorm';
+import { Post, Post as PostEntity } from 'src/entities/post.entity';
+import { DataSource, Repository } from 'typeorm';
 import { IPostsService } from './interfaces/IPostsService';
 import {
   CreatePostParams,
@@ -24,19 +24,40 @@ export class PostsService implements IPostsService {
     private readonly postRepository: Repository<PostEntity>,
     @InjectRepository(PostLike)
     private readonly postLikeRepository: Repository<PostLike>,
+    private readonly dataSource: DataSource,
   ) {}
 
   async create(params: CreatePostParams): Promise<PostEntity> {
-    const post = this.postRepository.create({
-      content: params.content,
-      profileId: params.profileId,
-      isArchived: params.isArchived || false,
-      createdById: params.createdById,
-    });
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    const savedPost = await this.postRepository.save(post);
+    try {
+      const post = this.postRepository.create({
+        content: params.content,
+        profileId: params.profileId,
+        isArchived: params.isArchived || false,
+        createdById: params.createdById,
+      });
 
-    return await this.findOne(savedPost.id);
+      const savedPost = await queryRunner.manager.save(post);
+
+      await queryRunner.commitTransaction();
+
+      return await this.findOne(savedPost.id);
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+
+      if (error instanceof ConflictException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException(
+        'Failed to create user: ' + error.message,
+      );
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   async findAll(params: FindPostsParams): Promise<PostPaginationResult> {
@@ -107,18 +128,43 @@ export class PostsService implements IPostsService {
       throw new NotFoundException('Post not found');
     }
 
-    const updatePayload: Partial<PostEntity> = {};
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    if (updateData.content !== undefined)
-      updatePayload.content = updateData.content;
-    if (updateData.isArchived !== undefined)
-      updatePayload.isArchived = updateData.isArchived;
-    if (updateData.updatedById !== undefined)
-      updatePayload.updatedById = updateData.updatedById;
+    try {
+      const updatePayload: Partial<PostEntity> = {};
 
-    await this.postRepository.update(id, updatePayload);
+      if (updateData.content !== undefined)
+        updatePayload.content = updateData.content;
+      if (updateData.isArchived !== undefined)
+        updatePayload.isArchived = updateData.isArchived;
+      if (updateData.updatedById !== undefined)
+        updatePayload.updatedById = updateData.updatedById;
 
-    return await this.findOne(id);
+      if (Object.keys(updatePayload).length > 0) {
+        await queryRunner.manager.update(Post, id, updatePayload);
+      }
+
+      await queryRunner.commitTransaction();
+
+      return await this.findOne(id);
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+
+      if (
+        error instanceof ConflictException ||
+        error instanceof NotFoundException
+      ) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException(
+        'Failed to update post: ' + error.message,
+      );
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   async remove(id: number): Promise<void> {
@@ -154,17 +200,42 @@ export class PostsService implements IPostsService {
       where: { postId, profileId },
     });
 
-    if (existingLike) {
-      return await this.postLikeRepository.remove(existingLike);
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      if (existingLike) {
+        return await queryRunner.manager.remove(PostLike, existingLike);
+      }
+
+      const like = queryRunner.manager.create(PostLike, {
+        postId,
+        profileId,
+        createdById,
+      });
+
+      const savedPostLike = await queryRunner.manager.save(PostLike, like);
+
+      await queryRunner.commitTransaction();
+
+      return savedPostLike;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+
+      if (
+        error instanceof ConflictException ||
+        error instanceof NotFoundException
+      ) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException(
+        'Failed to like post: ' + error.message,
+      );
+    } finally {
+      await queryRunner.release();
     }
-
-    const like = this.postLikeRepository.create({
-      postId,
-      profileId,
-      createdById,
-    });
-
-    return await this.postLikeRepository.save(like);
   }
 
   async findProfilePosts(
