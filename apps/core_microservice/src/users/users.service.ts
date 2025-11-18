@@ -67,7 +67,7 @@ export class UsersService implements IUsersService {
         bio: params.bio,
         avatarUrl: params.avatarUrl,
         isPublic: params.isPublic !== undefined ? params.isPublic : true,
-        createdById: params.createdById,
+        createdById: savedUser.id,
       });
 
       await queryRunner.manager.save(Profile, profile);
@@ -79,7 +79,7 @@ export class UsersService implements IUsersService {
         email: params.email,
         passwordHash,
         provider: 'local',
-        createdById: params.createdById,
+        createdById: savedUser.id,
       });
 
       await queryRunner.manager.save(Account, account);
@@ -103,6 +103,8 @@ export class UsersService implements IUsersService {
       .createQueryBuilder('user')
       .leftJoinAndSelect('user.createdBy', 'createdBy')
       .leftJoinAndSelect('user.updatedBy', 'updatedBy')
+      .leftJoinAndSelect('user.account', 'account')
+      .leftJoinAndSelect('user.profile', 'profile')
       .where('user.disabled = :disabled', { disabled: false });
 
     if (role) {
@@ -131,7 +133,7 @@ export class UsersService implements IUsersService {
   async findOne(id: number): Promise<User> {
     const user = await this.userRepository.findOne({
       where: { id },
-      relations: ['createdBy', 'updatedBy'],
+      relations: ['createdBy', 'updatedBy', 'account', 'profile'],
     });
 
     if (!user) {
