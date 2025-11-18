@@ -9,6 +9,14 @@ import {
 } from 'typeorm';
 import { User } from './user.entity';
 
+export enum NotificationType {
+  LIKE = 'like',
+  COMMENT = 'comment',
+  FOLLOW = 'follow',
+  MESSAGE = 'message',
+  SYSTEM = 'system',
+}
+
 @Entity('notifications')
 export class Notification {
   @PrimaryGeneratedColumn('increment')
@@ -16,10 +24,10 @@ export class Notification {
 
   @Column({
     type: 'enum',
-    enum: ['like', 'comment', 'follow', 'message', 'system'],
-    default: 'system',
+    enum: NotificationType,
+    default: NotificationType.SYSTEM,
   })
-  type: string;
+  type: NotificationType;
 
   @Column()
   title: string;
