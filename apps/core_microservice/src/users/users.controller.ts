@@ -168,4 +168,23 @@ export class UsersController {
   ): Promise<void> {
     await this.userService.softRemove(id, deletedById);
   }
+
+  @Put(':id/restore')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Restore user after soft deleting' })
+  @ApiParam({ name: 'id', type: Number, description: 'User ID' })
+  @ApiResponse({ status: 204, description: 'User restored successfully' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiQuery({
+    name: 'restoredById',
+    required: true,
+    type: Number,
+    description: 'ID of user performing restore',
+  })
+  async restore(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('restoredById', ParseIntPipe) restoredById: number,
+  ): Promise<void> {
+    await this.userService.restore(id, restoredById);
+  }
 }
