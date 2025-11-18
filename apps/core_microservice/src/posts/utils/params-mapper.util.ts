@@ -30,7 +30,7 @@ export class PostMappers {
     return {
       id,
       content: dto.content,
-      isArchived: dto.isArchived,
+      //isArchived: dto.isArchived,
       updatedById: dto.updatedById,
       assetIds: dto.assetIds,
     };

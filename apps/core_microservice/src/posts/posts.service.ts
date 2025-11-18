@@ -16,6 +16,7 @@ import {
   UpdatePostParams,
   CreatePostLikeParams,
 } from './types/post-service.types';
+import { Asset } from 'src/entities/asset.entity';
 
 @Injectable()
 export class PostsService implements IPostsService {
@@ -24,6 +25,8 @@ export class PostsService implements IPostsService {
     private readonly postRepository: Repository<PostEntity>,
     @InjectRepository(PostLike)
     private readonly postLikeRepository: Repository<PostLike>,
+    @InjectRepository(Asset)
+    private readonly postAssetRepository: Repository<Asset>,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -41,6 +44,8 @@ export class PostsService implements IPostsService {
       });
 
       const savedPost = await queryRunner.manager.save(post);
+
+      // TODO: add asset adding in when create post
 
       await queryRunner.commitTransaction();
 
@@ -137,14 +142,16 @@ export class PostsService implements IPostsService {
 
       if (updateData.content !== undefined)
         updatePayload.content = updateData.content;
-      if (updateData.isArchived !== undefined)
-        updatePayload.isArchived = updateData.isArchived;
+      // if (updateData.isArchived !== undefined)
+      //   updatePayload.isArchived = updateData.isArchived;
       if (updateData.updatedById !== undefined)
         updatePayload.updatedById = updateData.updatedById;
 
       if (Object.keys(updatePayload).length > 0) {
         await queryRunner.manager.update(Post, id, updatePayload);
       }
+
+      // TODO: add asset updating
 
       await queryRunner.commitTransaction();
 
@@ -169,7 +176,24 @@ export class PostsService implements IPostsService {
 
   async remove(id: number): Promise<void> {
     const post = await this.findOne(id);
-    await this.postRepository.remove(post);
+
+    if (!post) {
+      throw new NotFoundException('Post not found');
+    }
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      await queryRunner.manager.delete(Post, id);
+      await queryRunner.commitTransaction();
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   async archive(id: number, updatedById: number): Promise<PostEntity> {
@@ -179,12 +203,25 @@ export class PostsService implements IPostsService {
       throw new NotFoundException('Post not found');
     }
 
-    await this.postRepository.update(id, {
-      isArchived: true,
-      updatedById,
-    });
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    return await this.findOne(id);
+    try {
+      await this.postRepository.update(id, {
+        isArchived: true,
+        updatedById,
+      });
+
+      await queryRunner.commitTransaction();
+
+      return await this.findOne(id);
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   async likePost(params: CreatePostLikeParams): Promise<PostLike> {
@@ -209,7 +246,7 @@ export class PostsService implements IPostsService {
         return await queryRunner.manager.remove(PostLike, existingLike);
       }
 
-      const like = queryRunner.manager.create(PostLike, {
+      const like = this.postLikeRepository.create({
         postId,
         profileId,
         createdById,

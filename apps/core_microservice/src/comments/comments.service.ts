@@ -4,7 +4,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { Comment } from '../entities/comment.entity';
 import { CommentLike } from 'src/entities/many-to-many/comment-like.entity';
 import { ICommentsService } from './interfaces/ICommentsService';
@@ -23,6 +23,7 @@ export class CommentsService implements ICommentsService {
     private readonly commentRepository: Repository<Comment>,
     @InjectRepository(CommentLike)
     private readonly commentLikeRepository: Repository<CommentLike>,
+    private readonly dataSource: DataSource,
   ) {}
 
   async create(params: CreateCommentParams): Promise<Comment> {
@@ -37,16 +38,28 @@ export class CommentsService implements ICommentsService {
       }
     }
 
-    const comment = this.commentRepository.create({
-      content: params.content,
-      postId: params.postId,
-      profileId: params.profileId,
-      parentCommentId: params.parentCommentId,
-      createdById: params.createdById,
-    });
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    const savedComment = await this.commentRepository.save(comment);
-    return await this.findOne(savedComment.id);
+    try {
+      const comment = this.commentRepository.create({
+        content: params.content,
+        postId: params.postId,
+        profileId: params.profileId,
+        parentCommentId: params.parentCommentId,
+        createdById: params.createdById,
+      });
+
+      const savedComment = await queryRunner.manager.save(Comment, comment);
+      await queryRunner.commitTransaction();
+      return await this.findOne(savedComment.id);
+    } catch (error) {
+      queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      queryRunner.release();
+    }
   }
 
   async findAll(params: FindCommentsParams): Promise<CommentPaginationResult> {
@@ -128,25 +141,56 @@ export class CommentsService implements ICommentsService {
       throw new NotFoundException('Comment not found');
     }
 
-    const updatePayload: Partial<Comment> = {};
-    if (updateData.content !== undefined)
-      updatePayload.content = updateData.content;
-    if (updateData.updatedById !== undefined)
-      updatePayload.updatedById = updateData.updatedById;
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    await this.commentRepository.update(id, updatePayload);
+    try {
+      const updatePayload: Partial<Comment> = {};
+      if (updateData.content !== undefined)
+        updatePayload.content = updateData.content;
+      if (updateData.updatedById !== undefined)
+        updatePayload.updatedById = updateData.updatedById;
 
-    return await this.findOne(id);
+      await queryRunner.manager.update(Comment, id, updatePayload);
+
+      await queryRunner.commitTransaction();
+
+      return await this.findOne(id);
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      queryRunner.release();
+    }
   }
 
   async remove(id: number): Promise<void> {
     const comment = await this.findOne(id);
 
+    if (!comment) {
+      throw new NotFoundException('Comment not found');
+    }
+
     if (comment.replies && comment.replies.length > 0) {
       throw new ConflictException('Cannot delete comment with replies');
     }
+    // TODO: maybe every comment can be deleted
 
-    await this.commentRepository.remove(comment);
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      await queryRunner.manager.remove(Comment, comment);
+
+      await queryRunner.commitTransaction();
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   async likeComment(params: CreateCommentLikeParams): Promise<CommentLike> {
@@ -162,17 +206,31 @@ export class CommentsService implements ICommentsService {
       where: { commentId, profileId },
     });
 
-    if (existingLike) {
-      return await this.commentLikeRepository.remove(existingLike);
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      if (existingLike) {
+        return await queryRunner.manager.remove(CommentLike, existingLike);
+      }
+
+      const like = this.commentLikeRepository.create({
+        commentId,
+        profileId,
+        createdById,
+      });
+
+      const savedLike = await queryRunner.manager.save(CommentLike, like);
+      await queryRunner.commitTransaction();
+
+      return savedLike;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
     }
-
-    const like = this.commentLikeRepository.create({
-      commentId,
-      profileId,
-      createdById,
-    });
-
-    return await this.commentLikeRepository.save(like);
   }
 
   async findPostComments(

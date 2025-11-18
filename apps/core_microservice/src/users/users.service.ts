@@ -223,6 +223,10 @@ export class UsersService implements IUsersService {
   async remove(id: number): Promise<void> {
     const user = await this.findOne(id);
 
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -243,6 +247,10 @@ export class UsersService implements IUsersService {
 
   async softRemove(id: number, deletedById: number): Promise<void> {
     const user = await this.findOne(id);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
