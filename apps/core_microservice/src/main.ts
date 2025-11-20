@@ -5,9 +5,14 @@ import cookieParser from 'cookie-parser';
 import { getCorsConfig } from './config/cors.config';
 import helmet from 'helmet';
 import { getHelmetConfig } from './config/helmet.config';
+import { WinstonLoggerService } from './winston-logger/winston-logger.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  const loggerService = app.get(WinstonLoggerService);
+
+  loggerService.log('Initializing application...', 'Bootstrap');
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Innogram')
@@ -22,6 +27,17 @@ async function bootstrap() {
   app.use(cookieParser());
   app.enableCors(getCorsConfig());
 
-  await app.listen(process.env.PORT ?? 3001);
+  const port = process.env.PORT ?? 3001;
+
+  await app.listen(port);
+
+  loggerService.log(
+    `Application is running on: ${await app.getUrl()}`,
+    'Bootstrap',
+    {
+      port,
+      timestamp: new Date().toISOString(),
+    },
+  );
 }
 bootstrap();

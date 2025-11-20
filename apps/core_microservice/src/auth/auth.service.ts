@@ -1,26 +1,35 @@
 import { Injectable } from '@nestjs/common';
-import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
+import { IAuthService } from './interfaces/IAuthService';
+import {
+  LoginParams,
+  OAuthCallbackParams,
+  RefreshParams,
+  LogoutParams,
+  ValidateTokenParams,
+  SignUpParams,
+} from './types/auth-params.types';
 
 @Injectable()
-export class AuthService {
-  create(createAuthDto: CreateAuthDto) {
-    return 'This action adds a new auth';
+export class AuthService implements IAuthService {
+  handleLogin(params: LoginParams) {
+    throw new Error('Method not implemented.');
   }
-
-  findAll() {
-    return `This action returns all auth`;
+  handleOAuthInit() {
+    throw new Error('Method not implemented.');
   }
-
-  findOne(id: number) {
-    return `This action returns a #${id} auth`;
+  handleOAuthCallback(params: OAuthCallbackParams) {
+    throw new Error('Method not implemented.');
   }
-
-  update(id: number, updateAuthDto: UpdateAuthDto) {
-    return `This action updates a #${id} auth`;
+  handleRefresh(params: RefreshParams) {
+    throw new Error('Method not implemented.');
   }
-
-  remove(id: number) {
-    return `This action removes a #${id} auth`;
+  handleLogout(params: LogoutParams) {
+    throw new Error('Method not implemented.');
+  }
+  validateToken(params: ValidateTokenParams) {
+    throw new Error('Method not implemented.');
+  }
+  handleSignUp(paras: SignUpParams) {
+    throw new Error('Method not implemented.');
   }
 }
