@@ -1,6 +1,10 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import cookieParser from 'cookie-parser';
+import { getCorsConfig } from './config/cors.config';
+import helmet from 'helmet';
+import { getHelmetConfig } from './config/helmet.config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -14,6 +18,10 @@ async function bootstrap() {
   const documnet = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api', app, documnet);
 
-  await app.listen(process.env.PORT ?? 3000);
+  app.use(helmet(getHelmetConfig()));
+  app.use(cookieParser());
+  app.enableCors(getCorsConfig());
+
+  await app.listen(process.env.PORT ?? 3001);
 }
 bootstrap();
