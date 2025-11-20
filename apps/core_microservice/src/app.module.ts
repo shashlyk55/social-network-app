@@ -7,6 +7,11 @@ import { PostsModule } from './posts/posts.module';
 import { CommentsModule } from './comments/comments.module';
 import { ChatsModule } from './chats/chats.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { WinstonLoggerModule } from './winston-logger/winston-logger.module';
+import { WinstonLoggerService } from './winston-logger/winston-logger.service';
+import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
+import { WinstonExceptionsFilter } from './winston-logger/winston-exceptions.filter';
+import { WinstonLoggingInterceptor } from './winston-logger/winston-logging.interceptor';
 
 @Module({
   imports: [
@@ -35,6 +40,17 @@ import { NotificationsModule } from './notifications/notifications.module';
     CommentsModule,
     ChatsModule,
     NotificationsModule,
+    WinstonLoggerModule,
+  ],
+  providers: [
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: WinstonLoggingInterceptor,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: WinstonExceptionsFilter,
+    },
   ],
 })
 export class AppModule {}
