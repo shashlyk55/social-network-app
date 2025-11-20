@@ -1,5 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsOptional, MaxLength, IsEnum } from 'class-validator';
+import { ChatType } from 'src/entities/chat.entity';
 
 export class UpdateChatDto {
   @ApiPropertyOptional({
@@ -20,13 +21,13 @@ export class UpdateChatDto {
   description?: string;
 
   @ApiPropertyOptional({
-    example: 'group',
+    example: ChatType.GROUP,
     description: 'Chat type',
-    enum: ['private', 'group'],
+    enum: ChatType,
   })
   @IsOptional()
-  @IsEnum(['private', 'group'])
-  type: string;
+  @IsEnum(ChatType)
+  type: ChatType;
 
   @ApiPropertyOptional({ description: 'ID of user updating the chat' })
   @IsOptional()

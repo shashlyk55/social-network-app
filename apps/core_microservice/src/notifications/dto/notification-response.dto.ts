@@ -1,12 +1,17 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { NotificationType } from 'src/entities/notification.entity';
+import { UserRole } from 'src/entities/user.entity';
 
 class UserReferenceDto {
   @ApiProperty({ example: 1, description: 'User ID' })
   id: number;
 
-  @ApiProperty({ example: 'user', description: 'User role' })
-  role: string;
+  @ApiProperty({
+    example: UserRole.USER,
+    description: 'User role',
+    enum: UserRole,
+  })
+  role: UserRole;
 }
 
 export class NotificationResponseDto {

@@ -5,7 +5,10 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Chat } from 'src/entities/chat.entity';
-import { ChatParticipant } from 'src/entities/many-to-many/chat-participants.entity';
+import {
+  ChatParticipant,
+  ChatParticipantRole,
+} from 'src/entities/many-to-many/chat-participants.entity';
 import { DataSource, Repository } from 'typeorm';
 import { IChatService } from './interfaces/IChatService';
 import {
@@ -44,7 +47,7 @@ export class ChatsService implements IChatService {
         this.chatParticipantRepository.create({
           chatId: savedChat.id,
           profileId,
-          role: 'member',
+          role: ChatParticipantRole.MEMBER,
           createdById: params.createdById,
         }),
       );

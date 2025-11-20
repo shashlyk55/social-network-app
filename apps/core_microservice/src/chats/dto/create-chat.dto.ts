@@ -8,6 +8,7 @@ import {
   MaxLength,
   IsEnum,
 } from 'class-validator';
+import { ChatType } from 'src/entities/chat.entity';
 
 export class CreateChatDto {
   @ApiProperty({ example: 'General Chat', description: 'Chat name' })
@@ -25,13 +26,13 @@ export class CreateChatDto {
   description?: string;
 
   @ApiProperty({
-    example: 'private',
+    example: ChatType.GROUP,
     description: 'Chat type',
-    enum: ['private', 'group'],
+    enum: ChatType,
   })
-  @IsEnum(['private', 'group'])
+  @IsEnum(ChatType)
   @IsNotEmpty()
-  type: string;
+  type: ChatType;
 
   @ApiProperty({ description: 'ID of user creating the chat' })
   @IsNotEmpty()

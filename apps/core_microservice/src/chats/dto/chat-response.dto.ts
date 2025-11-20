@@ -1,15 +1,18 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { ChatType } from 'src/entities/chat.entity';
+import { ChatParticipantRole } from 'src/entities/many-to-many/chat-participants.entity';
+import { UserRole } from 'src/entities/user.entity';
 
 class UserReferenceDto {
   @ApiProperty({ example: 1, description: 'User ID' })
   id: number;
 
   @ApiProperty({
-    example: 'admin',
+    example: UserRole.ADMIN,
     description: 'User role',
-    enum: ['member', 'admin', 'creator'],
+    enum: UserRole,
   })
-  role: string;
+  role: UserRole;
 }
 
 class ParticipantResponseDto {
@@ -21,11 +24,11 @@ class ParticipantResponseDto {
 
   @ApiProperty({ example: 'member', description: 'Participant role' })
   @ApiProperty({
-    example: 'member',
+    example: ChatParticipantRole.MEMBER,
     description: 'Participant role',
-    enum: ['member', 'admin', 'creator'],
+    enum: ChatParticipantRole,
   })
-  role: string;
+  role: ChatParticipantRole;
 
   @ApiProperty({ description: 'Join date' })
   joinedAt: Date;
@@ -55,11 +58,11 @@ export class ChatResponseDto {
   description: string | null;
 
   @ApiProperty({
-    example: 'group',
+    example: ChatType.GROUP,
     description: 'Chat type',
-    enum: ['private', 'group'],
+    enum: ChatType,
   })
-  type: string;
+  type: ChatType;
 
   @ApiProperty({ description: 'Creation date' })
   createdAt: Date;
