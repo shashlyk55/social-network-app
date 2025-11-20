@@ -12,6 +12,12 @@ import { MessageAsset } from './many-to-many/message-asset.entity';
 import { PostAsset } from './many-to-many/post-asset.entity';
 import { User } from './user.entity';
 
+export enum FileType {
+  IMAGE = 'image',
+  VIDEO = 'video',
+  AUDIO = 'audio',
+}
+
 @Entity('assets')
 export class Asset {
   @PrimaryGeneratedColumn('increment')
@@ -25,8 +31,8 @@ export class Asset {
 
   @Column({
     type: 'enum',
-    enum: ['image', 'video', 'audio'],
-    default: 'image',
+    enum: FileType,
+    default: FileType.IMAGE,
   })
   fileType: string;
 

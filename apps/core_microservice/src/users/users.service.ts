@@ -14,7 +14,7 @@ import {
   UpdateUserParams,
 } from './types/user-service.types';
 import { Profile } from 'src/entities/profile.entity';
-import { Account } from 'src/entities/account.entity';
+import { Account, AccountProviderType } from 'src/entities/account.entity';
 import bcrypt from 'bcrypt';
 
 @Injectable()
@@ -78,7 +78,7 @@ export class UsersService implements IUsersService {
         userId: savedUser.id,
         email: params.email,
         passwordHash,
-        provider: 'local',
+        provider: AccountProviderType.LOCAL,
         createdById: savedUser.id,
       });
 

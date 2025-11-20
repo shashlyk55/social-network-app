@@ -10,6 +10,14 @@ import {
 } from 'typeorm';
 import { User } from './user.entity';
 
+export enum AccountProviderType {
+  LOCAL = 'local',
+  GOOGLE = 'google',
+  FACEBOOK = 'facebook',
+  GITHUB = 'github',
+  TWITTER = 'twitter',
+}
+
 @Entity('accounts')
 export class Account {
   @PrimaryGeneratedColumn('increment')
@@ -30,10 +38,10 @@ export class Account {
 
   @Column({
     type: 'enum',
-    enum: ['local', 'google', 'facebook', 'github', 'twitter'],
-    default: 'local',
+    enum: AccountProviderType,
+    default: AccountProviderType.LOCAL,
   })
-  provider: string;
+  provider: AccountProviderType;
 
   @Column({ name: 'provider_id', nullable: true })
   providerId: string;

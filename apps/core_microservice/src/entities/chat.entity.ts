@@ -12,6 +12,11 @@ import { ChatParticipant } from './many-to-many/chat-participants.entity';
 import { Message } from './message.entity';
 import { User } from './user.entity';
 
+export enum ChatType {
+  PRIVATE = 'private',
+  GROUP = 'group',
+}
+
 @Entity('chats')
 export class Chat {
   @PrimaryGeneratedColumn('increment')
@@ -23,8 +28,8 @@ export class Chat {
   @Column({ type: 'text', nullable: true })
   description: string;
 
-  @Column({ type: 'enum', enum: ['private', 'group'], default: 'group' })
-  type: string;
+  @Column({ type: 'enum', enum: ChatType, default: ChatType.GROUP })
+  type: ChatType;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

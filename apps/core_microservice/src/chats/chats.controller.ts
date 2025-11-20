@@ -26,6 +26,7 @@ import { CreateChatDto } from './dto/create-chat.dto';
 import { UpdateChatDto } from './dto/update-chat.dto';
 import { ChatMappers } from './utils/params-mapper.util';
 import { PaginationResponseDto } from 'src/common/dto/pagination-response.dto';
+import { ChatType } from 'src/entities/chat.entity';
 
 @ApiTags('chats')
 @ApiBearerAuth()
@@ -76,7 +77,7 @@ export class ChatsController {
   async findAll(
     @Query('page', new ParseIntPipe({ optional: true })) page?: number,
     @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
-    @Query('type') type?: string,
+    @Query('type') type?: ChatType,
   ): Promise<PaginationResponseDto<ChatResponseDto>> {
     const params = { page, limit, type };
     const result = await this.chatService.findAll(params);
@@ -113,7 +114,7 @@ export class ChatsController {
     @Param('profileId', ParseIntPipe) profileId: number,
     @Query('page', new ParseIntPipe({ optional: true })) page?: number,
     @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
-    @Query('type') type?: string,
+    @Query('type') type?: ChatType,
   ): Promise<PaginationResponseDto<ChatResponseDto>> {
     const params = { page, limit, type };
     const result = await this.chatService.findUserChats(profileId, params);

@@ -9,16 +9,17 @@ import {
   IsString,
   MaxLength,
 } from 'class-validator';
+import { UserRole } from 'src/entities/user.entity';
 
 export class CreateUserDto {
   @ApiProperty({
-    example: 'admin',
+    example: UserRole.ADMIN,
     description: 'User role',
-    enum: ['user', 'admin'],
+    enum: UserRole,
   })
-  @IsEnum(['user', 'admin'])
+  @IsEnum(UserRole)
   @IsNotEmpty()
-  role: string;
+  role: UserRole;
 
   @ApiPropertyOptional({
     example: false,

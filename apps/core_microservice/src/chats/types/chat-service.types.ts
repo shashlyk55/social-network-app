@@ -1,9 +1,9 @@
-import { Chat } from 'src/entities/chat.entity';
+import { Chat, ChatType } from 'src/entities/chat.entity';
 
 export type CreateChatParams = {
   name: string;
   description?: string;
-  type: string;
+  type: ChatType;
   createdById: number;
   participantProfileIds: number[];
 };
@@ -12,14 +12,14 @@ export type UpdateChatParams = {
   id: number;
   name?: string;
   description?: string;
-  type?: string;
+  type?: ChatType;
   updatedById?: number;
 };
 
 export type FindChatsParams = {
   page?: number;
   limit?: number;
-  type?: string;
+  type?: ChatType;
   profileId?: number;
 };
 

@@ -12,6 +12,11 @@ import {
 import { Account } from './account.entity';
 import { Profile } from './profile.entity';
 
+export enum UserRole {
+  USER = 'user',
+  ADMIN = 'admin',
+}
+
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn('increment')
@@ -19,10 +24,10 @@ export class User {
 
   @Column({
     type: 'enum',
-    enum: ['user', 'admin'],
-    default: 'user',
+    enum: UserRole,
+    default: UserRole.USER,
   })
-  role: string;
+  role: UserRole;
 
   @Column({ default: false })
   disabled: boolean;

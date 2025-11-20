@@ -1,7 +1,7 @@
-import { User } from 'src/entities/user.entity';
+import { User, UserRole } from 'src/entities/user.entity';
 
 export type CreateUserParams = {
-  role: string;
+  role: UserRole;
   disabled?: boolean;
   // createdById?: number;
   // Profile data
@@ -18,7 +18,7 @@ export type CreateUserParams = {
 
 export type UpdateUserParams = {
   id: number;
-  role?: string;
+  role?: UserRole;
   disabled?: boolean;
   updatedById?: number;
   // Profile data
@@ -33,7 +33,7 @@ export type UpdateUserParams = {
 export type FindUsersParams = {
   page?: number;
   limit?: number;
-  role?: string;
+  role?: UserRole;
   disabled?: boolean;
 };
 

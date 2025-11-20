@@ -11,6 +11,12 @@ import { Chat } from '../chat.entity';
 import { Profile } from '../profile.entity';
 import { User } from '../user.entity';
 
+export enum ChatParticipantRole {
+  MEMBER = 'member',
+  ADMIN = 'admin',
+  CREATOR = 'creator',
+}
+
 @Entity('chats_participants')
 export class ChatParticipant {
   @PrimaryGeneratedColumn('increment')
@@ -34,10 +40,10 @@ export class ChatParticipant {
 
   @Column({
     type: 'enum',
-    enum: ['member', 'admin', 'creator'],
-    default: 'member',
+    enum: ChatParticipantRole,
+    default: ChatParticipantRole.MEMBER,
   })
-  role: string;
+  role: ChatParticipantRole;
 
   @Column({ name: 'joined_at', default: () => 'CURRENT_TIMESTAMP' })
   joinedAt: Date;

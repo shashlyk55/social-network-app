@@ -8,16 +8,17 @@ import {
   IsString,
   MaxLength,
 } from 'class-validator';
+import { UserRole } from 'src/entities/user.entity';
 
 export class UpdateUserDto {
   @ApiPropertyOptional({
-    example: 'user',
+    example: UserRole.ADMIN,
     description: 'User role',
-    enum: ['user', 'admin'],
+    enum: UserRole,
   })
-  @IsEnum(['user', 'admin'])
+  @IsEnum(UserRole)
   @IsOptional()
-  role?: string;
+  role: UserRole;
 
   @ApiPropertyOptional({
     example: false,

@@ -27,6 +27,7 @@ import { UserResponseDto } from './dto/user-response.dto';
 import { UserMappers } from './utils/params-mapper.util';
 import { UsersService } from './users.service';
 import { PaginationResponseDto } from 'src/common/dto/pagination-response.dto';
+import { UserRole } from 'src/entities/user.entity';
 
 @ApiTags('users')
 @ApiBearerAuth()
@@ -93,7 +94,7 @@ export class UsersController {
   async findAll(
     @Query('page', new ParseIntPipe({ optional: true })) page?: number,
     @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
-    @Query('role') role?: string,
+    @Query('role') role?: UserRole,
     @Query('disabled') disabled?: boolean,
   ): Promise<PaginationResponseDto<UserResponseDto>> {
     const params = {
