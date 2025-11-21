@@ -15,6 +15,13 @@ import {
   UpdateCommentParams,
   CreateCommentLikeParams,
 } from './types/comment-service.types';
+import {
+  CommentNotFoundException,
+  CommentOperationException,
+  CommentWithRepliesException,
+  ParentCommentNotFoundException,
+} from './exceptions/comment-domain.exceptions';
+import { DomainException } from 'src/app/exceptions/domain.exception';
 
 @Injectable()
 export class CommentsService implements ICommentsService {
@@ -32,9 +39,7 @@ export class CommentsService implements ICommentsService {
         where: { id: params.parentCommentId },
       });
       if (!parentComment) {
-        throw new NotFoundException(
-          `Parent comment with ID ${params.parentCommentId} not found`,
-        );
+        throw new ParentCommentNotFoundException(params.parentCommentId);
       }
     }
 
@@ -56,80 +61,101 @@ export class CommentsService implements ICommentsService {
       return await this.findOne(savedComment.id);
     } catch (error) {
       queryRunner.rollbackTransaction();
-      throw error;
+      if (error instanceof DomainException) {
+        throw error;
+      }
+
+      throw new CommentOperationException('create comment', error.message);
     } finally {
       queryRunner.release();
     }
   }
 
   async findAll(params: FindCommentsParams): Promise<CommentPaginationResult> {
-    const { page = 1, limit = 10, postId, profileId, parentCommentId } = params;
-    const skip = (page - 1) * limit;
+    try {
+      const {
+        page = 1,
+        limit = 10,
+        postId,
+        profileId,
+        parentCommentId,
+      } = params;
+      const skip = (page - 1) * limit;
 
-    const queryBuilder = this.commentRepository
-      .createQueryBuilder('comment')
-      .leftJoinAndSelect('comment.profile', 'profile')
-      .leftJoinAndSelect('comment.createdBy', 'createdBy')
-      .leftJoinAndSelect('comment.updatedBy', 'updatedBy')
-      .leftJoinAndSelect('comment.commentLikes', 'commentLikes')
-      .leftJoinAndSelect('commentLikes.profile', 'likeProfile')
-      .leftJoinAndSelect('comment.replies', 'replies')
-      .where('comment.parentCommentId IS NULL');
+      const queryBuilder = this.commentRepository
+        .createQueryBuilder('comment')
+        .leftJoinAndSelect('comment.profile', 'profile')
+        .leftJoinAndSelect('comment.createdBy', 'createdBy')
+        .leftJoinAndSelect('comment.updatedBy', 'updatedBy')
+        .leftJoinAndSelect('comment.commentLikes', 'commentLikes')
+        .leftJoinAndSelect('commentLikes.profile', 'likeProfile')
+        .leftJoinAndSelect('comment.replies', 'replies')
+        .where('comment.parentCommentId IS NULL');
 
-    if (postId) {
-      queryBuilder.andWhere('comment.postId = :postId', { postId });
-    }
-
-    if (profileId) {
-      queryBuilder.andWhere('comment.profileId = :profileId', { profileId });
-    }
-
-    if (parentCommentId !== undefined) {
-      if (parentCommentId === null) {
-        queryBuilder.andWhere('comment.parentCommentId IS NULL');
-      } else {
-        queryBuilder.andWhere('comment.parentCommentId = :parentCommentId', {
-          parentCommentId,
-        });
+      if (postId) {
+        queryBuilder.andWhere('comment.postId = :postId', { postId });
       }
+
+      if (profileId) {
+        queryBuilder.andWhere('comment.profileId = :profileId', { profileId });
+      }
+
+      if (parentCommentId !== undefined) {
+        if (parentCommentId === null) {
+          queryBuilder.andWhere('comment.parentCommentId IS NULL');
+        } else {
+          queryBuilder.andWhere('comment.parentCommentId = :parentCommentId', {
+            parentCommentId,
+          });
+        }
+      }
+
+      const [data, total] = await queryBuilder
+        .skip(skip)
+        .take(limit)
+        .orderBy('comment.createdAt', 'DESC')
+        .getManyAndCount();
+
+      return {
+        data,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
+    } catch (error) {
+      throw new CommentOperationException('find comments', error.message);
     }
-
-    const [data, total] = await queryBuilder
-      .skip(skip)
-      .take(limit)
-      .orderBy('comment.createdAt', 'DESC')
-      .getManyAndCount();
-
-    return {
-      data,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
   }
 
   async findOne(id: number): Promise<Comment> {
-    const comment = await this.commentRepository.findOne({
-      where: { id },
-      relations: [
-        'profile',
-        'createdBy',
-        'updatedBy',
-        'commentLikes',
-        'commentLikes.profile',
-        'replies',
-        'replies.profile',
-        'replies.commentLikes',
-        'parentComment',
-      ],
-    });
+    try {
+      const comment = await this.commentRepository.findOne({
+        where: { id },
+        relations: [
+          'profile',
+          'createdBy',
+          'updatedBy',
+          'commentLikes',
+          'commentLikes.profile',
+          'replies',
+          'replies.profile',
+          'replies.commentLikes',
+          'parentComment',
+        ],
+      });
 
-    if (!comment) {
-      throw new NotFoundException(`Comment with ID ${id} not found`);
+      if (!comment) {
+        throw new CommentNotFoundException(id);
+      }
+
+      return comment;
+    } catch (error) {
+      if (error instanceof CommentNotFoundException) {
+        throw error;
+      }
+      throw new CommentOperationException('find comment', error.message);
     }
-
-    return comment;
   }
 
   async update(params: UpdateCommentParams): Promise<Comment> {
@@ -138,7 +164,7 @@ export class CommentsService implements ICommentsService {
     const comment = await this.findOne(id);
 
     if (!comment) {
-      throw new NotFoundException('Comment not found');
+      throw new CommentNotFoundException(id);
     }
 
     const queryRunner = this.dataSource.createQueryRunner();
@@ -159,7 +185,11 @@ export class CommentsService implements ICommentsService {
       return await this.findOne(id);
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      throw error;
+      if (error instanceof DomainException) {
+        throw error;
+      }
+
+      throw new CommentOperationException('update comment', error.message);
     } finally {
       queryRunner.release();
     }
@@ -169,11 +199,11 @@ export class CommentsService implements ICommentsService {
     const comment = await this.findOne(id);
 
     if (!comment) {
-      throw new NotFoundException('Comment not found');
+      throw new CommentNotFoundException(id);
     }
 
     if (comment.replies && comment.replies.length > 0) {
-      throw new ConflictException('Cannot delete comment with replies');
+      throw new CommentWithRepliesException(id);
     }
     // TODO: maybe every comment can be deleted
 
@@ -187,7 +217,11 @@ export class CommentsService implements ICommentsService {
       await queryRunner.commitTransaction();
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      throw error;
+      if (error instanceof DomainException) {
+        throw error;
+      }
+
+      throw new CommentOperationException('delete comment', error.message);
     } finally {
       await queryRunner.release();
     }
@@ -199,7 +233,7 @@ export class CommentsService implements ICommentsService {
     const comment = await this.findOne(commentId);
 
     if (!comment) {
-      throw new NotFoundException('Comment not found');
+      throw new CommentNotFoundException(commentId);
     }
 
     const existingLike = await this.commentLikeRepository.findOne({
@@ -227,7 +261,11 @@ export class CommentsService implements ICommentsService {
       return savedLike;
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      throw error;
+      if (error instanceof DomainException) {
+        throw error;
+      }
+
+      throw new CommentOperationException('like comment', error.message);
     } finally {
       await queryRunner.release();
     }
@@ -237,69 +275,80 @@ export class CommentsService implements ICommentsService {
     postId: number,
     params: FindCommentsParams,
   ): Promise<CommentPaginationResult> {
-    const { page = 1, limit = 10 } = params;
-    const skip = (page - 1) * limit;
+    try {
+      const { page = 1, limit = 10 } = params;
+      const skip = (page - 1) * limit;
 
-    const queryBuilder = this.commentRepository
-      .createQueryBuilder('comment')
-      .leftJoinAndSelect('comment.profile', 'profile')
-      .leftJoinAndSelect('comment.createdBy', 'createdBy')
-      .leftJoinAndSelect('comment.updatedBy', 'updatedBy')
-      .leftJoinAndSelect('comment.commentLikes', 'commentLikes')
-      .leftJoinAndSelect('commentLikes.profile', 'likeProfile')
-      .leftJoinAndSelect('comment.replies', 'replies')
-      .where('comment.postId = :postId', { postId })
-      .andWhere('comment.parentCommentId IS NULL');
+      const queryBuilder = this.commentRepository
+        .createQueryBuilder('comment')
+        .leftJoinAndSelect('comment.profile', 'profile')
+        .leftJoinAndSelect('comment.createdBy', 'createdBy')
+        .leftJoinAndSelect('comment.updatedBy', 'updatedBy')
+        .leftJoinAndSelect('comment.commentLikes', 'commentLikes')
+        .leftJoinAndSelect('commentLikes.profile', 'likeProfile')
+        .leftJoinAndSelect('comment.replies', 'replies')
+        .where('comment.postId = :postId', { postId })
+        .andWhere('comment.parentCommentId IS NULL');
 
-    const [data, total] = await queryBuilder
-      .skip(skip)
-      .take(limit)
-      .orderBy('comment.createdAt', 'DESC')
-      .getManyAndCount();
+      const [data, total] = await queryBuilder
+        .skip(skip)
+        .take(limit)
+        .orderBy('comment.createdAt', 'DESC')
+        .getManyAndCount();
 
-    return {
-      data,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
+      return {
+        data,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
+    } catch (error) {
+      throw new CommentOperationException('find post comments', error.message);
+    }
   }
 
   async findCommentReplies(
     commentId: number,
     params: FindCommentsParams,
   ): Promise<CommentPaginationResult> {
-    const { page = 1, limit = 10 } = params;
-    const skip = (page - 1) * limit;
+    try {
+      const { page = 1, limit = 10 } = params;
+      const skip = (page - 1) * limit;
 
-    const comment = await this.findOne(commentId);
+      const comment = await this.findOne(commentId);
 
-    if (!comment) {
-      throw new NotFoundException('Comment not found');
+      if (!comment) {
+        throw new CommentNotFoundException(commentId);
+      }
+
+      const queryBuilder = this.commentRepository
+        .createQueryBuilder('comment')
+        .leftJoinAndSelect('comment.profile', 'profile')
+        .leftJoinAndSelect('comment.createdBy', 'createdBy')
+        .leftJoinAndSelect('comment.updatedBy', 'updatedBy')
+        .leftJoinAndSelect('comment.commentLikes', 'commentLikes')
+        .leftJoinAndSelect('commentLikes.profile', 'likeProfile')
+        .where('comment.parentCommentId = :commentId', { commentId });
+
+      const [data, total] = await queryBuilder
+        .skip(skip)
+        .take(limit)
+        .orderBy('comment.createdAt', 'ASC')
+        .getManyAndCount();
+
+      return {
+        data,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
+    } catch (error) {
+      throw new CommentOperationException(
+        'find comment replies',
+        error.message,
+      );
     }
-
-    const queryBuilder = this.commentRepository
-      .createQueryBuilder('comment')
-      .leftJoinAndSelect('comment.profile', 'profile')
-      .leftJoinAndSelect('comment.createdBy', 'createdBy')
-      .leftJoinAndSelect('comment.updatedBy', 'updatedBy')
-      .leftJoinAndSelect('comment.commentLikes', 'commentLikes')
-      .leftJoinAndSelect('commentLikes.profile', 'likeProfile')
-      .where('comment.parentCommentId = :commentId', { commentId });
-
-    const [data, total] = await queryBuilder
-      .skip(skip)
-      .take(limit)
-      .orderBy('comment.createdAt', 'ASC')
-      .getManyAndCount();
-
-    return {
-      data,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
   }
 }

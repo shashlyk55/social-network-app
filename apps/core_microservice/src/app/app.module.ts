@@ -1,17 +1,18 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { AuthModule } from './auth/auth.module';
-import { UsersModule } from './users/users.module';
-import { PostsModule } from './posts/posts.module';
-import { CommentsModule } from './comments/comments.module';
-import { ChatsModule } from './chats/chats.module';
-import { NotificationsModule } from './notifications/notifications.module';
-import { WinstonLoggerModule } from './winston-logger/winston-logger.module';
-import { WinstonLoggerService } from './winston-logger/winston-logger.service';
+import { AuthModule } from '../auth/auth.module';
+import { UsersModule } from '../users/users.module';
+import { PostsModule } from '../posts/posts.module';
+import { CommentsModule } from '../comments/comments.module';
+import { ChatsModule } from '../chats/chats.module';
+import { NotificationsModule } from '../notifications/notifications.module';
+import { WinstonLoggerModule } from '../winston-logger/winston-logger.module';
+import { WinstonLoggerService } from '../winston-logger/winston-logger.service';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
-import { WinstonExceptionsFilter } from './winston-logger/winston-exceptions.filter';
-import { WinstonLoggingInterceptor } from './winston-logger/winston-logging.interceptor';
+import { WinstonExceptionsFilter } from '../winston-logger/winston-exceptions.filter';
+import { WinstonLoggingInterceptor } from '../winston-logger/winston-logging.interceptor';
+import { GlobalExceptionFilter } from './exceptions/global-exception.filter';
 
 @Module({
   imports: [
@@ -50,6 +51,10 @@ import { WinstonLoggingInterceptor } from './winston-logger/winston-logging.inte
     {
       provide: APP_FILTER,
       useClass: WinstonExceptionsFilter,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: GlobalExceptionFilter,
     },
   ],
 })

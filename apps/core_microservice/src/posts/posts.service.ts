@@ -17,6 +17,11 @@ import {
   CreatePostLikeParams,
 } from './types/post-service.types';
 import { Asset } from 'src/entities/asset.entity';
+import {
+  PostNotFoundException,
+  PostOperationException,
+} from './exceptions/post-domain.exceptions';
+import { DomainException } from 'src/app/exceptions/domain.exception';
 
 @Injectable()
 export class PostsService implements IPostsService {
@@ -53,75 +58,88 @@ export class PostsService implements IPostsService {
     } catch (error) {
       await queryRunner.rollbackTransaction();
 
-      if (error instanceof ConflictException) {
+      if (error instanceof DomainException) {
         throw error;
       }
 
-      throw new InternalServerErrorException(
-        'Failed to create user: ' + error.message,
-      );
+      throw new PostOperationException('create post', error.message);
     } finally {
       await queryRunner.release();
     }
   }
 
   async findAll(params: FindPostsParams): Promise<PostPaginationResult> {
-    const { page = 1, limit = 10, profileId, isArchived } = params;
-    const skip = (page - 1) * limit;
+    try {
+      const { page = 1, limit = 10, profileId, isArchived } = params;
+      const skip = (page - 1) * limit;
 
-    const queryBuilder = this.postRepository
-      .createQueryBuilder('post')
-      .leftJoinAndSelect('post.profile', 'profile')
-      .leftJoinAndSelect('post.createdBy', 'createdBy')
-      .leftJoinAndSelect('post.updatedBy', 'updatedBy')
-      .leftJoinAndSelect('post.postAssets', 'postAssets')
-      .leftJoinAndSelect('post.postLikes', 'postLikes')
-      .leftJoinAndSelect('postLikes.profile', 'likeProfile')
-      .leftJoinAndSelect('post.comments', 'comments')
-      .where('post.isArchived = :isArchived', { isArchived: false });
+      const queryBuilder = this.postRepository
+        .createQueryBuilder('post')
+        .leftJoinAndSelect('post.profile', 'profile')
+        .leftJoinAndSelect('post.createdBy', 'createdBy')
+        .leftJoinAndSelect('post.updatedBy', 'updatedBy')
+        .leftJoinAndSelect('post.postAssets', 'postAssets')
+        .leftJoinAndSelect('post.postLikes', 'postLikes')
+        .leftJoinAndSelect('postLikes.profile', 'likeProfile')
+        .leftJoinAndSelect('post.comments', 'comments')
+        .where('post.isArchived = :isArchived', { isArchived: false });
 
-    if (profileId) {
-      queryBuilder.andWhere('post.profileId = :profileId', { profileId });
+      if (profileId) {
+        queryBuilder.andWhere('post.profileId = :profileId', { profileId });
+      }
+
+      if (isArchived !== undefined) {
+        queryBuilder.andWhere('post.isArchived = :isArchived', { isArchived });
+      }
+
+      const [data, total] = await queryBuilder
+        .skip(skip)
+        .take(limit)
+        .orderBy('post.createdAt', 'DESC')
+        .getManyAndCount();
+
+      return {
+        data,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
+    } catch (error) {
+      if (error instanceof DomainException) {
+        throw error;
+      }
+
+      throw new PostOperationException('create post', error.message);
     }
-
-    if (isArchived !== undefined) {
-      queryBuilder.andWhere('post.isArchived = :isArchived', { isArchived });
-    }
-
-    const [data, total] = await queryBuilder
-      .skip(skip)
-      .take(limit)
-      .orderBy('post.createdAt', 'DESC')
-      .getManyAndCount();
-
-    return {
-      data,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
   }
 
   async findOne(id: number): Promise<PostEntity> {
-    const post = await this.postRepository.findOne({
-      where: { id },
-      relations: [
-        'profile',
-        'createdBy',
-        'updatedBy',
-        'postAssets',
-        'postLikes',
-        'postLikes.profile',
-        'comments',
-      ],
-    });
+    try {
+      const post = await this.postRepository.findOne({
+        where: { id },
+        relations: [
+          'profile',
+          'createdBy',
+          'updatedBy',
+          'postAssets',
+          'postLikes',
+          'postLikes.profile',
+          'comments',
+        ],
+      });
 
-    if (!post) {
-      throw new NotFoundException(`Post with ID ${id} not found`);
+      if (!post) {
+        throw new PostNotFoundException(id);
+      }
+
+      return post;
+    } catch (error) {
+      if (error instanceof PostNotFoundException) {
+        throw error;
+      }
+      throw new PostOperationException('find post', error.message);
     }
-
-    return post;
   }
 
   async update(params: UpdatePostParams): Promise<PostEntity> {
@@ -130,7 +148,7 @@ export class PostsService implements IPostsService {
     const post = await this.findOne(id);
 
     if (!post) {
-      throw new NotFoundException('Post not found');
+      throw new PostNotFoundException(id);
     }
 
     const queryRunner = this.dataSource.createQueryRunner();
@@ -157,16 +175,11 @@ export class PostsService implements IPostsService {
     } catch (error) {
       await queryRunner.rollbackTransaction();
 
-      if (
-        error instanceof ConflictException ||
-        error instanceof NotFoundException
-      ) {
+      if (error instanceof DomainException) {
         throw error;
       }
 
-      throw new InternalServerErrorException(
-        'Failed to update post: ' + error.message,
-      );
+      throw new PostOperationException('update post', error.message);
     } finally {
       await queryRunner.release();
     }
@@ -176,7 +189,7 @@ export class PostsService implements IPostsService {
     const post = await this.findOne(id);
 
     if (!post) {
-      throw new NotFoundException('Post not found');
+      throw new PostNotFoundException('Post not found');
     }
 
     const queryRunner = this.dataSource.createQueryRunner();
@@ -188,7 +201,7 @@ export class PostsService implements IPostsService {
       await queryRunner.commitTransaction();
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      throw error;
+      throw new PostOperationException('remove post', error.message);
     } finally {
       await queryRunner.release();
     }
@@ -198,7 +211,7 @@ export class PostsService implements IPostsService {
     const post = await this.findOne(id);
 
     if (!post) {
-      throw new NotFoundException('Post not found');
+      throw new PostNotFoundException(id);
     }
 
     const queryRunner = this.dataSource.createQueryRunner();
@@ -216,7 +229,7 @@ export class PostsService implements IPostsService {
       return await this.findOne(id);
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      throw error;
+      throw new PostOperationException('archive post', error.message);
     } finally {
       await queryRunner.release();
     }
@@ -228,7 +241,7 @@ export class PostsService implements IPostsService {
     const post = await this.findOne(postId);
 
     if (!post) {
-      throw new NotFoundException('Post not found');
+      throw new PostNotFoundException(postId);
     }
 
     const existingLike = await this.postLikeRepository.findOne({
@@ -258,16 +271,11 @@ export class PostsService implements IPostsService {
     } catch (error) {
       await queryRunner.rollbackTransaction();
 
-      if (
-        error instanceof ConflictException ||
-        error instanceof NotFoundException
-      ) {
+      if (error instanceof DomainException) {
         throw error;
       }
 
-      throw new InternalServerErrorException(
-        'Failed to like post: ' + error.message,
-      );
+      throw new PostOperationException('like post', error.message);
     } finally {
       await queryRunner.release();
     }
@@ -277,39 +285,43 @@ export class PostsService implements IPostsService {
     profileId: number,
     params: FindPostsParams,
   ): Promise<PostPaginationResult> {
-    const { page = 1, limit = 10, isArchived } = params;
-    const skip = (page - 1) * limit;
+    try {
+      const { page = 1, limit = 10, isArchived } = params;
+      const skip = (page - 1) * limit;
 
-    const queryBuilder = this.postRepository
-      .createQueryBuilder('post')
-      .leftJoinAndSelect('post.profile', 'profile')
-      .leftJoinAndSelect('post.createdBy', 'createdBy')
-      .leftJoinAndSelect('post.updatedBy', 'updatedBy')
-      .leftJoinAndSelect('post.postLikes', 'postLikes')
-      .leftJoinAndSelect('postLikes.profile', 'likeProfile')
-      .leftJoinAndSelect('post.comments', 'comments')
-      .where('post.profileId = :profileId', { profileId });
+      const queryBuilder = this.postRepository
+        .createQueryBuilder('post')
+        .leftJoinAndSelect('post.profile', 'profile')
+        .leftJoinAndSelect('post.createdBy', 'createdBy')
+        .leftJoinAndSelect('post.updatedBy', 'updatedBy')
+        .leftJoinAndSelect('post.postLikes', 'postLikes')
+        .leftJoinAndSelect('postLikes.profile', 'likeProfile')
+        .leftJoinAndSelect('post.comments', 'comments')
+        .where('post.profileId = :profileId', { profileId });
 
-    if (isArchived !== undefined) {
-      queryBuilder.andWhere('post.isArchived = :isArchived', { isArchived });
-    } else {
-      queryBuilder.andWhere('post.isArchived = :isArchived', {
-        isArchived: false,
-      });
+      if (isArchived !== undefined) {
+        queryBuilder.andWhere('post.isArchived = :isArchived', { isArchived });
+      } else {
+        queryBuilder.andWhere('post.isArchived = :isArchived', {
+          isArchived: false,
+        });
+      }
+
+      const [data, total] = await queryBuilder
+        .skip(skip)
+        .take(limit)
+        .orderBy('post.createdAt', 'DESC')
+        .getManyAndCount();
+
+      return {
+        data,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
+    } catch (error) {
+      throw new PostOperationException('find profile posts', error.message);
     }
-
-    const [data, total] = await queryBuilder
-      .skip(skip)
-      .take(limit)
-      .orderBy('post.createdAt', 'DESC')
-      .getManyAndCount();
-
-    return {
-      data,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
   }
 }
