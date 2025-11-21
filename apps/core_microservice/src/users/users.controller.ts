@@ -1,4 +1,3 @@
-// src/users/controllers/user.controller.ts
 import {
   Controller,
   Get,
@@ -8,7 +7,6 @@ import {
   Body,
   Param,
   Query,
-  ParseIntPipe,
   HttpStatus,
   HttpCode,
 } from '@nestjs/common';
@@ -45,14 +43,14 @@ export class UsersController {
   @ApiResponse({ status: 400, description: 'Invalid input data' })
   @ApiQuery({
     name: 'createdById',
-    required: true,
+    required: false,
     type: Number,
     description: 'Id of user creator',
   })
   @ApiBody({ type: CreateUserDto })
   async create(
     @Body() createUserDto: CreateUserDto,
-    @Query('createdById', new ParseIntPipe({ optional: false }))
+    @Query('createdById')
     createdById: number,
   ): Promise<UserResponseDto> {
     const params = UserMappers.toCreateParams(createUserDto);
@@ -92,8 +90,8 @@ export class UsersController {
     description: 'Filter by disabled status',
   })
   async findAll(
-    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
     @Query('role') role?: UserRole,
     @Query('disabled') disabled?: boolean,
   ): Promise<PaginationResponseDto<UserResponseDto>> {
@@ -116,9 +114,7 @@ export class UsersController {
     type: UserResponseDto,
   })
   @ApiResponse({ status: 404, description: 'User not found' })
-  async findOne(
-    @Param('id', ParseIntPipe) id: number,
-  ): Promise<UserResponseDto> {
+  async findOne(@Param('id') id: number): Promise<UserResponseDto> {
     const user = await this.userService.findOne(id);
     return UserMappers.toResponse(user);
   }
@@ -134,7 +130,7 @@ export class UsersController {
   @ApiResponse({ status: 404, description: 'User not found' })
   @ApiBody({ type: UpdateUserDto })
   async update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: number,
     @Body() updateUserDto: UpdateUserDto,
   ): Promise<UserResponseDto> {
     const params = UserMappers.toUpdateParams(id, updateUserDto);
@@ -155,8 +151,8 @@ export class UsersController {
     description: 'ID of user performing deletion',
   })
   async remove(
-    @Param('id', ParseIntPipe) id: number,
-    @Query('deletedById', ParseIntPipe) deletedById: number,
+    @Param('id') id: number,
+    @Query('deletedById') deletedById: number,
   ): Promise<void> {
     await this.userService.remove(id);
   }
@@ -174,8 +170,8 @@ export class UsersController {
     description: 'ID of user performing deletion',
   })
   async softRemove(
-    @Param('id', ParseIntPipe) id: number,
-    @Query('deletedById', ParseIntPipe) deletedById: number,
+    @Param('id') id: number,
+    @Query('deletedById') deletedById: number,
   ): Promise<void> {
     await this.userService.softRemove(id, deletedById);
   }
@@ -193,8 +189,8 @@ export class UsersController {
     description: 'ID of user performing restore',
   })
   async restore(
-    @Param('id', ParseIntPipe) id: number,
-    @Query('restoredById', ParseIntPipe) restoredById: number,
+    @Param('id') id: number,
+    @Query('restoredById') restoredById: number,
   ): Promise<void> {
     await this.userService.restore(id, restoredById);
   }

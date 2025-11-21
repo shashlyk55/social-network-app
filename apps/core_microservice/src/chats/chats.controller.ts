@@ -7,7 +7,6 @@ import {
   Body,
   Param,
   Query,
-  ParseIntPipe,
   HttpStatus,
   HttpCode,
 } from '@nestjs/common';
@@ -75,8 +74,8 @@ export class ChatsController {
     description: 'Filter by chat type',
   })
   async findAll(
-    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
     @Query('type') type?: ChatType,
   ): Promise<PaginationResponseDto<ChatResponseDto>> {
     const params = { page, limit, type };
@@ -111,9 +110,9 @@ export class ChatsController {
     description: 'Filter by chat type',
   })
   async findUserChats(
-    @Param('profileId', ParseIntPipe) profileId: number,
-    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+    @Param('profileId') profileId: number,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
     @Query('type') type?: ChatType,
   ): Promise<PaginationResponseDto<ChatResponseDto>> {
     const params = { page, limit, type };
@@ -130,9 +129,7 @@ export class ChatsController {
     type: ChatResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Chat not found' })
-  async findOne(
-    @Param('id', ParseIntPipe) id: number,
-  ): Promise<ChatResponseDto> {
+  async findOne(@Param('id') id: number): Promise<ChatResponseDto> {
     const chat = await this.chatService.findOne(id);
     return ChatMappers.toChatResponse(chat);
   }
@@ -148,7 +145,7 @@ export class ChatsController {
   @ApiResponse({ status: 404, description: 'Chat not found' })
   @ApiBody({ type: UpdateChatDto })
   async update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: number,
     @Body() updateChatDto: UpdateChatDto,
   ): Promise<ChatResponseDto> {
     const params = ChatMappers.toUpdateParams(id, updateChatDto);
@@ -169,8 +166,8 @@ export class ChatsController {
     description: 'ID of user performing deletion',
   })
   async remove(
-    @Param('id', ParseIntPipe) id: number,
-    @Query('deletedById', ParseIntPipe) deletedById: number,
+    @Param('id') id: number,
+    @Query('deletedById') deletedById: number,
   ): Promise<void> {
     await this.chatService.remove(id);
   }
