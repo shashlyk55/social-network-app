@@ -16,6 +16,13 @@ import {
 import { Profile } from 'src/entities/profile.entity';
 import { Account, AccountProviderType } from 'src/entities/account.entity';
 import bcrypt from 'bcrypt';
+import {
+  EmailAlreadyExistsException,
+  UsernameAlreadyExistsException,
+  UserNotFoundException,
+  UserOperationException,
+} from './exceptions/user.exceptions';
+import { DomainException } from 'src/app/exceptions/domain.exception';
 
 @Injectable()
 export class UsersService implements IUsersService {
@@ -35,7 +42,7 @@ export class UsersService implements IUsersService {
     });
 
     if (existingProfile) {
-      throw new ConflictException('Username is already taken');
+      throw new UsernameAlreadyExistsException(params.username);
     }
 
     const existingAccount = await this.accountRepository.findOne({
@@ -43,7 +50,7 @@ export class UsersService implements IUsersService {
     });
 
     if (existingAccount) {
-      throw new ConflictException('Email is already registered');
+      throw new EmailAlreadyExistsException(params.email);
     }
 
     const queryRunner = this.dataSource.createQueryRunner();
@@ -89,64 +96,84 @@ export class UsersService implements IUsersService {
       return await this.findOne(savedUser.id);
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      throw error;
+
+      if (error instanceof DomainException) {
+        throw error;
+      }
+
+      throw new UserOperationException('create user', error.message);
     } finally {
       await queryRunner.release();
     }
   }
 
   async findAll(params: FindUsersParams): Promise<UserPaginationResult> {
-    const { page = 1, limit = 10, role, disabled } = params;
-    const skip = (page - 1) * limit;
+    try {
+      const { page = 1, limit = 10, role, disabled } = params;
+      const skip = (page - 1) * limit;
 
-    const queryBuilder = this.userRepository
-      .createQueryBuilder('user')
-      .leftJoinAndSelect('user.createdBy', 'createdBy')
-      .leftJoinAndSelect('user.updatedBy', 'updatedBy')
-      .leftJoinAndSelect('user.account', 'account')
-      .leftJoinAndSelect('user.profile', 'profile')
-      .where('user.disabled = :disabled', { disabled: false });
+      const queryBuilder = this.userRepository
+        .createQueryBuilder('user')
+        .leftJoinAndSelect('user.createdBy', 'createdBy')
+        .leftJoinAndSelect('user.updatedBy', 'updatedBy')
+        .leftJoinAndSelect('user.account', 'account')
+        .leftJoinAndSelect('user.profile', 'profile')
+        .where('user.disabled = :disabled', { disabled: false });
 
-    if (role) {
-      queryBuilder.andWhere('user.role = :role', { role });
+      if (role) {
+        queryBuilder.andWhere('user.role = :role', { role });
+      }
+
+      if (disabled !== undefined) {
+        queryBuilder.andWhere('user.disabled = :disabled', { disabled });
+      }
+
+      const [data, total] = await queryBuilder
+        .skip(skip)
+        .take(limit)
+        .orderBy('user.createdAt', 'DESC')
+        .getManyAndCount();
+
+      return {
+        data,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
+    } catch (error) {
+      throw new UserOperationException('find users', error.message);
     }
-
-    if (disabled !== undefined) {
-      queryBuilder.andWhere('user.disabled = :disabled', { disabled });
-    }
-
-    const [data, total] = await queryBuilder
-      .skip(skip)
-      .take(limit)
-      .orderBy('user.createdAt', 'DESC')
-      .getManyAndCount();
-
-    return {
-      data,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
   }
 
   async findOne(id: number): Promise<User> {
-    const user = await this.userRepository.findOne({
-      where: { id },
-      relations: ['createdBy', 'updatedBy', 'account', 'profile'],
-    });
+    try {
+      const user = await this.userRepository.findOne({
+        where: { id },
+        relations: ['createdBy', 'updatedBy', 'account', 'profile'],
+      });
 
-    if (!user) {
-      throw new NotFoundException(`User with ID ${id} not found`);
+      if (!user) {
+        throw new UserNotFoundException(id);
+      }
+
+      return user;
+    } catch (error) {
+      if (error instanceof DomainException) {
+        throw error;
+      }
+      throw new UserOperationException('find user', error.message);
     }
-
-    return user;
   }
 
   async update(params: UpdateUserParams): Promise<User> {
     const { id, ...updateData } = params;
 
     const user = await this.findOne(id);
+
+    if (!user) {
+      throw new UserNotFoundException(id);
+    }
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -182,7 +209,7 @@ export class UsersService implements IUsersService {
           });
 
           if (existingProfile) {
-            throw new ConflictException('Username is already taken');
+            throw new UsernameAlreadyExistsException(updateData.username);
           }
         }
 
@@ -214,7 +241,12 @@ export class UsersService implements IUsersService {
       return await this.findOne(id);
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      throw error;
+
+      if (error instanceof DomainException) {
+        throw error;
+      }
+
+      throw new UserOperationException('update user', error.message);
     } finally {
       await queryRunner.release();
     }
@@ -224,7 +256,7 @@ export class UsersService implements IUsersService {
     const user = await this.findOne(id);
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new UserNotFoundException(id);
     }
 
     const queryRunner = this.dataSource.createQueryRunner();
@@ -237,7 +269,8 @@ export class UsersService implements IUsersService {
       await queryRunner.commitTransaction();
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      throw error;
+
+      throw new UserOperationException('remove user', error.message);
     } finally {
       await queryRunner.release();
     }
@@ -247,7 +280,7 @@ export class UsersService implements IUsersService {
     const user = await this.findOne(id);
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new UserNotFoundException(id);
     }
 
     const queryRunner = this.dataSource.createQueryRunner();
@@ -268,7 +301,7 @@ export class UsersService implements IUsersService {
       await queryRunner.commitTransaction();
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      throw error;
+      throw new UserOperationException('soft remove user', error.message);
     } finally {
       await queryRunner.release();
     }
@@ -278,7 +311,7 @@ export class UsersService implements IUsersService {
     const user = await this.findOne(id);
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new UserNotFoundException(id);
     }
 
     const queryRunner = this.dataSource.createQueryRunner();
@@ -299,7 +332,7 @@ export class UsersService implements IUsersService {
       await queryRunner.commitTransaction();
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      throw error;
+      throw new UserOperationException('restore user', error.message);
     } finally {
       await queryRunner.release();
     }

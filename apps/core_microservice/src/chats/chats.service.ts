@@ -17,6 +17,11 @@ import {
   ChatPaginationResult,
   UpdateChatParams,
 } from './types/chat-service.types';
+import { DomainException } from 'src/app/exceptions/domain.exception';
+import {
+  ChatNotFoundException,
+  ChatOperationException,
+} from './exceptions/chat-domain.exceptions';
 
 @Injectable()
 export class ChatsService implements IChatService {
@@ -59,65 +64,83 @@ export class ChatsService implements IChatService {
       return await this.findOne(savedChat.id);
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      throw error;
+      if (error instanceof DomainException) {
+        throw error;
+      }
+
+      throw new ChatOperationException('create chat', error.message);
     } finally {
       await queryRunner.release();
     }
   }
 
   async findAll(params: FindChatsParams): Promise<ChatPaginationResult> {
-    const { page = 1, limit = 10, type } = params;
-    const skip = (page - 1) * limit;
+    try {
+      const { page = 1, limit = 10, type } = params;
+      const skip = (page - 1) * limit;
 
-    const queryBuilder = this.chatRepository
-      .createQueryBuilder('chat')
-      .leftJoinAndSelect('chat.createdBy', 'createdBy')
-      .leftJoinAndSelect('chat.updatedBy', 'updatedBy')
-      .leftJoinAndSelect('chat.participants', 'participants')
-      .leftJoinAndSelect('participants.createdBy', 'participantCreatedBy');
+      const queryBuilder = this.chatRepository
+        .createQueryBuilder('chat')
+        .leftJoinAndSelect('chat.createdBy', 'createdBy')
+        .leftJoinAndSelect('chat.updatedBy', 'updatedBy')
+        .leftJoinAndSelect('chat.participants', 'participants')
+        .leftJoinAndSelect('participants.createdBy', 'participantCreatedBy');
 
-    if (type) {
-      queryBuilder.andWhere('chat.type = :type', { type });
+      if (type) {
+        queryBuilder.andWhere('chat.type = :type', { type });
+      }
+
+      const [data, total] = await queryBuilder
+        .skip(skip)
+        .take(limit)
+        .orderBy('chat.updatedAt', 'DESC')
+        .getManyAndCount();
+
+      return {
+        data,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
+    } catch (error) {
+      throw new ChatOperationException('find chats', error.message);
     }
-
-    const [data, total] = await queryBuilder
-      .skip(skip)
-      .take(limit)
-      .orderBy('chat.updatedAt', 'DESC')
-      .getManyAndCount();
-
-    return {
-      data,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
   }
 
   async findOne(id: number): Promise<Chat> {
-    const chat = await this.chatRepository.findOne({
-      where: { id },
-      relations: [
-        'createdBy',
-        'updatedBy',
-        'participants',
-        'participants.createdBy',
-        'participants.profile',
-      ],
-    });
+    try {
+      const chat = await this.chatRepository.findOne({
+        where: { id },
+        relations: [
+          'createdBy',
+          'updatedBy',
+          'participants',
+          'participants.createdBy',
+          'participants.profile',
+        ],
+      });
 
-    if (!chat) {
-      throw new NotFoundException(`Chat with ID ${id} not found`);
+      if (!chat) {
+        throw new ChatNotFoundException(id);
+      }
+
+      return chat;
+    } catch (error) {
+      if (error instanceof ChatNotFoundException) {
+        throw error;
+      }
+      throw new ChatOperationException('find chat', error.message);
     }
-
-    return chat;
   }
 
   async update(params: UpdateChatParams): Promise<Chat> {
     const { id, ...updateData } = params;
 
-    await this.findOne(id);
+    const chat = await this.findOne(id);
+    if (!chat) {
+      throw new ChatNotFoundException(id);
+    }
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -139,7 +162,11 @@ export class ChatsService implements IChatService {
       return await this.findOne(id);
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      throw error;
+      if (error instanceof DomainException) {
+        throw error;
+      }
+
+      throw new ChatOperationException('update chat', error.message);
     } finally {
       await queryRunner.release();
     }
@@ -149,7 +176,7 @@ export class ChatsService implements IChatService {
     const chat = await this.findOne(id);
 
     if (!chat) {
-      throw new NotFoundException('Chat not found');
+      throw new ChatNotFoundException(id);
     }
 
     const queryRunner = this.dataSource.createQueryRunner();
@@ -161,7 +188,7 @@ export class ChatsService implements IChatService {
       await queryRunner.commitTransaction();
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      throw error;
+      throw new ChatOperationException('delete chat', error.message);
     } finally {
       await queryRunner.release();
     }
@@ -171,35 +198,39 @@ export class ChatsService implements IChatService {
     profileId: number,
     params: FindChatsParams,
   ): Promise<ChatPaginationResult> {
-    const { page = 1, limit = 10, type } = params;
-    const skip = (page - 1) * limit;
+    try {
+      const { page = 1, limit = 10, type } = params;
+      const skip = (page - 1) * limit;
 
-    const queryBuilder = this.chatRepository
-      .createQueryBuilder('chat')
-      .innerJoin('chat.participants', 'participants')
-      .leftJoinAndSelect('chat.createdBy', 'createdBy')
-      .leftJoinAndSelect('chat.updatedBy', 'updatedBy')
-      .leftJoinAndSelect('chat.participants', 'chatParticipants')
-      .leftJoinAndSelect('chatParticipants.createdBy', 'participantCreatedBy')
-      .where('participants.profileId = :profileId', { profileId })
-      .andWhere('participants.leftAt IS NULL');
+      const queryBuilder = this.chatRepository
+        .createQueryBuilder('chat')
+        .innerJoin('chat.participants', 'participants')
+        .leftJoinAndSelect('chat.createdBy', 'createdBy')
+        .leftJoinAndSelect('chat.updatedBy', 'updatedBy')
+        .leftJoinAndSelect('chat.participants', 'chatParticipants')
+        .leftJoinAndSelect('chatParticipants.createdBy', 'participantCreatedBy')
+        .where('participants.profileId = :profileId', { profileId })
+        .andWhere('participants.leftAt IS NULL');
 
-    if (type) {
-      queryBuilder.andWhere('chat.type = :type', { type });
+      if (type) {
+        queryBuilder.andWhere('chat.type = :type', { type });
+      }
+
+      const [data, total] = await queryBuilder
+        .skip(skip)
+        .take(limit)
+        .orderBy('chat.updatedAt', 'DESC')
+        .getManyAndCount();
+
+      return {
+        data,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
+    } catch (error) {
+      throw new ChatOperationException('find user chats', error.message);
     }
-
-    const [data, total] = await queryBuilder
-      .skip(skip)
-      .take(limit)
-      .orderBy('chat.updatedAt', 'DESC')
-      .getManyAndCount();
-
-    return {
-      data,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
   }
 }

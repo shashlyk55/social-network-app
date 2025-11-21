@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
+import { AppModule } from './app/app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import { getCorsConfig } from './config/cors.config';
@@ -7,6 +7,7 @@ import helmet from 'helmet';
 import { getHelmetConfig } from './config/helmet.config';
 import { WinstonLoggerService } from './winston-logger/winston-logger.service';
 import { ValidationPipe } from '@nestjs/common';
+import { GlobalExceptionFilter } from './app/exceptions/global-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -36,6 +37,8 @@ async function bootstrap() {
       },
     }),
   );
+
+  //app.useGlobalFilters(new GlobalExceptionFilter());
 
   const port = process.env.PORT ?? 3001;
 
