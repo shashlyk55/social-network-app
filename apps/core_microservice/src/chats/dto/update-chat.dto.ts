@@ -18,6 +18,7 @@ export class UpdateChatDto {
   })
   @IsString()
   @IsOptional()
+  @MaxLength(1000)
   description?: string;
 
   @ApiPropertyOptional({

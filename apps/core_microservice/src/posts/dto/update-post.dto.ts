@@ -5,6 +5,9 @@ import {
   IsBoolean,
   IsArray,
   IsNumber,
+  MaxLength,
+  ArrayMinSize,
+  ArrayMaxSize,
 } from 'class-validator';
 
 export class UpdatePostDto {
@@ -13,16 +16,9 @@ export class UpdatePostDto {
     description: 'Post content',
   })
   @IsString()
+  @MaxLength(5000)
   @IsOptional()
   content?: string;
-
-  // @ApiPropertyOptional({
-  //   example: true,
-  //   description: 'Whether post is archived',
-  // })
-  // @IsBoolean()
-  // @IsOptional()
-  // isArchived?: boolean;
 
   @ApiPropertyOptional({ description: 'ID of user updating the post' })
   @IsNumber()
@@ -33,6 +29,8 @@ export class UpdatePostDto {
     example: [4, 5],
     description: 'Array of asset IDs to attach to the post',
   })
+  @ArrayMaxSize(10)
+  @ArrayMinSize(1)
   @IsArray()
   @IsOptional()
   assetIds?: number[];

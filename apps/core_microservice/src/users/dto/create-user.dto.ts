@@ -8,6 +8,7 @@ import {
   IsOptional,
   IsString,
   MaxLength,
+  MinLength,
 } from 'class-validator';
 import { UserRole } from 'src/entities/user.entity';
 
@@ -32,12 +33,15 @@ export class CreateUserDto {
   // Profile fields
   @ApiProperty({ example: 'john_doe', description: 'Username for profile' })
   @IsString()
+  @MinLength(3)
+  @MaxLength(50)
   @IsNotEmpty()
   username: string;
 
   @ApiProperty({ example: 'John Doe', description: 'Display name for profile' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(100)
   displayName: string;
 
   @ApiProperty({ example: '1990-01-01', description: 'Birthday for profile' })
@@ -51,6 +55,7 @@ export class CreateUserDto {
   })
   @IsString()
   @IsOptional()
+  @MaxLength(500)
   bio?: string;
 
   @ApiPropertyOptional({
@@ -58,6 +63,7 @@ export class CreateUserDto {
     description: 'Avatar URL for profile',
   })
   @IsString()
+  @MaxLength(500)
   @IsOptional()
   avatarUrl?: string;
 
@@ -80,6 +86,8 @@ export class CreateUserDto {
 
   @ApiProperty({ example: 'password123', description: 'Password for account' })
   @IsString()
+  @MinLength(8)
+  @MaxLength(20)
   @IsNotEmpty()
   password: string;
 }

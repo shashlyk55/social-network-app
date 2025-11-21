@@ -6,6 +6,7 @@ import {
   IsBoolean,
   IsEnum,
   IsObject,
+  MaxLength,
 } from 'class-validator';
 import { NotificationType } from 'src/entities/notification.entity';
 
@@ -21,6 +22,7 @@ export class CreateNotificationDto {
 
   @ApiProperty({ example: 'New like', description: 'Notification title' })
   @IsString()
+  @MaxLength(200)
   @IsNotEmpty()
   title: string;
 
@@ -30,6 +32,7 @@ export class CreateNotificationDto {
   })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(1000)
   message: string;
 
   @ApiPropertyOptional({

@@ -6,6 +6,9 @@ import {
   IsBoolean,
   IsArray,
   IsNumber,
+  MaxLength,
+  ArrayMaxSize,
+  ArrayMinSize,
 } from 'class-validator';
 
 export class CreatePostDto {
@@ -14,6 +17,7 @@ export class CreatePostDto {
     description: 'Post content',
   })
   @IsString()
+  @MaxLength(5000)
   @IsNotEmpty()
   content: string;
 
@@ -39,6 +43,8 @@ export class CreatePostDto {
     example: [1, 2, 3],
     description: 'Array of asset IDs to attach to the post',
   })
+  @ArrayMaxSize(10)
+  @ArrayMinSize(1)
   @IsArray()
   @IsOptional()
   assetIds?: number[];

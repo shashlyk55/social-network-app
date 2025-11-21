@@ -18,7 +18,7 @@ export class UpdateUserDto {
   })
   @IsEnum(UserRole)
   @IsOptional()
-  role: UserRole;
+  role?: UserRole;
 
   @ApiPropertyOptional({
     example: false,
@@ -39,6 +39,7 @@ export class UpdateUserDto {
     description: 'Username for profile',
   })
   @IsString()
+  @MaxLength(50)
   @IsOptional()
   username?: string;
 
@@ -47,6 +48,7 @@ export class UpdateUserDto {
     description: 'Display name for profile',
   })
   @IsString()
+  @MaxLength(100)
   @IsOptional()
   displayName?: string;
 
@@ -63,6 +65,7 @@ export class UpdateUserDto {
     description: 'Bio for profile',
   })
   @IsString()
+  @MaxLength(500)
   @IsOptional()
   bio?: string;
 
@@ -71,6 +74,7 @@ export class UpdateUserDto {
     description: 'Avatar URL for profile',
   })
   @IsString()
+  @MaxLength(500)
   @IsOptional()
   avatarUrl?: string;
 

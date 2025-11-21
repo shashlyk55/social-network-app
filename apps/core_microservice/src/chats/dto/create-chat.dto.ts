@@ -23,6 +23,7 @@ export class CreateChatDto {
   })
   @IsString()
   @IsOptional()
+  @MaxLength(1000)
   description?: string;
 
   @ApiProperty({
