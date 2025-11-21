@@ -11,7 +11,7 @@ import { Asset } from '../asset.entity';
 import { Message } from '../message.entity';
 import { User } from '../user.entity';
 
-@Entity('messages_assets')
+@Entity('messages_assets', { schema: 'main' })
 export class MessageAsset {
   @PrimaryGeneratedColumn('increment')
   id: number;

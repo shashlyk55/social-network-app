@@ -14,7 +14,7 @@ import { ProfileFollow } from './many-to-many/profile-follow.entity';
 import { ProfileToProfileConfiguration } from './many-to-many/profile-to-profile-configuration.entity';
 import { Post } from './post.entity';
 
-@Entity('profiles')
+@Entity('profiles', { schema: 'main' })
 export class Profile {
   @PrimaryGeneratedColumn('increment')
   id: number;

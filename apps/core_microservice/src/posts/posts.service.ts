@@ -142,8 +142,6 @@ export class PostsService implements IPostsService {
 
       if (updateData.content !== undefined)
         updatePayload.content = updateData.content;
-      // if (updateData.isArchived !== undefined)
-      //   updatePayload.isArchived = updateData.isArchived;
       if (updateData.updatedById !== undefined)
         updatePayload.updatedById = updateData.updatedById;
 

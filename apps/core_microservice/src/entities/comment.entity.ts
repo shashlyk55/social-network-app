@@ -13,7 +13,7 @@ import { Post } from './post.entity';
 import { Profile } from './profile.entity';
 import { User } from './user.entity';
 
-@Entity('comments')
+@Entity('comments', { schema: 'main' })
 export class Comment {
   @PrimaryGeneratedColumn('increment')
   id: number;

@@ -18,7 +18,7 @@ export enum FileType {
   AUDIO = 'audio',
 }
 
-@Entity('assets')
+@Entity('assets', { schema: 'main' })
 export class Asset {
   @PrimaryGeneratedColumn('increment')
   id: number;

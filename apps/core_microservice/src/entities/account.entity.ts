@@ -18,7 +18,7 @@ export enum AccountProviderType {
   TWITTER = 'twitter',
 }
 
-@Entity('accounts')
+@Entity('accounts', { schema: 'auth' })
 export class Account {
   @PrimaryGeneratedColumn('increment')
   id: number;

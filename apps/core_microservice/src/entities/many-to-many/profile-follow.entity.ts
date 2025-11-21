@@ -11,7 +11,7 @@ import {
 import { Profile } from '../profile.entity';
 import { User } from '../user.entity';
 
-@Entity('profiles_follows')
+@Entity('profiles_follows', { schema: 'main' })
 @Check('"follower_profile_id" != "followed_profile_id"')
 export class ProfileFollow {
   @PrimaryGeneratedColumn('increment')

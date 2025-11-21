@@ -16,7 +16,7 @@ import { Profile } from './profile.entity';
 import { User } from './user.entity';
 import { Comment } from './comment.entity';
 
-@Entity('posts')
+@Entity('posts', { schema: 'main' })
 export class Post {
   @PrimaryGeneratedColumn('increment')
   id: number;
