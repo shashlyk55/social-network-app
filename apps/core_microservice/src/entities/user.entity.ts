@@ -11,6 +11,7 @@ import {
 } from 'typeorm';
 import { Account } from './account.entity';
 import { Profile } from './profile.entity';
+import { AuditLog } from './audit-log.entity';
 
 export enum UserRole {
   USER = 'user',
@@ -63,4 +64,14 @@ export class User {
 
   @OneToMany(() => User, (user) => user.updatedBy)
   updatedUsers: User[];
+
+  // Audit Log relations
+  @OneToMany(() => AuditLog, (auditLog) => auditLog.user)
+  auditLogs: AuditLog[];
+
+  @OneToMany(() => AuditLog, (auditLog) => auditLog.createdByUser)
+  createdAuditLogs: AuditLog[];
+
+  @OneToMany(() => AuditLog, (auditLog) => auditLog.updatedByUser)
+  updatedAuditLogs: AuditLog[];
 }
