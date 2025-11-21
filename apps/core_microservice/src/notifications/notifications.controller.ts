@@ -1,4 +1,3 @@
-// src/notifications/controllers/notification.controller.ts
 import {
   Controller,
   Get,
@@ -8,7 +7,6 @@ import {
   Body,
   Param,
   Query,
-  ParseIntPipe,
   HttpStatus,
   HttpCode,
 } from '@nestjs/common';
@@ -95,11 +93,11 @@ export class NotificationsController {
     description: 'Filter by creator ID',
   })
   async findAll(
-    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
     @Query('type') type?: NotificationType,
     @Query('isRead') isRead?: boolean,
-    @Query('createdById', new ParseIntPipe({ optional: true }))
+    @Query('createdById')
     createdById?: number,
   ): Promise<PaginationResponseDto<NotificationResponseDto>> {
     const params = { page, limit, type, isRead, createdById };
@@ -140,9 +138,9 @@ export class NotificationsController {
     description: 'Filter by read status',
   })
   async getUserNotifications(
-    @Param('userId', ParseIntPipe) userId: number,
-    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+    @Param('userId') userId: number,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
     @Query('type') type?: NotificationType,
     @Query('isRead') isRead?: boolean,
   ): Promise<PaginationResponseDto<NotificationResponseDto>> {
@@ -162,7 +160,7 @@ export class NotificationsController {
     description: 'Unread count retrieved successfully',
   })
   async getUnreadCount(
-    @Param('userId', ParseIntPipe) userId: number,
+    @Param('userId') userId: number,
   ): Promise<{ count: number }> {
     const count = await this.notificationService.getUnreadCount(userId);
     return { count };
@@ -177,9 +175,7 @@ export class NotificationsController {
     type: NotificationResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Notification not found' })
-  async findOne(
-    @Param('id', ParseIntPipe) id: number,
-  ): Promise<NotificationResponseDto> {
+  async findOne(@Param('id') id: number): Promise<NotificationResponseDto> {
     const notification = await this.notificationService.findOne(id);
     return NotificationMappers.toNotificationResponse(notification);
   }
@@ -195,7 +191,7 @@ export class NotificationsController {
   @ApiResponse({ status: 404, description: 'Notification not found' })
   @ApiBody({ type: UpdateNotificationDto })
   async update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: number,
     @Body() updateNotificationDto: UpdateNotificationDto,
   ): Promise<NotificationResponseDto> {
     const params = NotificationMappers.toUpdateParams(
@@ -217,7 +213,7 @@ export class NotificationsController {
   @ApiResponse({ status: 404, description: 'Notification not found' })
   @ApiBody({ type: MarkAsReadDto })
   async markAsRead(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: number,
     @Body() markAsReadDto: MarkAsReadDto,
   ): Promise<NotificationResponseDto> {
     const params = NotificationMappers.toMarkAsReadParams(id, markAsReadDto);
@@ -236,8 +232,8 @@ export class NotificationsController {
     description: 'ID of user performing the action',
   })
   async markAllAsRead(
-    @Param('userId', ParseIntPipe) userId: number,
-    @Query('updatedById', new ParseIntPipe({ optional: true }))
+    @Param('userId') userId: number,
+    @Query('updatedById')
     updatedById?: number,
   ): Promise<{ affected: number }> {
     return await this.notificationService.markAllAsRead({
@@ -259,8 +255,8 @@ export class NotificationsController {
     description: 'ID of user performing deletion',
   })
   async remove(
-    @Param('id', ParseIntPipe) id: number,
-    @Query('deletedById', ParseIntPipe) deletedById: number,
+    @Param('id') id: number,
+    @Query('deletedById') deletedById: number,
   ): Promise<void> {
     await this.notificationService.remove(id, deletedById);
   }

@@ -1,4 +1,3 @@
-// src/posts/controllers/post.controller.ts
 import {
   Controller,
   Get,
@@ -8,7 +7,6 @@ import {
   Body,
   Param,
   Query,
-  ParseIntPipe,
   HttpStatus,
   HttpCode,
 } from '@nestjs/common';
@@ -82,9 +80,9 @@ export class PostsController {
     description: 'Filter by archived status',
   })
   async findAll(
-    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
-    @Query('profileId', new ParseIntPipe({ optional: true }))
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('profileId')
     profileId?: number,
     @Query('isArchived') isArchived?: boolean,
   ): Promise<PaginationResponseDto<PostResponseDto>> {
@@ -120,9 +118,9 @@ export class PostsController {
     description: 'Filter by archived status',
   })
   async findProfilePosts(
-    @Param('profileId', ParseIntPipe) profileId: number,
-    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+    @Param('profileId') profileId: number,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
     @Query('isArchived') isArchived?: boolean,
   ): Promise<PaginationResponseDto<PostResponseDto>> {
     const params = { page, limit, isArchived };
@@ -139,9 +137,7 @@ export class PostsController {
     type: PostResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Post not found' })
-  async findOne(
-    @Param('id', ParseIntPipe) id: number,
-  ): Promise<PostResponseDto> {
+  async findOne(@Param('id') id: number): Promise<PostResponseDto> {
     const post = await this.postService.findOne(id);
     return PostMappers.toPostResponse(post);
   }
@@ -157,7 +153,7 @@ export class PostsController {
   @ApiResponse({ status: 404, description: 'Post not found' })
   @ApiBody({ type: UpdatePostDto })
   async update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: number,
     @Body() updatePostDto: UpdatePostDto,
   ): Promise<PostResponseDto> {
     const params = PostMappers.toUpdateParams(id, updatePostDto);
@@ -181,8 +177,8 @@ export class PostsController {
     description: 'ID of user performing archive',
   })
   async archive(
-    @Param('id', ParseIntPipe) id: number,
-    @Query('updatedById', ParseIntPipe) updatedById: number,
+    @Param('id') id: number,
+    @Query('updatedById') updatedById: number,
   ): Promise<PostResponseDto> {
     const post = await this.postService.archive(id, updatedById);
     return PostMappers.toPostResponse(post);
@@ -201,8 +197,8 @@ export class PostsController {
     description: 'ID of user performing deletion',
   })
   async remove(
-    @Param('id', ParseIntPipe) id: number,
-    @Query('deletedById', ParseIntPipe) deletedById: number,
+    @Param('id') id: number,
+    @Query('deletedById') deletedById: number,
   ): Promise<void> {
     await this.postService.remove(id);
   }
@@ -215,7 +211,7 @@ export class PostsController {
   @ApiResponse({ status: 409, description: 'Post already liked' })
   @ApiBody({ type: CreatePostLikeDto })
   async likePost(
-    @Param('id', ParseIntPipe) postId: number,
+    @Param('id') postId: number,
     @Body() createPostLikeDto: CreatePostLikeDto,
   ): Promise<void> {
     const params = PostMappers.toCreatePostLikeParams(

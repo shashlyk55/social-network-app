@@ -7,7 +7,6 @@ import {
   Body,
   Param,
   Query,
-  ParseIntPipe,
   HttpStatus,
   HttpCode,
 } from '@nestjs/common';
@@ -90,12 +89,12 @@ export class CommentsController {
     description: 'Filter by parent comment ID',
   })
   async findAll(
-    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
-    @Query('postId', new ParseIntPipe({ optional: true })) postId?: number,
-    @Query('profileId', new ParseIntPipe({ optional: true }))
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('postId') postId?: number,
+    @Query('profileId')
     profileId?: number,
-    @Query('parentCommentId', new ParseIntPipe({ optional: true }))
+    @Query('parentCommentId')
     parentCommentId?: number,
   ): Promise<PaginationResponseDto<CommentResponseDto>> {
     const params = { page, limit, postId, profileId, parentCommentId };
@@ -124,9 +123,9 @@ export class CommentsController {
     description: 'Items per page',
   })
   async findPostComments(
-    @Param('postId', ParseIntPipe) postId: number,
-    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+    @Param('postId') postId: number,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
   ): Promise<PaginationResponseDto<CommentResponseDto>> {
     const params = { page, limit };
     const result = await this.commentService.findPostComments(postId, params);
@@ -154,9 +153,9 @@ export class CommentsController {
     description: 'Items per page',
   })
   async findCommentReplies(
-    @Param('id', ParseIntPipe) commentId: number,
-    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+    @Param('id') commentId: number,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
   ): Promise<PaginationResponseDto<CommentResponseDto>> {
     const params = { page, limit };
     const result = await this.commentService.findCommentReplies(
@@ -175,9 +174,7 @@ export class CommentsController {
     type: CommentResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Comment not found' })
-  async findOne(
-    @Param('id', ParseIntPipe) id: number,
-  ): Promise<CommentResponseDto> {
+  async findOne(@Param('id') id: number): Promise<CommentResponseDto> {
     const comment = await this.commentService.findOne(id);
     return CommentMappers.toCommentResponse(comment);
   }
@@ -193,7 +190,7 @@ export class CommentsController {
   @ApiResponse({ status: 404, description: 'Comment not found' })
   @ApiBody({ type: UpdateCommentDto })
   async update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: number,
     @Body() updateCommentDto: UpdateCommentDto,
   ): Promise<CommentResponseDto> {
     const params = CommentMappers.toUpdateParams(id, updateCommentDto);
@@ -218,8 +215,8 @@ export class CommentsController {
     description: 'ID of user performing deletion',
   })
   async remove(
-    @Param('id', ParseIntPipe) id: number,
-    @Query('deletedById', ParseIntPipe) deletedById: number,
+    @Param('id') id: number,
+    @Query('deletedById') deletedById: number,
   ): Promise<void> {
     await this.commentService.remove(id);
   }
@@ -232,7 +229,7 @@ export class CommentsController {
   @ApiResponse({ status: 409, description: 'Comment already liked' })
   @ApiBody({ type: CreateCommentLikeDto })
   async likeComment(
-    @Param('id', ParseIntPipe) commentId: number,
+    @Param('id') commentId: number,
     @Body() createCommentLikeDto: CreateCommentLikeDto,
   ): Promise<void> {
     const params = CommentMappers.toCreateCommentLikeParams(

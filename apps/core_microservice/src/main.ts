@@ -6,6 +6,7 @@ import { getCorsConfig } from './config/cors.config';
 import helmet from 'helmet';
 import { getHelmetConfig } from './config/helmet.config';
 import { WinstonLoggerService } from './winston-logger/winston-logger.service';
+import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -26,6 +27,15 @@ async function bootstrap() {
   app.use(helmet(getHelmetConfig()));
   app.use(cookieParser());
   app.enableCors(getCorsConfig());
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+    }),
+  );
 
   const port = process.env.PORT ?? 3001;
 
