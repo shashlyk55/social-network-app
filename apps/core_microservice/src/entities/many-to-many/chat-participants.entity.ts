@@ -17,7 +17,7 @@ export enum ChatParticipantRole {
   CREATOR = 'creator',
 }
 
-@Entity('chats_participants')
+@Entity('chats_participants', { schema: 'main' })
 export class ChatParticipant {
   @PrimaryGeneratedColumn('increment')
   id: number;

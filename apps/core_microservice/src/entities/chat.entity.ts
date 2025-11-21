@@ -17,7 +17,7 @@ export enum ChatType {
   GROUP = 'group',
 }
 
-@Entity('chats')
+@Entity('chats', { schema: 'main' })
 export class Chat {
   @PrimaryGeneratedColumn('increment')
   id: number;

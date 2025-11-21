@@ -11,7 +11,7 @@ import {
 import { User } from './user.entity';
 import { ProfileToProfileConfiguration } from './many-to-many/profile-to-profile-configuration.entity';
 
-@Entity('profile_configurations')
+@Entity('profile_configurations', { schema: 'main' })
 export class ProfileConfiguration {
   @PrimaryGeneratedColumn('increment')
   id: number;

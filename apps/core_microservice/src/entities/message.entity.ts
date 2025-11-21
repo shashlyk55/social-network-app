@@ -13,7 +13,7 @@ import { MessageAsset } from './many-to-many/message-asset.entity';
 import { Profile } from './profile.entity';
 import { User } from './user.entity';
 
-@Entity('messages')
+@Entity('messages', { schema: 'main' })
 export class Message {
   @PrimaryGeneratedColumn('increment')
   id: number;

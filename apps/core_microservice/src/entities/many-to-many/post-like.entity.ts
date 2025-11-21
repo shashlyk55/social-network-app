@@ -11,7 +11,7 @@ import { Post } from '../post.entity';
 import { Profile } from '../profile.entity';
 import { User } from '../user.entity';
 
-@Entity('posts_likes')
+@Entity('posts_likes', { schema: 'main' })
 export class PostLike {
   @PrimaryGeneratedColumn('increment')
   id: number;

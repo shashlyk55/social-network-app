@@ -17,7 +17,7 @@ export enum NotificationType {
   SYSTEM = 'system',
 }
 
-@Entity('notifications')
+@Entity('notifications', { schema: 'notification' })
 export class Notification {
   @PrimaryGeneratedColumn('increment')
   id: number;

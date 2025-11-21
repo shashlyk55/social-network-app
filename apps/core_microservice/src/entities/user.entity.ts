@@ -17,7 +17,7 @@ export enum UserRole {
   ADMIN = 'admin',
 }
 
-@Entity('users')
+@Entity('users', { schema: 'auth' })
 export class User {
   @PrimaryGeneratedColumn('increment')
   id: number;
