@@ -29,7 +29,7 @@ import { GlobalExceptionFilter } from './exceptions/global-exception.filter';
         password: configService.get('POSTGRES_PASSWORD'),
         database: configService.get('POSTGRES_DB'),
         schema: configService.get('POSTGRES_SCHEMA'),
-        entities: [__dirname + '/**/*.entity{.ts,.js}'],
+        entities: [__dirname + '/../**/*.entity{.ts,.js}'],
         synchronize: configService.get('POSTGRES_SYNCHRONIZE'),
         logging: configService.get('POSTGRES_LOGGING'),
       }),
