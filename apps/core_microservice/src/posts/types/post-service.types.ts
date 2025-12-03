@@ -19,8 +19,13 @@ export type UpdatePostParams = {
 export type FindPostsParams = {
   page?: number;
   limit?: number;
-  profileId?: number;
   isArchived?: boolean;
+};
+
+export type FindProfilePostsParams = {
+  page?: number;
+  limit?: number;
+  profileId?: number;
 };
 
 export type CreatePostLikeParams = {

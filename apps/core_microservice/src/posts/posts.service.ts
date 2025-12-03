@@ -15,6 +15,7 @@ import {
   PostPaginationResult,
   UpdatePostParams,
   CreatePostLikeParams,
+  FindProfilePostsParams,
 } from './types/post-service.types';
 import { Asset } from 'src/entities/asset.entity';
 import {
@@ -87,7 +88,7 @@ export class PostsService implements IPostsService {
 
   async findAll(params: FindPostsParams): Promise<PostPaginationResult> {
     try {
-      const { page = 1, limit = 10, profileId, isArchived } = params;
+      const { page = 1, limit = 10, isArchived } = params;
       const skip = (page - 1) * limit;
 
       const queryBuilder = this.postRepository
@@ -100,10 +101,6 @@ export class PostsService implements IPostsService {
         .leftJoinAndSelect('postLikes.profile', 'likeProfile')
         .leftJoinAndSelect('post.comments', 'comments')
         .where('post.isArchived = :isArchived', { isArchived: false });
-
-      if (profileId) {
-        queryBuilder.andWhere('post.profileId = :profileId', { profileId });
-      }
 
       if (isArchived !== undefined) {
         queryBuilder.andWhere('post.isArchived = :isArchived', { isArchived });
@@ -233,9 +230,9 @@ export class PostsService implements IPostsService {
 
     // TODO: check user existing
 
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // const queryRunner = this.dataSource.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
 
     try {
       await this.postRepository.update(id, {
@@ -243,14 +240,44 @@ export class PostsService implements IPostsService {
         updatedById,
       });
 
-      await queryRunner.commitTransaction();
+      //await queryRunner.commitTransaction();
 
       return await this.findOne(id);
     } catch (error) {
-      await queryRunner.rollbackTransaction();
+      //await queryRunner.rollbackTransaction();
       throw new PostOperationException('archive post', error.message);
     } finally {
-      await queryRunner.release();
+      //await queryRunner.release();
+    }
+  }
+
+  async unarchive(id: number, updatedById: number): Promise<PostEntity> {
+    const post = await this.findOne(id);
+
+    if (!post) {
+      throw new PostNotFoundException(id);
+    }
+
+    // TODO: check user existing
+
+    // const queryRunner = this.dataSource.createQueryRunner();
+    // await queryRunner.connect();
+    // await queryRunner.startTransaction();
+
+    try {
+      await this.postRepository.update(id, {
+        isArchived: false,
+        updatedById,
+      });
+
+      //await queryRunner.commitTransaction();
+
+      return await this.findOne(id);
+    } catch (error) {
+      //await queryRunner.rollbackTransaction();
+      throw new PostOperationException('unarchive post', error.message);
+    } finally {
+      //await queryRunner.release();
     }
   }
 
@@ -309,8 +336,7 @@ export class PostsService implements IPostsService {
   }
 
   async findProfilePosts(
-    profileId: number,
-    params: FindPostsParams,
+    params: FindProfilePostsParams,
   ): Promise<PostPaginationResult> {
     const profile = await this.profileRepository.findOne({
       where: { id: params.profileId },
@@ -321,7 +347,7 @@ export class PostsService implements IPostsService {
     }
 
     try {
-      const { page = 1, limit = 10, isArchived } = params;
+      const { page = 1, limit = 10 } = params;
       const skip = (page - 1) * limit;
 
       const queryBuilder = this.postRepository
@@ -332,15 +358,11 @@ export class PostsService implements IPostsService {
         .leftJoinAndSelect('post.postLikes', 'postLikes')
         .leftJoinAndSelect('postLikes.profile', 'likeProfile')
         .leftJoinAndSelect('post.comments', 'comments')
-        .where('post.profileId = :profileId', { profileId });
+        .where('post.profileId = :profileId', { profileId: params.profileId });
 
-      if (isArchived !== undefined) {
-        queryBuilder.andWhere('post.isArchived = :isArchived', { isArchived });
-      } else {
-        queryBuilder.andWhere('post.isArchived = :isArchived', {
-          isArchived: false,
-        });
-      }
+      queryBuilder.andWhere('post.isArchived = :isArchived', {
+        isArchived: false,
+      });
 
       const [data, total] = await queryBuilder
         .skip(skip)

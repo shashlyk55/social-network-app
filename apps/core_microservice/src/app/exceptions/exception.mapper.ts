@@ -20,7 +20,10 @@ import {
   ParentCommentNotFoundException,
   ProfileNotFoundException,
 } from 'src/app/exceptions/domain.exception';
-import { PostAlreadyLikedException } from 'src/posts/exceptions/post-domain.exceptions';
+import {
+  PostAlreadyLikedException,
+  PostNotFoundException,
+} from 'src/posts/exceptions/post-domain.exceptions';
 import {
   ChatParticipantNotFoundException,
   ChatParticipantAlreadyExistsException,
@@ -56,7 +59,7 @@ export class ExceptionMapper {
     }
 
     // Post domain
-    if (domainException instanceof NotFoundException) {
+    if (domainException instanceof PostNotFoundException) {
       return new NotFoundException(domainException.message);
     }
 

@@ -26,7 +26,8 @@ export class UpdatePostDto {
   updatedById?: number;
 
   @ApiPropertyOptional({
-    example: [4, 5],
+    //example: [4, 5],
+    example: null,
     description: 'Array of asset IDs to attach to the post',
   })
   @ArrayMaxSize(10)

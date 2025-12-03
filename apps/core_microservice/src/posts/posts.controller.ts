@@ -82,8 +82,7 @@ export class PostsController {
   async findAll(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
-    @Query('profileId')
-    profileId?: number,
+    @Query('profileId') profileId?: number,
     @Query('isArchived') isArchived?: boolean,
   ): Promise<PaginationResponseDto<PostResponseDto>> {
     const params = { page, limit, profileId, isArchived };
@@ -121,10 +120,9 @@ export class PostsController {
     @Param('profileId') profileId: number,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
-    @Query('isArchived') isArchived?: boolean,
   ): Promise<PaginationResponseDto<PostResponseDto>> {
-    const params = { page, limit, isArchived };
-    const result = await this.postService.findProfilePosts(profileId, params);
+    const params = { page, limit, profileId };
+    const result = await this.postService.findProfilePosts(params);
     return PostMappers.toPaginationResponse(result);
   }
 
@@ -178,9 +176,32 @@ export class PostsController {
   })
   async archive(
     @Param('id') id: number,
-    @Query('updatedById') updatedById: number,
+    @Query('updatedById') updatedById: number, // change on current user
   ): Promise<PostResponseDto> {
     const post = await this.postService.archive(id, updatedById);
+    return PostMappers.toPostResponse(post);
+  }
+
+  @Put(':id/unarchive')
+  @ApiOperation({ summary: 'Unarchive post' })
+  @ApiParam({ name: 'id', type: Number, description: 'Post ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Post unarchived successfully',
+    type: PostResponseDto,
+  })
+  @ApiResponse({ status: 404, description: 'Post not found' })
+  @ApiQuery({
+    name: 'updatedById',
+    required: true,
+    type: Number,
+    description: 'ID of user performing unarchive',
+  })
+  async unarchive(
+    @Param('id') id: number,
+    @Query('updatedById') updatedById: number, // change on current user
+  ): Promise<PostResponseDto> {
+    const post = await this.postService.unarchive(id, updatedById);
     return PostMappers.toPostResponse(post);
   }
 
@@ -198,7 +219,7 @@ export class PostsController {
   })
   async remove(
     @Param('id') id: number,
-    @Query('deletedById') deletedById: number,
+    @Query('deletedById') deletedById: number, // change on current user
   ): Promise<void> {
     await this.postService.remove(id);
   }
