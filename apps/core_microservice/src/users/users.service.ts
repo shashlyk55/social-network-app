@@ -1,8 +1,4 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { User } from '../entities/user.entity';
@@ -51,6 +47,10 @@ export class UsersService implements IUsersService {
 
     if (existingAccount) {
       throw new EmailAlreadyExistsException(params.email);
+    }
+
+    if (createdById !== undefined) {
+      const createdByUser = await this.findOne(createdById);
     }
 
     const queryRunner = this.dataSource.createQueryRunner();
@@ -117,7 +117,7 @@ export class UsersService implements IUsersService {
         .leftJoinAndSelect('user.createdBy', 'createdBy')
         .leftJoinAndSelect('user.updatedBy', 'updatedBy')
         .leftJoinAndSelect('user.account', 'account')
-        .leftJoinAndSelect('user.profile', 'profile')
+        //.leftJoinAndSelect('user.profile', 'profile')
         .where('user.disabled = :disabled', { disabled: false });
 
       if (role) {
@@ -150,7 +150,12 @@ export class UsersService implements IUsersService {
     try {
       const user = await this.userRepository.findOne({
         where: { id },
-        relations: ['createdBy', 'updatedBy', 'account', 'profile'],
+        relations: [
+          'createdBy',
+          'updatedBy',
+          'account',
+          //'profile'
+        ],
       });
 
       if (!user) {
@@ -171,8 +176,8 @@ export class UsersService implements IUsersService {
 
     const user = await this.findOne(id);
 
-    if (!user) {
-      throw new UserNotFoundException(id);
+    if (params.updatedById !== undefined) {
+      const updatedByUser = await this.findOne(params.updatedById);
     }
 
     const queryRunner = this.dataSource.createQueryRunner();
@@ -255,10 +260,6 @@ export class UsersService implements IUsersService {
   async remove(id: number): Promise<void> {
     const user = await this.findOne(id);
 
-    if (!user) {
-      throw new UserNotFoundException(id);
-    }
-
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -279,9 +280,7 @@ export class UsersService implements IUsersService {
   async softRemove(id: number, deletedById: number): Promise<void> {
     const user = await this.findOne(id);
 
-    if (!user) {
-      throw new UserNotFoundException(id);
-    }
+    const deletedByUser = await this.findOne(deletedById);
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();

@@ -18,6 +18,7 @@ import {
   CommentWithRepliesException,
   DomainException,
   ParentCommentNotFoundException,
+  ProfileNotFoundException,
 } from 'src/app/exceptions/domain.exception';
 import { PostAlreadyLikedException } from 'src/posts/exceptions/post-domain.exceptions';
 import {
@@ -32,7 +33,10 @@ import {
 export class ExceptionMapper {
   static mapDomainToHttp(domainException: DomainException): HttpException {
     // Users domain
-    if (domainException instanceof UserNotFoundException) {
+    if (
+      domainException instanceof UserNotFoundException ||
+      domainException instanceof ProfileNotFoundException
+    ) {
       return new NotFoundException(domainException.message);
     }
 
@@ -42,7 +46,7 @@ export class ExceptionMapper {
 
     if (
       domainException instanceof EmailAlreadyExistsException ||
-      UsernameAlreadyExistsException
+      domainException instanceof UsernameAlreadyExistsException
     ) {
       return new ConflictException(domainException.message);
     }

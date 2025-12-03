@@ -8,6 +8,16 @@ export class UserNotFoundException extends DomainException {
   }
 }
 
+export class ProfileNotFoundException extends DomainException {
+  code = 'PROFILE_NOT_FOUND';
+
+  constructor(profileId?: string | number) {
+    super(
+      profileId ? `User with id ${profileId} not found` : `Profile not found`,
+    );
+  }
+}
+
 export class UsernameAlreadyExistsException extends DomainException {
   code = 'USERNAME_ALREADY_EXISTS';
 

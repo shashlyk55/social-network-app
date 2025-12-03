@@ -22,6 +22,8 @@ import {
   PostOperationException,
 } from './exceptions/post-domain.exceptions';
 import { DomainException } from 'src/app/exceptions/domain.exception';
+import { Profile } from 'src/entities/profile.entity';
+import { ProfileNotFoundException } from 'src/users/exceptions/user.exceptions';
 
 @Injectable()
 export class PostsService implements IPostsService {
@@ -32,6 +34,9 @@ export class PostsService implements IPostsService {
     private readonly postLikeRepository: Repository<PostLike>,
     @InjectRepository(Asset)
     private readonly postAssetRepository: Repository<Asset>,
+    //private readonly userService: UsersService,
+    @InjectRepository(Profile)
+    private readonly profileRepository: Repository<Profile>,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -39,6 +44,18 @@ export class PostsService implements IPostsService {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
+
+    // TODO: check existing user
+
+    const profile = await this.profileRepository.findOne({
+      where: { id: params.profileId },
+    });
+
+    if (!profile) {
+      throw new ProfileNotFoundException(params.profileId);
+    }
+
+    // TODO: check asset existing
 
     try {
       const post = this.postRepository.create({
@@ -76,8 +93,8 @@ export class PostsService implements IPostsService {
       const queryBuilder = this.postRepository
         .createQueryBuilder('post')
         .leftJoinAndSelect('post.profile', 'profile')
-        .leftJoinAndSelect('post.createdBy', 'createdBy')
-        .leftJoinAndSelect('post.updatedBy', 'updatedBy')
+        // .leftJoinAndSelect('post.createdBy', 'createdBy')
+        // .leftJoinAndSelect('post.updatedBy', 'updatedBy')
         .leftJoinAndSelect('post.postAssets', 'postAssets')
         .leftJoinAndSelect('post.postLikes', 'postLikes')
         .leftJoinAndSelect('postLikes.profile', 'likeProfile')
@@ -120,8 +137,8 @@ export class PostsService implements IPostsService {
         where: { id },
         relations: [
           'profile',
-          'createdBy',
-          'updatedBy',
+          // 'createdBy',
+          // 'updatedBy',
           'postAssets',
           'postLikes',
           'postLikes.profile',
@@ -147,9 +164,9 @@ export class PostsService implements IPostsService {
 
     const post = await this.findOne(id);
 
-    if (!post) {
-      throw new PostNotFoundException(id);
-    }
+    // TODO: check user existing
+
+    // TODO: check asset existing
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -214,6 +231,8 @@ export class PostsService implements IPostsService {
       throw new PostNotFoundException(id);
     }
 
+    // TODO: check user existing
+
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -242,6 +261,14 @@ export class PostsService implements IPostsService {
 
     if (!post) {
       throw new PostNotFoundException(postId);
+    }
+
+    const profile = await this.profileRepository.findOne({
+      where: { id: params.profileId },
+    });
+
+    if (!profile) {
+      throw new ProfileNotFoundException(params.profileId);
     }
 
     const existingLike = await this.postLikeRepository.findOne({
@@ -285,6 +312,14 @@ export class PostsService implements IPostsService {
     profileId: number,
     params: FindPostsParams,
   ): Promise<PostPaginationResult> {
+    const profile = await this.profileRepository.findOne({
+      where: { id: params.profileId },
+    });
+
+    if (!profile) {
+      throw new ProfileNotFoundException(params.profileId);
+    }
+
     try {
       const { page = 1, limit = 10, isArchived } = params;
       const skip = (page - 1) * limit;
@@ -292,8 +327,8 @@ export class PostsService implements IPostsService {
       const queryBuilder = this.postRepository
         .createQueryBuilder('post')
         .leftJoinAndSelect('post.profile', 'profile')
-        .leftJoinAndSelect('post.createdBy', 'createdBy')
-        .leftJoinAndSelect('post.updatedBy', 'updatedBy')
+        // .leftJoinAndSelect('post.createdBy', 'createdBy')
+        // .leftJoinAndSelect('post.updatedBy', 'updatedBy')
         .leftJoinAndSelect('post.postLikes', 'postLikes')
         .leftJoinAndSelect('postLikes.profile', 'likeProfile')
         .leftJoinAndSelect('post.comments', 'comments')

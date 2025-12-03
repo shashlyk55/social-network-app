@@ -56,6 +56,9 @@ export class User {
   @OneToOne(() => Account, (account) => account.user)
   account: Account;
 
+  @Column({ name: 'profile_id', nullable: true })
+  profileId: number;
+
   @OneToOne(() => Profile, (profile) => profile.user)
   profile: Profile;
 

@@ -62,22 +62,22 @@ export class PostMappers {
         username: post.profile.username,
         displayName: post.profile.displayName,
       },
-      createdBy: {
-        id: post.createdBy.id,
-        role: post.createdBy.role,
-      },
+      // createdBy: {
+      //   id: post.createdBy.id,
+      //   role: post.createdBy.role,
+      // },
       assets: [],
       likes: [],
       commentsCount: post.comments ? post.comments.length : 0,
       likesCount: post.postLikes ? post.postLikes.length : 0,
     };
 
-    if (post.updatedBy) {
-      response.updatedBy = {
-        id: post.updatedBy.id,
-        role: post.updatedBy.role,
-      };
-    }
+    // if (post.updatedBy) {
+    //   response.updatedBy = {
+    //     id: post.updatedBy.id,
+    //     role: post.updatedBy.role,
+    //   };
+    // }
 
     if (post.postAssets) {
       response.assets = post.postAssets.map((asset) => ({
