@@ -225,11 +225,10 @@ export class PostsController {
   }
 
   @Post(':id/like')
-  @ApiOperation({ summary: 'Like post' })
+  @ApiOperation({ summary: 'Like/Unlike post' })
   @ApiParam({ name: 'id', type: Number, description: 'Post ID' })
-  @ApiResponse({ status: 201, description: 'Post liked successfully' })
+  @ApiResponse({ status: 201, description: 'Post liked/unliked successfully' })
   @ApiResponse({ status: 404, description: 'Post not found' })
-  @ApiResponse({ status: 409, description: 'Post already liked' })
   @ApiBody({ type: CreatePostLikeDto })
   async likePost(
     @Param('id') postId: number,

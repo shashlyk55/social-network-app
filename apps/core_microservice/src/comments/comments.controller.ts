@@ -76,12 +76,12 @@ export class CommentsController {
     type: Number,
     description: 'Filter by post ID',
   })
-  @ApiQuery({
-    name: 'profileId',
-    required: false,
-    type: Number,
-    description: 'Filter by profile ID',
-  })
+  // @ApiQuery({
+  //   name: 'profileId',
+  //   required: false,
+  //   type: Number,
+  //   description: 'Filter by profile ID',
+  // })
   @ApiQuery({
     name: 'parentCommentId',
     required: false,
@@ -92,12 +92,10 @@ export class CommentsController {
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('postId') postId?: number,
-    @Query('profileId')
-    profileId?: number,
-    @Query('parentCommentId')
-    parentCommentId?: number,
+    //@Query('profileId') profileId?: number,
+    @Query('parentCommentId') parentCommentId?: number,
   ): Promise<PaginationResponseDto<CommentResponseDto>> {
-    const params = { page, limit, postId, profileId, parentCommentId };
+    const params = { page, limit, postId, parentCommentId };
     const result = await this.commentService.findAll(params);
     return CommentMappers.toPaginationResponse(result);
   }
@@ -216,13 +214,13 @@ export class CommentsController {
   })
   async remove(
     @Param('id') id: number,
-    @Query('deletedById') deletedById: number,
+    @Query('deletedById') deletedById: number, // change on current user
   ): Promise<void> {
     await this.commentService.remove(id);
   }
 
   @Post(':id/like')
-  @ApiOperation({ summary: 'Like comment' })
+  @ApiOperation({ summary: 'Like/Unlike comment' })
   @ApiParam({ name: 'id', type: Number, description: 'Comment ID' })
   @ApiResponse({ status: 201, description: 'Comment liked successfully' })
   @ApiResponse({ status: 404, description: 'Comment not found' })

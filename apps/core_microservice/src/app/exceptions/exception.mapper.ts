@@ -15,6 +15,7 @@ import {
 } from '../../users/exceptions/user.exceptions';
 import {
   CommentAccessDeniedException,
+  CommentNotFoundException,
   CommentWithRepliesException,
   DomainException,
   ParentCommentNotFoundException,
@@ -73,7 +74,7 @@ export class ExceptionMapper {
 
     // Comment domain
     if (
-      domainException instanceof ParentCommentNotFoundException ||
+      domainException instanceof CommentNotFoundException ||
       domainException instanceof ParentCommentNotFoundException
     ) {
       return new NotFoundException(domainException.message);

@@ -105,8 +105,8 @@ export class PostResponseDto {
   @ApiProperty({ type: [PostAssetResponseDto], description: 'Post assets' })
   assets: PostAssetResponseDto[];
 
-  @ApiProperty({ type: [PostLikeResponseDto], description: 'Post likes' })
-  likes: PostLikeResponseDto[];
+  // @ApiProperty({ type: [PostLikeResponseDto], description: 'Post likes' })
+  // likes: PostLikeResponseDto[];
 
   @ApiProperty({ example: 5, description: 'Number of comments' })
   commentsCount: number;

@@ -21,7 +21,12 @@ import {
   CommentWithRepliesException,
   ParentCommentNotFoundException,
 } from './exceptions/comment-domain.exceptions';
-import { DomainException } from 'src/app/exceptions/domain.exception';
+import {
+  DomainException,
+  ProfileNotFoundException,
+} from 'src/app/exceptions/domain.exception';
+import { PostsService } from 'src/posts/posts.service';
+import { Profile } from 'src/entities/profile.entity';
 
 @Injectable()
 export class CommentsService implements ICommentsService {
@@ -30,10 +35,25 @@ export class CommentsService implements ICommentsService {
     private readonly commentRepository: Repository<Comment>,
     @InjectRepository(CommentLike)
     private readonly commentLikeRepository: Repository<CommentLike>,
+    private readonly postService: PostsService,
+    @InjectRepository(Profile)
+    private readonly profileRepository: Repository<Profile>,
     private readonly dataSource: DataSource,
   ) {}
 
   async create(params: CreateCommentParams): Promise<Comment> {
+    const post = await this.postService.findOne(params.postId);
+
+    // TODO: check user existing
+
+    const profile = await this.profileRepository.findOne({
+      where: { id: params.profileId },
+    });
+
+    if (!profile) {
+      throw new ProfileNotFoundException(params.profileId);
+    }
+
     if (params.parentCommentId) {
       const parentComment = await this.commentRepository.findOne({
         where: { id: params.parentCommentId },
@@ -77,7 +97,7 @@ export class CommentsService implements ICommentsService {
         page = 1,
         limit = 10,
         postId,
-        profileId,
+        //profileId,
         parentCommentId,
       } = params;
       const skip = (page - 1) * limit;
@@ -85,20 +105,20 @@ export class CommentsService implements ICommentsService {
       const queryBuilder = this.commentRepository
         .createQueryBuilder('comment')
         .leftJoinAndSelect('comment.profile', 'profile')
-        .leftJoinAndSelect('comment.createdBy', 'createdBy')
-        .leftJoinAndSelect('comment.updatedBy', 'updatedBy')
-        .leftJoinAndSelect('comment.commentLikes', 'commentLikes')
-        .leftJoinAndSelect('commentLikes.profile', 'likeProfile')
-        .leftJoinAndSelect('comment.replies', 'replies')
-        .where('comment.parentCommentId IS NULL');
+        .leftJoinAndSelect('comment.post', 'post')
+        // .leftJoinAndSelect('comment.createdBy', 'createdBy')
+        // .leftJoinAndSelect('comment.updatedBy', 'updatedBy')
+        .leftJoinAndSelect('comment.commentLikes', 'commentLikes');
+      // .leftJoinAndSelect('commentLikes.profile', 'likeProfile');
+      // .leftJoinAndSelect('comment.replies', 'replies');
 
       if (postId) {
         queryBuilder.andWhere('comment.postId = :postId', { postId });
       }
 
-      if (profileId) {
-        queryBuilder.andWhere('comment.profileId = :profileId', { profileId });
-      }
+      // if (profileId) {
+      //   queryBuilder.andWhere('comment.profileId = :profileId', { profileId });
+      // }
 
       if (parentCommentId !== undefined) {
         if (parentCommentId === null) {
@@ -134,14 +154,14 @@ export class CommentsService implements ICommentsService {
         where: { id },
         relations: [
           'profile',
-          'createdBy',
-          'updatedBy',
+          // 'createdBy',
+          // 'updatedBy',
           'commentLikes',
-          'commentLikes.profile',
+          //'commentLikes.profile',
           'replies',
-          'replies.profile',
-          'replies.commentLikes',
-          'parentComment',
+          //'replies.profile',
+          //'replies.commentLikes',
+          //'parentComment',
         ],
       });
 
@@ -161,11 +181,9 @@ export class CommentsService implements ICommentsService {
   async update(params: UpdateCommentParams): Promise<Comment> {
     const { id, ...updateData } = params;
 
-    const comment = await this.findOne(id);
+    // TODO: check user existing
 
-    if (!comment) {
-      throw new CommentNotFoundException(id);
-    }
+    const comment = await this.findOne(id);
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -198,13 +216,9 @@ export class CommentsService implements ICommentsService {
   async remove(id: number): Promise<void> {
     const comment = await this.findOne(id);
 
-    if (!comment) {
-      throw new CommentNotFoundException(id);
-    }
-
-    if (comment.replies && comment.replies.length > 0) {
-      throw new CommentWithRepliesException(id);
-    }
+    // if (comment.replies && comment.replies.length > 0) {
+    //   throw new CommentWithRepliesException(id);
+    // }
     // TODO: maybe every comment can be deleted
 
     const queryRunner = this.dataSource.createQueryRunner();
@@ -230,11 +244,17 @@ export class CommentsService implements ICommentsService {
   async likeComment(params: CreateCommentLikeParams): Promise<CommentLike> {
     const { commentId, profileId, createdById } = params;
 
-    const comment = await this.findOne(commentId);
+    // TODO: check user existing
 
-    if (!comment) {
-      throw new CommentNotFoundException(commentId);
+    const profile = await this.profileRepository.findOne({
+      where: { id: params.profileId },
+    });
+
+    if (!profile) {
+      throw new ProfileNotFoundException(params.profileId);
     }
+
+    const comment = await this.findOne(commentId);
 
     const existingLike = await this.commentLikeRepository.findOne({
       where: { commentId, profileId },
@@ -246,7 +266,13 @@ export class CommentsService implements ICommentsService {
 
     try {
       if (existingLike) {
-        return await queryRunner.manager.remove(CommentLike, existingLike);
+        const removedLike = await queryRunner.manager.remove(
+          CommentLike,
+          existingLike,
+        );
+        await queryRunner.commitTransaction();
+
+        return removedLike;
       }
 
       const like = this.commentLikeRepository.create({
@@ -275,6 +301,8 @@ export class CommentsService implements ICommentsService {
     postId: number,
     params: FindCommentsParams,
   ): Promise<CommentPaginationResult> {
+    const post = await this.postService.findOne(postId);
+
     try {
       const { page = 1, limit = 10 } = params;
       const skip = (page - 1) * limit;
@@ -282,11 +310,11 @@ export class CommentsService implements ICommentsService {
       const queryBuilder = this.commentRepository
         .createQueryBuilder('comment')
         .leftJoinAndSelect('comment.profile', 'profile')
-        .leftJoinAndSelect('comment.createdBy', 'createdBy')
-        .leftJoinAndSelect('comment.updatedBy', 'updatedBy')
+        // .leftJoinAndSelect('comment.createdBy', 'createdBy')
+        // .leftJoinAndSelect('comment.updatedBy', 'updatedBy')
         .leftJoinAndSelect('comment.commentLikes', 'commentLikes')
-        .leftJoinAndSelect('commentLikes.profile', 'likeProfile')
-        .leftJoinAndSelect('comment.replies', 'replies')
+        //.leftJoinAndSelect('commentLikes.profile', 'likeProfile')
+        //.leftJoinAndSelect('comment.replies', 'replies')
         .where('comment.postId = :postId', { postId })
         .andWhere('comment.parentCommentId IS NULL');
 
@@ -312,23 +340,19 @@ export class CommentsService implements ICommentsService {
     commentId: number,
     params: FindCommentsParams,
   ): Promise<CommentPaginationResult> {
+    const comment = await this.findOne(commentId);
+
     try {
       const { page = 1, limit = 10 } = params;
       const skip = (page - 1) * limit;
 
-      const comment = await this.findOne(commentId);
-
-      if (!comment) {
-        throw new CommentNotFoundException(commentId);
-      }
-
       const queryBuilder = this.commentRepository
         .createQueryBuilder('comment')
         .leftJoinAndSelect('comment.profile', 'profile')
-        .leftJoinAndSelect('comment.createdBy', 'createdBy')
-        .leftJoinAndSelect('comment.updatedBy', 'updatedBy')
+        // .leftJoinAndSelect('comment.createdBy', 'createdBy')
+        // .leftJoinAndSelect('comment.updatedBy', 'updatedBy')
         .leftJoinAndSelect('comment.commentLikes', 'commentLikes')
-        .leftJoinAndSelect('commentLikes.profile', 'likeProfile')
+        //.leftJoinAndSelect('commentLikes.profile', 'likeProfile')
         .where('comment.parentCommentId = :commentId', { commentId });
 
       const [data, total] = await queryBuilder

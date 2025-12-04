@@ -35,7 +35,10 @@ export class Comment {
   @Column({ name: 'parent_comment_id', nullable: true })
   parentCommentId: number;
 
-  @ManyToOne(() => Comment, (comment) => comment.replies, { nullable: true })
+  @ManyToOne(() => Comment, (comment) => comment.replies, {
+    nullable: true,
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'parent_comment_id' })
   parentComment: Comment;
 
@@ -48,9 +51,9 @@ export class Comment {
   @Column({ name: 'created_by' })
   createdById: number;
 
-  @ManyToOne(() => User)
-  @JoinColumn({ name: 'created_by' })
-  createdBy: User;
+  // @ManyToOne(() => User)
+  // @JoinColumn({ name: 'created_by' })
+  // createdBy: User;
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
@@ -58,9 +61,9 @@ export class Comment {
   @Column({ name: 'updated_by', nullable: true })
   updatedById: number;
 
-  @ManyToOne(() => User, { nullable: true })
-  @JoinColumn({ name: 'updated_by' })
-  updatedBy: User;
+  // @ManyToOne(() => User, { nullable: true })
+  // @JoinColumn({ name: 'updated_by' })
+  // updatedBy: User;
 
   @OneToMany(() => Comment, (comment) => comment.parentComment)
   replies: Comment[];

@@ -18,7 +18,7 @@ export type FindCommentsParams = {
   page?: number;
   limit?: number;
   postId?: number;
-  profileId?: number;
+  //profileId?: number;
   parentCommentId?: number | null;
 };
 

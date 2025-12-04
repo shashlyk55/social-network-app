@@ -13,7 +13,9 @@ export class ProfileNotFoundException extends DomainException {
 
   constructor(profileId?: string | number) {
     super(
-      profileId ? `User with id ${profileId} not found` : `Profile not found`,
+      profileId
+        ? `Profile with id ${profileId} not found`
+        : `Profile not found`,
     );
   }
 }

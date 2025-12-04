@@ -67,7 +67,7 @@ export class PostMappers {
       //   role: post.createdBy.role,
       // },
       assets: [],
-      likes: [],
+      //likes: [],
       commentsCount: post.comments ? post.comments.length : 0,
       likesCount: post.postLikes ? post.postLikes.length : 0,
     };
@@ -88,18 +88,18 @@ export class PostMappers {
       }));
     }
 
-    if (post.postLikes) {
-      response.likes = post.postLikes.map((like) => ({
-        id: like.id,
-        profileId: like.profileId,
-        createdAt: like.createdAt,
-        profile: {
-          id: like.profile.id,
-          username: like.profile.username,
-          displayName: like.profile.displayName,
-        },
-      }));
-    }
+    // if (post.postLikes) {
+    //   response.likes = post.postLikes.map((like) => ({
+    //     id: like.id,
+    //     profileId: like.profileId,
+    //     createdAt: like.createdAt,
+    //     profile: {
+    //       id: like.profile.id,
+    //       username: like.profile.username,
+    //       displayName: like.profile.displayName,
+    //     },
+    //   }));
+    // }
 
     return response;
   }

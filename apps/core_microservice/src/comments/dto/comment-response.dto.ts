@@ -1,17 +1,17 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { UserRole } from 'src/entities/user.entity';
 
-class UserReferenceDto {
-  @ApiProperty({ example: 1, description: 'User ID' })
-  id: number;
+// class UserReferenceDto {
+//   @ApiProperty({ example: 1, description: 'User ID' })
+//   id: number;
 
-  @ApiProperty({
-    example: UserRole.ADMIN,
-    enum: UserRole,
-    description: 'User role',
-  })
-  role: UserRole;
-}
+//   @ApiProperty({
+//     example: UserRole.ADMIN,
+//     enum: UserRole,
+//     description: 'User role',
+//   })
+//   role: UserRole;
+// }
 
 class ProfileReferenceDto {
   @ApiProperty({ example: 1, description: 'Profile ID' })
@@ -24,22 +24,22 @@ class ProfileReferenceDto {
   displayName: string;
 }
 
-class CommentLikeResponseDto {
-  @ApiProperty({ example: 1, description: 'Comment like ID' })
-  id: number;
+// class CommentLikeResponseDto {
+//   @ApiProperty({ example: 1, description: 'Comment like ID' })
+//   id: number;
 
-  @ApiProperty({ example: 1, description: 'Profile ID' })
-  profileId: number;
+//   @ApiProperty({ example: 1, description: 'Profile ID' })
+//   profileId: number;
 
-  @ApiProperty({ description: 'Creation date' })
-  createdAt: Date;
+//   @ApiProperty({ description: 'Creation date' })
+//   createdAt: Date;
 
-  @ApiProperty({
-    type: ProfileReferenceDto,
-    description: 'Profile that liked the comment',
-  })
-  profile: ProfileReferenceDto;
-}
+//   @ApiProperty({
+//     type: ProfileReferenceDto,
+//     description: 'Profile that liked the comment',
+//   })
+//   profile: ProfileReferenceDto;
+// }
 
 export class CommentResponseDto {
   @ApiProperty({ example: 1, description: 'Comment ID' })
@@ -75,24 +75,24 @@ export class CommentResponseDto {
   })
   profile: ProfileReferenceDto;
 
-  @ApiProperty({
-    type: UserReferenceDto,
-    description: 'User who created this comment',
-  })
-  createdBy: UserReferenceDto;
+  // @ApiProperty({
+  //   type: UserReferenceDto,
+  //   description: 'User who created this comment',
+  // })
+  // createdBy: UserReferenceDto;
 
-  @ApiProperty({
-    type: UserReferenceDto,
-    description: 'User who updated this comment',
-    nullable: true,
-  })
-  updatedBy?: UserReferenceDto;
+  // @ApiProperty({
+  //   type: UserReferenceDto,
+  //   description: 'User who updated this comment',
+  //   nullable: true,
+  // })
+  // updatedBy?: UserReferenceDto;
 
-  @ApiProperty({ type: [CommentLikeResponseDto], description: 'Comment likes' })
-  likes: CommentLikeResponseDto[];
+  // @ApiProperty({ type: [CommentLikeResponseDto], description: 'Comment likes' })
+  // likes: CommentLikeResponseDto[];
 
-  @ApiProperty({ type: [CommentResponseDto], description: 'Comment replies' })
-  replies: CommentResponseDto[];
+  // @ApiProperty({ type: [CommentResponseDto], description: 'Comment replies' })
+  // replies: CommentResponseDto[];
 
   @ApiProperty({ example: 5, description: 'Number of likes' })
   likesCount: number;

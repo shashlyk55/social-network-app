@@ -42,10 +42,6 @@ export class PostsService implements IPostsService {
   ) {}
 
   async create(params: CreatePostParams): Promise<PostEntity> {
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
     // TODO: check existing user
 
     const profile = await this.profileRepository.findOne({
@@ -57,6 +53,10 @@ export class PostsService implements IPostsService {
     }
 
     // TODO: check asset existing
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
     try {
       const post = this.postRepository.create({
@@ -202,10 +202,6 @@ export class PostsService implements IPostsService {
   async remove(id: number): Promise<void> {
     const post = await this.findOne(id);
 
-    if (!post) {
-      throw new PostNotFoundException('Post not found');
-    }
-
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -223,10 +219,6 @@ export class PostsService implements IPostsService {
 
   async archive(id: number, updatedById: number): Promise<PostEntity> {
     const post = await this.findOne(id);
-
-    if (!post) {
-      throw new PostNotFoundException(id);
-    }
 
     // TODO: check user existing
 
@@ -253,10 +245,6 @@ export class PostsService implements IPostsService {
 
   async unarchive(id: number, updatedById: number): Promise<PostEntity> {
     const post = await this.findOne(id);
-
-    if (!post) {
-      throw new PostNotFoundException(id);
-    }
 
     // TODO: check user existing
 
@@ -285,10 +273,6 @@ export class PostsService implements IPostsService {
     const { postId, profileId, createdById } = params;
 
     const post = await this.findOne(postId);
-
-    if (!post) {
-      throw new PostNotFoundException(postId);
-    }
 
     const profile = await this.profileRepository.findOne({
       where: { id: params.profileId },

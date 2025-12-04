@@ -63,41 +63,41 @@ export class CommentMappers {
         username: comment.profile.username,
         displayName: comment.profile.displayName,
       },
-      createdBy: {
-        id: comment.createdBy.id,
-        role: comment.createdBy.role,
-      },
-      likes: [],
-      replies: [],
+      // createdBy: {
+      //   id: comment.createdBy.id,
+      //   role: comment.createdBy.role,
+      // },
+      // likes: [],
+      // replies: [],
       likesCount: comment.commentLikes ? comment.commentLikes.length : 0,
       repliesCount: comment.replies ? comment.replies.length : 0,
     };
 
-    if (comment.updatedBy) {
-      response.updatedBy = {
-        id: comment.updatedBy.id,
-        role: comment.updatedBy.role,
-      };
-    }
+    // if (comment.updatedBy) {
+    //   response.updatedBy = {
+    //     id: comment.updatedBy.id,
+    //     role: comment.updatedBy.role,
+    //   };
+    // }
 
-    if (comment.commentLikes) {
-      response.likes = comment.commentLikes.map((like) => ({
-        id: like.id,
-        profileId: like.profileId,
-        createdAt: like.createdAt,
-        profile: {
-          id: like.profile.id,
-          username: like.profile.username,
-          displayName: like.profile.displayName,
-        },
-      }));
-    }
+    // if (comment.commentLikes) {
+    //   response.likes = comment.commentLikes.map((like) => ({
+    //     id: like.id,
+    //     profileId: like.profileId,
+    //     createdAt: like.createdAt,
+    //     profile: {
+    //       id: like.profile.id,
+    //       username: like.profile.username,
+    //       displayName: like.profile.displayName,
+    //     },
+    //   }));
+    // }
 
-    if (comment.replies) {
-      response.replies = comment.replies.map((reply) =>
-        this.toCommentResponse(reply),
-      );
-    }
+    // if (comment.replies) {
+    //   response.replies = comment.replies.map((reply) =>
+    //     this.toCommentResponse(reply),
+    //   );
+    // }
 
     return response;
   }
