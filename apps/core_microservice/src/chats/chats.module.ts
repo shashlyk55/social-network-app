@@ -9,7 +9,7 @@ import { ChatParticipant } from 'src/entities/many-to-many/chat-participants.ent
 @Module({
   controllers: [ChatsController],
   providers: [ChatsService],
-  imports: [TypeOrmModule.forFeature([Chat, User, ChatParticipant])],
+  imports: [TypeOrmModule.forFeature([Chat, ChatParticipant])],
   exports: [ChatsService],
 })
 export class ChatsModule {}

@@ -44,6 +44,7 @@ export class ChatsController {
   @ApiBody({ type: CreateChatDto })
   async create(@Body() createChatDto: CreateChatDto): Promise<ChatResponseDto> {
     const params = ChatMappers.toCreateParams(createChatDto);
+
     const chat = await this.chatService.create(params);
     return ChatMappers.toChatResponse(chat);
   }

@@ -3,17 +3,17 @@ import { ChatType } from 'src/entities/chat.entity';
 import { ChatParticipantRole } from 'src/entities/many-to-many/chat-participants.entity';
 import { UserRole } from 'src/entities/user.entity';
 
-class UserReferenceDto {
-  @ApiProperty({ example: 1, description: 'User ID' })
-  id: number;
+// class UserReferenceDto {
+//   @ApiProperty({ example: 1, description: 'User ID' })
+//   id: number;
 
-  @ApiProperty({
-    example: UserRole.ADMIN,
-    description: 'User role',
-    enum: UserRole,
-  })
-  role: UserRole;
-}
+//   @ApiProperty({
+//     example: UserRole.ADMIN,
+//     description: 'User role',
+//     enum: UserRole,
+//   })
+//   role: UserRole;
+// }
 
 class ParticipantResponseDto {
   @ApiProperty({ example: 1, description: 'Participant ID' })
@@ -36,11 +36,11 @@ class ParticipantResponseDto {
   @ApiProperty({ description: 'Left date', nullable: true })
   leftAt: Date | null;
 
-  @ApiProperty({
-    type: UserReferenceDto,
-    description: 'User who created this participant',
-  })
-  createdBy: UserReferenceDto;
+  // @ApiProperty({
+  //   type: UserReferenceDto,
+  //   description: 'User who created this participant',
+  // })
+  // createdBy: UserReferenceDto;
 }
 
 export class ChatResponseDto {
@@ -76,18 +76,18 @@ export class ChatResponseDto {
   @ApiProperty({ example: 2, description: 'Updater ID', nullable: true })
   updatedById: number | null;
 
-  @ApiProperty({
-    type: UserReferenceDto,
-    description: 'User who created this chat',
-  })
-  createdBy: UserReferenceDto;
+  // @ApiProperty({
+  //   type: UserReferenceDto,
+  //   description: 'User who created this chat',
+  // })
+  // createdBy: UserReferenceDto;
 
-  @ApiProperty({
-    type: UserReferenceDto,
-    description: 'User who updated this chat',
-    nullable: true,
-  })
-  updatedBy?: UserReferenceDto;
+  // @ApiProperty({
+  //   type: UserReferenceDto,
+  //   description: 'User who updated this chat',
+  //   nullable: true,
+  // })
+  // updatedBy?: UserReferenceDto;
 
   @ApiProperty({
     type: [ParticipantResponseDto],

@@ -6,7 +6,7 @@ import { getCorsConfig } from './config/cors.config';
 import helmet from 'helmet';
 import { getHelmetConfig } from './config/helmet.config';
 import { WinstonLoggerService } from './winston-logger/winston-logger.service';
-import { ValidationPipe } from '@nestjs/common';
+import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { GlobalExceptionFilter } from './app/exceptions/global-exception.filter';
 
 async function bootstrap() {
@@ -34,6 +34,13 @@ async function bootstrap() {
       transform: true,
       transformOptions: {
         enableImplicitConversion: true,
+      },
+      exceptionFactory: (errors) => {
+        const result = errors.map((error) => ({
+          property: error.property,
+          constraints: error.constraints,
+        }));
+        return new BadRequestException(result);
       },
     }),
   );

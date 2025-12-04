@@ -14,7 +14,7 @@ import { Profile } from 'src/entities/profile.entity';
   providers: [CommentsService],
   exports: [CommentsService],
   imports: [
-    TypeOrmModule.forFeature([User, Comment, Post, CommentLike, Profile]),
+    TypeOrmModule.forFeature([Comment, Post, CommentLike, Profile]),
     PostsModule,
   ],
 })

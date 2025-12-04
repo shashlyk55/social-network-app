@@ -5,7 +5,7 @@ export type CreateChatParams = {
   description?: string;
   type: ChatType;
   createdById: number;
-  participantProfileIds: number[];
+  participantProfileIds?: number[];
 };
 
 export type UpdateChatParams = {

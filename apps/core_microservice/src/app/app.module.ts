@@ -36,7 +36,7 @@ import { GlobalExceptionFilter } from './exceptions/global-exception.filter';
       inject: [ConfigService],
     }),
     AuthModule,
-    UsersModule,
+    //UsersModule,
     PostsModule,
     CommentsModule,
     ChatsModule,

@@ -48,16 +48,35 @@ export class ChatsService implements IChatService {
 
       const savedChat = await queryRunner.manager.save(Chat, chat);
 
-      const chatParticipants = params.participantProfileIds.map((profileId) =>
-        this.chatParticipantRepository.create({
-          chatId: savedChat.id,
-          profileId,
-          role: ChatParticipantRole.MEMBER,
-          createdById: params.createdById,
-        }),
-      );
+      // get createdById from currentUser
+      const profileId = params.createdById;
 
-      await queryRunner.manager.save(ChatParticipant, chatParticipants);
+      const chatOwnerParticipant = this.chatParticipantRepository.create({
+        chatId: savedChat.id,
+        profileId: profileId,
+        role: ChatParticipantRole.CREATOR,
+        createdById: params.createdById,
+      });
+
+      await queryRunner.manager.save(ChatParticipant, chatOwnerParticipant);
+
+      if (
+        params.participantProfileIds &&
+        params.participantProfileIds.length > 0
+      ) {
+        console.log(params.participantProfileIds);
+
+        const chatParticipants = params.participantProfileIds.map((profileId) =>
+          this.chatParticipantRepository.create({
+            chatId: savedChat.id,
+            profileId,
+            role: ChatParticipantRole.MEMBER,
+            createdById: params.createdById,
+          }),
+        );
+
+        await queryRunner.manager.save(ChatParticipant, chatParticipants);
+      }
 
       await queryRunner.commitTransaction();
 
@@ -81,10 +100,10 @@ export class ChatsService implements IChatService {
 
       const queryBuilder = this.chatRepository
         .createQueryBuilder('chat')
-        .leftJoinAndSelect('chat.createdBy', 'createdBy')
-        .leftJoinAndSelect('chat.updatedBy', 'updatedBy')
-        .leftJoinAndSelect('chat.participants', 'participants')
-        .leftJoinAndSelect('participants.createdBy', 'participantCreatedBy');
+        // .leftJoinAndSelect('chat.createdBy', 'createdBy')
+        // .leftJoinAndSelect('chat.updatedBy', 'updatedBy')
+        .leftJoinAndSelect('chat.chatParticipants', 'participants');
+      // .leftJoinAndSelect('participants.createdBy', 'participantCreatedBy');
 
       if (type) {
         queryBuilder.andWhere('chat.type = :type', { type });
@@ -113,11 +132,11 @@ export class ChatsService implements IChatService {
       const chat = await this.chatRepository.findOne({
         where: { id },
         relations: [
-          'createdBy',
-          'updatedBy',
-          'participants',
-          'participants.createdBy',
-          'participants.profile',
+          // 'createdBy',
+          // 'updatedBy',
+          'chatParticipants',
+          // 'chatParticipants.createdBy',
+          'chatParticipants.profile',
         ],
       });
 
@@ -204,13 +223,13 @@ export class ChatsService implements IChatService {
 
       const queryBuilder = this.chatRepository
         .createQueryBuilder('chat')
-        .innerJoin('chat.participants', 'participants')
-        .leftJoinAndSelect('chat.createdBy', 'createdBy')
-        .leftJoinAndSelect('chat.updatedBy', 'updatedBy')
-        .leftJoinAndSelect('chat.participants', 'chatParticipants')
-        .leftJoinAndSelect('chatParticipants.createdBy', 'participantCreatedBy')
-        .where('participants.profileId = :profileId', { profileId })
-        .andWhere('participants.leftAt IS NULL');
+        //.innerJoin('chat.chatParticipants', 'participants')   // use to get chats with all members
+        // .leftJoinAndSelect('chat.createdBy', 'createdBy')
+        // .leftJoinAndSelect('chat.updatedBy', 'updatedBy')
+        .leftJoinAndSelect('chat.chatParticipants', 'chatParticipants')
+        //.leftJoinAndSelect('chatParticipants.createdBy', 'participantCreatedBy')
+        .where('chatParticipants.profileId = :profileId', { profileId })
+        .andWhere('chatParticipants.leftAt IS NULL');
 
       if (type) {
         queryBuilder.andWhere('chat.type = :type', { type });

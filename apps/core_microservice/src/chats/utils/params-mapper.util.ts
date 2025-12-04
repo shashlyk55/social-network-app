@@ -11,13 +11,19 @@ import { PaginationResponseDto } from 'src/common/dto/pagination-response.dto';
 
 export class ChatMappers {
   static toCreateParams(dto: CreateChatDto): CreateChatParams {
-    return {
+    const params: CreateChatParams = {
       name: dto.name,
       description: dto.description,
       type: dto.type,
       createdById: dto.createdById,
-      participantProfileIds: dto.participantProfileIds,
     };
+    console.log(dto.participantProfileIds);
+
+    if (dto.participantProfileIds && dto.participantProfileIds.length > 0) {
+      params.participantProfileIds = dto.participantProfileIds;
+    }
+
+    return params;
   }
 
   static toUpdateParams(id: number, dto: UpdateChatDto): UpdateChatParams {
@@ -40,19 +46,19 @@ export class ChatMappers {
       updatedAt: chat.updatedAt,
       createdById: chat.createdById,
       updatedById: chat.updatedById,
-      createdBy: {
-        id: chat.createdBy.id,
-        role: chat.createdBy.role,
-      },
+      // createdBy: {
+      //   id: chat.createdBy.id,
+      //   role: chat.createdBy.role,
+      // },
       participants: [],
     };
 
-    if (chat.updatedBy) {
-      response.updatedBy = {
-        id: chat.updatedBy.id,
-        role: chat.updatedBy.role,
-      };
-    }
+    // if (chat.updatedBy) {
+    //   response.updatedBy = {
+    //     id: chat.updatedBy.id,
+    //     role: chat.updatedBy.role,
+    //   };
+    // }
 
     if (chat.chatParticipants) {
       response.participants = chat.chatParticipants.map((participant) => ({
@@ -61,10 +67,10 @@ export class ChatMappers {
         role: participant.role,
         joinedAt: participant.joinedAt,
         leftAt: participant.leftAt,
-        createdBy: {
-          id: participant.createdBy.id,
-          role: participant.createdBy.role,
-        },
+        // createdBy: {
+        //   id: participant.createdBy.id,
+        //   role: participant.createdBy.role,
+        // },
       }));
     }
 

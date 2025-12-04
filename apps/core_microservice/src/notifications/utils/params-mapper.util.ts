@@ -51,18 +51,18 @@ export class NotificationMappers {
       updatedAt: notification.updatedAt,
       createdById: notification.createdById,
       updatedById: notification.updatedById,
-      createdBy: {
-        id: notification.createdBy.id,
-        role: notification.createdBy.role,
-      },
+      // createdBy: {
+      //   id: notification.createdBy.id,
+      //   role: notification.createdBy.role,
+      // },
     };
 
-    if (notification.updatedBy) {
-      response.updatedBy = {
-        id: notification.updatedBy.id,
-        role: notification.updatedBy.role,
-      };
-    }
+    // if (notification.updatedBy) {
+    //   response.updatedBy = {
+    //     id: notification.updatedBy.id,
+    //     role: notification.updatedBy.role,
+    //   };
+    // }
 
     return response;
   }

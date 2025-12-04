@@ -7,6 +7,8 @@ import {
   IsArray,
   MaxLength,
   IsEnum,
+  ArrayMinSize,
+  ArrayNotEmpty,
 } from 'class-validator';
 import { ChatType } from 'src/entities/chat.entity';
 
@@ -40,10 +42,12 @@ export class CreateChatDto {
   createdById: number;
 
   @ApiProperty({
-    example: [1, 2, 3],
+    //example: [1, 2, 3],
+    example: null,
     description: 'Array of profile IDs to add as participants',
+    required: false,
   })
   @IsArray()
-  @IsNotEmpty()
-  participantProfileIds: number[];
+  @IsOptional()
+  participantProfileIds?: number[];
 }
