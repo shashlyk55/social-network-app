@@ -39,9 +39,9 @@ export class PostAsset {
   @Column({ name: 'created_by' })
   createdById: number;
 
-  @ManyToOne(() => User)
-  @JoinColumn({ name: 'created_by' })
-  createdBy: User;
+  // @ManyToOne(() => User)
+  // @JoinColumn({ name: 'created_by' })
+  // createdBy: User;
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
@@ -49,7 +49,7 @@ export class PostAsset {
   @Column({ name: 'updated_by', nullable: true })
   updatedById: number;
 
-  @ManyToOne(() => User, { nullable: true })
-  @JoinColumn({ name: 'updated_by' })
-  updatedBy: User;
+  // @ManyToOne(() => User, { nullable: true })
+  // @JoinColumn({ name: 'updated_by' })
+  // updatedBy: User;
 }

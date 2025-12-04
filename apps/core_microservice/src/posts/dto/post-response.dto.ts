@@ -38,22 +38,22 @@ class PostAssetResponseDto {
   createdAt: Date;
 }
 
-class PostLikeResponseDto {
-  @ApiProperty({ example: 1, description: 'Post like ID' })
-  id: number;
+// class PostLikeResponseDto {
+//   @ApiProperty({ example: 1, description: 'Post like ID' })
+//   id: number;
 
-  @ApiProperty({ example: 1, description: 'Profile ID' })
-  profileId: number;
+//   @ApiProperty({ example: 1, description: 'Profile ID' })
+//   profileId: number;
 
-  @ApiProperty({ description: 'Creation date' })
-  createdAt: Date;
+//   @ApiProperty({ description: 'Creation date' })
+//   createdAt: Date;
 
-  @ApiProperty({
-    type: ProfileReferenceDto,
-    description: 'Profile that liked the post',
-  })
-  profile: ProfileReferenceDto;
-}
+//   @ApiProperty({
+//     type: ProfileReferenceDto,
+//     description: 'Profile that liked the post',
+//   })
+//   profile: ProfileReferenceDto;
+// }
 
 export class PostResponseDto {
   @ApiProperty({ example: 1, description: 'Post ID' })

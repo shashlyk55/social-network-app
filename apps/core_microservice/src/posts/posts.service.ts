@@ -98,7 +98,7 @@ export class PostsService implements IPostsService {
         // .leftJoinAndSelect('post.updatedBy', 'updatedBy')
         .leftJoinAndSelect('post.postAssets', 'postAssets')
         .leftJoinAndSelect('post.postLikes', 'postLikes')
-        .leftJoinAndSelect('postLikes.profile', 'likeProfile')
+        //.leftJoinAndSelect('postLikes.profile', 'likeProfile')
         .leftJoinAndSelect('post.comments', 'comments')
         .where('post.isArchived = :isArchived', { isArchived: false });
 
