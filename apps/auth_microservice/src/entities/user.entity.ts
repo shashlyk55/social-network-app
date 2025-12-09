@@ -10,8 +10,6 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Account } from './account.entity';
-import { Profile } from './profile.entity';
-import { AuditLog } from './audit-log.entity';
 
 export enum UserRole {
   USER = 'user',
@@ -36,7 +34,7 @@ export class User {
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @Column({ name: 'created_by', nullable: true })
+  @Column({ name: 'created_by' })
   createdById: number;
 
   @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
@@ -53,14 +51,17 @@ export class User {
   @JoinColumn({ name: 'updated_by' })
   updatedBy: User;
 
+  @Column({ name: 'account_id' })
+  accountId: number;
+
   @OneToOne(() => Account, (account) => account.user)
   account: Account;
 
   @Column({ name: 'profile_id', nullable: true })
   profileId: number;
 
-  @OneToOne(() => Profile, (profile) => profile.user)
-  profile: Profile;
+  // @OneToOne(() => Profile, (profile) => profile.user)
+  // profile: Profile;
 
   @OneToMany(() => User, (user) => user.createdBy)
   createdUsers: User[];
@@ -69,12 +70,12 @@ export class User {
   updatedUsers: User[];
 
   // Audit Log relations
-  @OneToMany(() => AuditLog, (auditLog) => auditLog.user)
-  auditLogs: AuditLog[];
+  // @OneToMany(() => AuditLog, (auditLog) => auditLog.user)
+  // auditLogs: AuditLog[];
 
-  @OneToMany(() => AuditLog, (auditLog) => auditLog.createdByUser)
-  createdAuditLogs: AuditLog[];
+  // @OneToMany(() => AuditLog, (auditLog) => auditLog.createdByUser)
+  // createdAuditLogs: AuditLog[];
 
-  @OneToMany(() => AuditLog, (auditLog) => auditLog.updatedByUser)
-  updatedAuditLogs: AuditLog[];
+  // @OneToMany(() => AuditLog, (auditLog) => auditLog.updatedByUser)
+  // updatedAuditLogs: AuditLog[];
 }
