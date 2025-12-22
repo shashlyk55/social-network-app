@@ -20,6 +20,7 @@ import {
 import { AccountProviderType } from '../entities/account.entity';
 import { DomainException } from '../common/exceptions/domain.excpetion';
 import bcrypt from 'bcryptjs';
+import { IRedisRepository } from './interfaces/IRedisRepository';
 
 export class AuthService implements IAuthService {
   private readonly accessTokenSecret: string;
@@ -31,6 +32,7 @@ export class AuthService implements IAuthService {
     private readonly accountsService: IAccountsService,
     private readonly usersService: IUsersService,
     private readonly dataSource: DataSource,
+    private readonly redisRepository: IRedisRepository,
   ) {
     this.accessTokenSecret = process.env.ACCESS_TOKEN_SECRET || 'access-secren';
     this.accessTokenExpiresIn = process.env.ACCESS_TOKEN_EXPIRES_IN || '1h';
@@ -63,6 +65,8 @@ export class AuthService implements IAuthService {
 
         const generateTokensParams = { userId: user.id, role: user.role };
         const tokens = this.generateTokens(generateTokensParams);
+
+        this.redisRepository.storeRefreshTokenId(user.id, tokens.refreshToken);
 
         return {
           user,
@@ -101,7 +105,7 @@ export class AuthService implements IAuthService {
       const generateTokensParams = { userId: user.id, role: user.role };
       const tokens = this.generateTokens(generateTokensParams);
 
-      // TODO: create session
+      this.redisRepository.storeRefreshTokenId(user.id, tokens.refreshToken);
 
       return tokens;
     } catch (error) {
@@ -124,6 +128,8 @@ export class AuthService implements IAuthService {
    * Checks the signature, expiration, and blacklist status of an access_token.
    */
   validateToken(params: ValidateTokenParams) {
+    // TODO: Checks the signature, expiration, and blacklist status of an access_token.
+
     throw new Error('Method not implemented.');
   }
 
@@ -131,6 +137,8 @@ export class AuthService implements IAuthService {
    * Exchanges the code for a user profile, finds/creates the user, and calls generateNewTokens.
    */
   exchageCodeForTokens(code: any) {
+    // TODO: Exchanges the code for a user profile, finds/creates the user, and calls generateNewTokens.
+
     throw new Error('Method not implemented.');
   }
 

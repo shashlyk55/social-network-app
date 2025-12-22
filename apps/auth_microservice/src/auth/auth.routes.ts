@@ -7,16 +7,23 @@ import { AccountsService } from '../accounts/accounts.service';
 import { UsersService } from '../users/users.service';
 import { User } from '../entities/user.entity';
 import { Account } from '../entities/account.entity';
+import { RedisAuthRepository } from './redisAuth.repository';
 
 export function createAuthRouter(dataSource: DataSource): Router {
   const router = Router();
 
   const userRepository = dataSource.getRepository(User);
   const accountRepository = dataSource.getRepository(Account);
+  const redisAuthRepository = new RedisAuthRepository();
 
   const userService = new UsersService(userRepository, dataSource);
   const accountService = new AccountsService(accountRepository, dataSource);
-  const authService = new AuthService(accountService, userService, dataSource);
+  const authService = new AuthService(
+    accountService,
+    userService,
+    dataSource,
+    redisAuthRepository,
+  );
 
   const authController = new AuthController(authService);
 
