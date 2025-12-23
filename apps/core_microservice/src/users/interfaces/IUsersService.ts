@@ -5,9 +5,10 @@ import {
   FindUsersParams,
   UserPaginationResult,
 } from '../types/user-service.types';
+import { Profile } from 'src/entities/profile.entity';
 
 export interface IUsersService {
-  create(params: CreateUserParams, createdById: number): Promise<User>;
+  create(params: CreateUserParams, createdById: number): Promise<Profile>;
   findAll(params: FindUsersParams): Promise<UserPaginationResult>;
   findOne(id: number): Promise<User>;
   update(params: UpdateUserParams): Promise<User>;

@@ -32,7 +32,10 @@ export class UsersService implements IUsersService {
     private readonly dataSource: DataSource,
   ) {}
 
-  async create(params: CreateUserParams, createdById?: number): Promise<User> {
+  async create(
+    params: CreateUserParams,
+    createdById?: number,
+  ): Promise<Profile> {
     const existingProfile = await this.profileRepository.findOne({
       where: { username: params.username },
     });
@@ -41,59 +44,63 @@ export class UsersService implements IUsersService {
       throw new UsernameAlreadyExistsException(params.username);
     }
 
-    const existingAccount = await this.accountRepository.findOne({
-      where: { email: params.email },
-    });
+    // const existingAccount = await this.accountRepository.findOne({
+    //   where: { email: params.email },
+    // });
 
-    if (existingAccount) {
-      throw new EmailAlreadyExistsException(params.email);
-    }
+    // if (existingAccount) {
+    //   throw new EmailAlreadyExistsException(params.email);
+    // }
 
-    if (createdById !== undefined) {
-      const createdByUser = await this.findOne(createdById);
-    }
+    // if (createdById !== undefined) {
+    //   const createdByUser = await this.findOne(createdById);
+    // }
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     try {
-      const user = this.userRepository.create({
-        role: params.role,
-        disabled: params.disabled || false,
-        createdById: createdById || undefined,
-      });
+      // const user = this.userRepository.create({
+      //   role: params.role,
+      //   disabled: params.disabled || false,
+      //   createdById: createdById || undefined,
+      // });
 
-      const savedUser = await queryRunner.manager.save(User, user);
+      // const savedUser = await queryRunner.manager.save(User, user);
+
+      // get from auth_microservice
+      const userId = 1;
+      const createdByUserId = 1;
 
       const profile = this.profileRepository.create({
-        userId: savedUser.id,
+        userId: userId,
         username: params.username,
         displayName: params.displayName,
         birthday: new Date(params.birthday),
         bio: params.bio,
         avatarUrl: params.avatarUrl,
         isPublic: params.isPublic !== undefined ? params.isPublic : true,
-        createdById: savedUser.id,
+        createdById: createdByUserId,
       });
 
-      await queryRunner.manager.save(Profile, profile);
+      const savedProfile = await queryRunner.manager.save(Profile, profile);
 
       // TODO: move create account logic in Auth module
-      const passwordHash = await bcrypt.hash(params.password, 10);
-      const account = this.accountRepository.create({
-        userId: savedUser.id,
-        email: params.email,
-        passwordHash,
-        provider: AccountProviderType.LOCAL,
-        createdById: savedUser.id,
-      });
+      // const passwordHash = await bcrypt.hash(params.password, 10);
+      // const account = this.accountRepository.create({
+      //   userId: savedUser.id,
+      //   email: params.email,
+      //   passwordHash,
+      //   provider: AccountProviderType.LOCAL,
+      //   createdById: savedUser.id,
+      // });
 
-      await queryRunner.manager.save(Account, account);
+      // await queryRunner.manager.save(Account, account);
 
       await queryRunner.commitTransaction();
 
-      return await this.findOne(savedUser.id);
+      return savedProfile;
     } catch (error) {
       await queryRunner.rollbackTransaction();
 
