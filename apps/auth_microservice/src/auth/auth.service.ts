@@ -66,7 +66,9 @@ export class AuthService implements IAuthService {
         const generateTokensParams = { userId: user.id, role: user.role };
         const tokens = this.generateTokens(generateTokensParams);
 
-        this.redisRepository.storeRefreshTokenId(user.id, tokens.refreshToken);
+        const TTL = this.parseExpiresIn(process.env.REFRESH_TOKEN_EXPIRES_IN || '7d')
+
+      await this.redisRepository.storeRefreshTokenId(user.id, tokens.refreshToken, TTL);
 
         return {
           user,
@@ -100,12 +102,16 @@ export class AuthService implements IAuthService {
         throw new InvalidCredentials();
       }
 
+      // TODO: implement deleting old nonexpired session
+
       const user = await this.usersService.findByEmail(email);
 
       const generateTokensParams = { userId: user.id, role: user.role };
       const tokens = this.generateTokens(generateTokensParams);
 
-      this.redisRepository.storeRefreshTokenId(user.id, tokens.refreshToken);
+      const TTL = this.parseExpiresIn(this.refreshTokenExpiresIn)
+
+      await this.redisRepository.storeRefreshTokenId(user.id, tokens.refreshToken, TTL);
 
       return tokens;
     } catch (error) {
@@ -120,17 +126,120 @@ export class AuthService implements IAuthService {
   /**
    * Validates the old_refresh_token_id(old token) in Redis and generates a new pair of tokens.
    */
-  processRefreshToken(old_refresh_token_id: RefreshTokenParams) {
-    throw new Error('Method not implemented.');
+  async processRefreshToken(oldRefreshToken: string): Promise<TokenResult> {
+    try {
+      // 1. Верифицируем refresh token
+      const decoded = jwt.verify(
+        oldRefreshToken, 
+        this.refreshTokenSecret
+      ) as TokenPayload & { jti?: string };
+      
+      const { userId, role } = decoded;
+  
+      // 2. Проверяем существование пользователя
+      // const user = await this.usersService.findById(userId);
+      // if (!user) {
+      //   throw new AuthOperationException('refresh token', 'User not found');
+      // }
+  
+      // 3. Проверяем, не заблокирован ли пользователь
+      // if (user.isBlocked || !user.isActive) {
+      //   await this.redisRepository.revokeAllUserTokens(userId);
+      //   throw new AuthOperationException('refresh token', 'User is blocked');
+      // }
+  
+      // 4. Проверяем, не отозван ли токен (по jti или самому токену)
+      // const isTokenRevoked = await this.redisRepository.isRefreshTokenRevoked(
+      //   userId, 
+      //   oldRefreshToken
+      // );
+      
+      // if (isTokenRevoked) {
+      //   // Если токен скомпрометирован - отзываем все токены пользователя
+      //   await this.redisRepository.revokeAllUserTokens(userId);
+      //   throw new AuthOperationException('refresh token', 'Token has been revoked');
+      // }
+  
+      // 5. Отзываем старый refresh token (rotation для безопасности)
+      await this.redisRepository.removeRefreshToken(userId, oldRefreshToken);
+  
+      // 6. Генерируем новую пару токенов
+      const generateTokensParams = { userId, role };
+      const tokens = this.generateTokens(generateTokensParams);
+  
+      // 7. Сохраняем новый refresh token
+      const TTL = this.parseExpiresIn(this.refreshTokenExpiresIn);
+      await this.redisRepository.storeRefreshTokenId(
+        userId, 
+        tokens.refreshToken, 
+        TTL
+      );
+  
+      return tokens;
+    } catch (error) {
+      if (error instanceof jwt.TokenExpiredError) {
+        throw new AuthOperationException('refresh token', 'Token expired');
+      }
+      if (error instanceof jwt.JsonWebTokenError) {
+        throw new AuthOperationException('refresh token', 'Invalid token');
+      }
+      if (error instanceof AuthOperationException) {
+        throw error;
+      }
+      throw new AuthOperationException('refresh token', error.message);
+    }
   }
 
   /**
    * Checks the signature, expiration, and blacklist status of an access_token.
    */
-  validateToken(params: ValidateTokenParams) {
+  async validateToken(acessToken: string): Promise<{
+    isValid: boolean;
+    payload?: TokenPayload;
+    error?: string;
+  }> {
     // TODO: Checks the signature, expiration, and blacklist status of an access_token.
-
-    throw new Error('Method not implemented.');
+    try {
+      // 1. Проверяем базовую структуру токена
+      // if (!acessToken || typeof acessToken !== 'string') {
+      //   return { isValid: false, error: 'Invalid token format' };
+      // }
+  
+      // 2. Верифицируем подпись и срок действия
+      const payload = jwt.verify(
+        acessToken, 
+        this.accessTokenSecret
+      ) as TokenPayload;
+  
+      // 3. Проверяем, не находится ли токен в черном списке
+      // (например, если пользователь вышел из системы)
+      const isBlacklisted = await this.redisRepository.isAccessTokenBlacklisted(
+        acessToken
+      );
+      
+      if (isBlacklisted) {
+        return { isValid: false, error: 'Token has been revoked' };
+      }
+  
+      // 4. Дополнительная проверка пользователя (опционально)
+      // const user = await this.usersService.findById(payload.userId);
+      // if (!user || user.isBlocked || !user.isActive) {
+      //   return { isValid: false, error: 'User is not active' };
+      // }
+  
+      return {
+        isValid: true,
+        payload
+      };
+    } catch (error) {
+      if (error instanceof jwt.TokenExpiredError) {
+        return { isValid: false, error: 'Token expired' };
+      }
+      if (error instanceof jwt.JsonWebTokenError) {
+        return { isValid: false, error: 'Invalid token signature' };
+      }
+      return { isValid: false, error: 'Token validation failed' };
+    }
   }
 
   /**

@@ -11,8 +11,8 @@ import {
 
 export interface IAuthService {
   authenticateUser(credentials: LoginParams): Promise<TokenResult>;
-  processRefreshToken(old_refresh_token_id: RefreshTokenParams);
-  validateToken(params: ValidateTokenParams);
+  processRefreshToken(oldRefreshToken: string): Promise<TokenResult>;
+  validateToken(acessToken: string);
   exchageCodeForTokens(code);
   registerUser(params: RegisterParams): Promise<AuthResult>;
 }

@@ -35,8 +35,8 @@ export function createAuthRouter(dataSource: DataSource): Router {
     authController.login(req, res, next),
   );
 
-  router.post('/validate', (req, res, next) => {});
-  router.post('/refresh', (req, res, next) => {});
+  router.post('/validate', (req, res, next) => authController.validate);
+  router.post('/refresh', (req, res, next) => authController.refreshTokens);
   router.post('/logout', (req, res, next) => {});
 
   return router;

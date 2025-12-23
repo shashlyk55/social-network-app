@@ -6,7 +6,7 @@ export class RedisAuthRepository implements IRedisRepository {
 
   constructor() {
     this.client = createClient({
-      url: process.env.REDIS_URL || 'redis://localhost:6379',
+      url: process.env.REDIS_URL || 'redis://:redis_password@localhost:6379',
     });
 
     this.client.on('error', (err) =>
@@ -36,7 +36,7 @@ export class RedisAuthRepository implements IRedisRepository {
   /**
    * Проверяет, находится ли токен в черном списке
    */
-  async isTokenBlacklisted(token: string): Promise<boolean> {
+  async isAccessTokenBlacklisted(accessToken: string): Promise<boolean> {
     try {
       const result = await this.client.get(`blacklist:${token}`);
       return result !== null;
@@ -68,13 +68,14 @@ export class RedisAuthRepository implements IRedisRepository {
   async storeRefreshTokenId(
     userId: number,
     refreshTokenId: string,
+    TTL: number
   ): Promise<void> {
     try {
-      const key = `user:${userId}:refresh_tokens`;
+      const key = `session:${refreshTokenId}`;
+      const value = `${userId}`
 
-      // Добавляем токен в множество и устанавливаем TTL (например, 7 дней)
-      await this.client.sAdd(key, refreshTokenId);
-      await this.client.expire(key, 7 * 24 * 60 * 60); // 7 дней
+      await this.client.sAdd(key, value);
+      await this.client.expire(key, TTL); 
     } catch (error) {
       console.error('Error storing refresh token:', error);
       throw error;
@@ -102,8 +103,32 @@ export class RedisAuthRepository implements IRedisRepository {
     refreshTokenId: string,
   ): Promise<void> {
     try {
-      const key = `user:${userId}:refresh_tokens`;
+      const key = `session:${refreshTokenId}`;
       await this.client.sRem(key, refreshTokenId);
+    } catch (error) {
+      console.error('Error removing refresh token:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Дополнительный метод: удаление refresh токена пользователя
+   */
+  async removeRefreshToken(
+    userId: number,
+    refreshTokenId: string,
+  ): Promise<void> {
+    try {
+      // Удаляем mapping токена
+      // await this.client.del(`refresh_token:${refreshTokenId}`);
+      
+      // Удаляем из списка сессий пользователя
+      const userSessionsKey = `session:${refreshTokenId}`;
+      
+      await this.client.sRem(userSessionsKey, userId);
+      
+      // Удаляем метаданные сессии
+      // await this.client.del(`session_meta:${refreshTokenId}`);
     } catch (error) {
       console.error('Error removing refresh token:', error);
       throw error;

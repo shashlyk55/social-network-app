@@ -51,4 +51,26 @@ export class AuthController {
       next(error);
     }
   }
+
+  @HandleExceptions()
+  async validate(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try{
+    
+
+
+    }catch(error){
+      next(error)
+    }
+  }
+
+  @HandleExceptions()
+  async refreshTokens(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try{
+
+
+      
+    }catch(error){
+      next(error)
+    }
+  }
 }

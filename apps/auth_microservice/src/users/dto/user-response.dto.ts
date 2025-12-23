@@ -6,10 +6,10 @@ export class UserResponseDto {
   id: number;
   role: string;
   disabled: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-  createdById?: number;
-  updatedById?: number;
+  // createdAt: Date;
+  // updatedAt: Date;
+  // createdById?: number;
+  // updatedById?: number;
   //account: AccountReferenceDto;
 
   static toResponse(user: User, account: Account): UserResponseDto {

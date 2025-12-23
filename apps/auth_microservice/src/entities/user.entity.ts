@@ -8,6 +8,7 @@ import {
   OneToOne,
   ManyToOne,
   JoinColumn,
+  RelationId,
 } from 'typeorm';
 import { Account } from './account.entity';
 
@@ -34,7 +35,7 @@ export class User {
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @Column({ name: 'created_by' })
+  @Column({ name: 'created_by', nullable: true })
   createdById: number;
 
   @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
@@ -51,7 +52,8 @@ export class User {
   @JoinColumn({ name: 'updated_by' })
   updatedBy: User;
 
-  @Column({ name: 'account_id' })
+  //@Column({ name: 'account_id' })
+  @RelationId((user: User) => user.account)
   accountId: number;
 
   @OneToOne(() => Account, (account) => account.user)

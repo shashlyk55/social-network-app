@@ -8,7 +8,7 @@ export const AppDataSource = new DataSource({
   port: parseInt(process.env.POSTGRES_PORT || '5432'),
   username: process.env.POSTGRES_USER || 'postgres_user',
   password: process.env.POSTGRES_PASSWORD || '123',
-  database: process.env.POSTGRES_PASSWORD || 'innogram_db',
+  database: process.env.POSTGRES_DB || 'innogram_db',
   synchronize: process.env.POSTGRES_SYNCHRONIZE === 'true' ? true : false,
   schema: process.env.POSTGRES_SCHEMA || 'auth',
   logging: true,

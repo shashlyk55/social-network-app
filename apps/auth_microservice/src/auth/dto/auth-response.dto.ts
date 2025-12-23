@@ -13,6 +13,11 @@ export class AuthResponseDto {
       refreshToken: params.tokens.refreshToken,
       expiresIn: params.tokens.expiresIn,
       user: params.user,
+      // user: {
+      //   id: params.user.id,
+      //   role: params.user.role,
+      //   disabled: params.user.disabled
+      // }
     };
 
     return response;

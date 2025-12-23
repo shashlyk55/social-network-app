@@ -44,4 +44,4 @@ export type FindUsersParams = {
 //   totalPages: number;
 // };
 
-export type UserResult = Pick<User, 'id' | 'role'>;
+export type UserResult = Pick<User, 'id' | 'role' | 'disabled'>;
