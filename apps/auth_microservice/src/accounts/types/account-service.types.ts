@@ -11,7 +11,4 @@ export type CreateAccountParams = {
 
 export type UpdateAccountParams = {};
 
-export type AccountResult = Omit<
-  Account,
-  'passwordHash' | 'user' | 'createdBy' | 'updatedBy'
->;
+export type AccountResult = Pick<Account, 'email' | 'lastLoginAt'>;

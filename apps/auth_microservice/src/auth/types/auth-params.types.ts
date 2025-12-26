@@ -14,10 +14,16 @@ export type OAuthCallbackParams = {
 
 export type LogoutParams = {
   refreshTokenId: string;
+  accessToken: string;
 };
 
 export type ValidateTokenParams = {
   accessToken: string;
+};
+
+export type ValidateTokenResult = {
+  isValid: boolean;
+  payload: TokenPayload;
 };
 
 export type RefreshTokenParams = {
@@ -38,23 +44,34 @@ export type TokenPayload = {
   role: UserRole;
 };
 
+export type TokenDecodeResult = {
+  userId: number;
+  role: UserRole;
+  jti: string;
+  iat: number;
+  exp: number;
+};
+
 export type AuthResult = {
   user: UserResult;
   account: AccountResult;
   tokens: {
     accessToken: string;
     refreshToken: string;
-    expiresIn: number;
   };
 };
 
 export type TokenResult = {
   accessToken: string;
   refreshToken: string;
-  expiresIn: number;
 };
 
 export type ValidatePasswordResult = {
   user: UserResult;
   account: AccountResult;
+};
+
+export type Session = {
+  userId: number;
+  role: UserRole;
 };

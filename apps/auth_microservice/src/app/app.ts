@@ -6,15 +6,16 @@ import {
   domainErrorHandler,
   errorHandler,
 } from './middleware/error-handler.middleware';
+import cookieParser from 'cookie-parser';
 
 export function configureApp(app: Application, dataSource: DataSource) {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
+  app.use(cookieParser());
 
   const authRouter = createAuthRouter(dataSource);
   app.use('/internal/auth', authRouter);
 
-  // global error handlers (order is important)
   app.use(domainErrorHandler);
   app.use(errorHandler);
   app.use((req, res) => {
@@ -26,9 +27,4 @@ export function configureApp(app: Application, dataSource: DataSource) {
       },
     });
   });
-
-  // app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  //   // console.error(err.stack);
-  //   res.status(500).send('Internal server error');
-  // });
 }

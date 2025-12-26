@@ -9,24 +9,33 @@ import {
   AuthResult,
   LoginParams,
   TokenPayload,
+  LogoutParams,
+  ValidateTokenResult,
+  TokenDecodeResult,
 } from './types/auth-params.types';
 import { DataSource } from 'typeorm';
 import { UserRole } from 'src/entities/user.entity';
 import * as jwt from 'jsonwebtoken';
 import {
+  AccessTokenInBlacklist,
   AuthOperationException,
   InvalidCredentials,
+  InvalidTokenFormat,
+  RefreshTokenInBlacklist,
+  UserDisabled,
 } from './exceptions/auth.exceptions';
 import { AccountProviderType } from '../entities/account.entity';
 import { DomainException } from '../common/exceptions/domain.excpetion';
 import bcrypt from 'bcryptjs';
 import { IRedisRepository } from './interfaces/IRedisRepository';
+import { v4 as uuidv4 } from 'uuid';
 
 export class AuthService implements IAuthService {
   private readonly accessTokenSecret: string;
   private readonly accessTokenExpiresIn: string;
   private readonly refreshTokenSecret: string;
   private readonly refreshTokenExpiresIn: string;
+  private readonly refreshTokenBlacklistTTL = 1000 * 60;
 
   constructor(
     private readonly accountsService: IAccountsService,
@@ -40,6 +49,16 @@ export class AuthService implements IAuthService {
       process.env.REFRESH_TOKEN_SECRET || 'refresh-secren';
     this.refreshTokenExpiresIn = process.env.REFRESH_TOKEN_EXPIRES_IN || '7d';
   }
+
+  /**
+   * Exchanges the code for a user profile, finds/creates the user, and calls generateNewTokens.
+   */
+  exchageCodeForTokens(code: any) {
+    // TODO: Exchanges the code for a user profile, finds/creates the user, and calls generateNewTokens.
+
+    throw new Error('Method not implemented.');
+  }
+
   async registerUser(params: RegisterParams): Promise<AuthResult> {
     return this.dataSource.transaction(async (transactionalEntityManager) => {
       try {
@@ -63,18 +82,18 @@ export class AuthService implements IAuthService {
           transactionalEntityManager,
         );
 
-        const generateTokensParams = { userId: user.id, role: user.role };
-        const tokens = this.generateTokens(generateTokensParams);
+        const tokens = await this.generateTokens({
+          userId: user.id,
+          role: user.role,
+        });
 
-        const TTL = this.parseExpiresIn(process.env.REFRESH_TOKEN_EXPIRES_IN || '7d')
-
-      await this.redisRepository.storeRefreshTokenId(user.id, tokens.refreshToken, TTL);
-
-        return {
+        const result = {
           user,
           account,
           tokens,
         };
+
+        return result;
       } catch (error) {
         if (error instanceof DomainException) {
           throw error;
@@ -85,7 +104,7 @@ export class AuthService implements IAuthService {
     });
   }
 
-  async authenticateUser(credentials: LoginParams): Promise<TokenResult> {
+  async authenticateUser(credentials: LoginParams): Promise<AuthResult> {
     try {
       const { email, password } = credentials;
 
@@ -102,18 +121,23 @@ export class AuthService implements IAuthService {
         throw new InvalidCredentials();
       }
 
-      // TODO: implement deleting old nonexpired session
-
       const user = await this.usersService.findByEmail(email);
+      const account = await this.accountsService.findOneByUserId(user.id);
 
-      const generateTokensParams = { userId: user.id, role: user.role };
-      const tokens = this.generateTokens(generateTokensParams);
+      const payload = {
+        userId: user.id,
+        role: user.role,
+      };
 
-      const TTL = this.parseExpiresIn(this.refreshTokenExpiresIn)
+      const tokens = await this.generateTokens(payload);
 
-      await this.redisRepository.storeRefreshTokenId(user.id, tokens.refreshToken, TTL);
+      const result = {
+        user,
+        account,
+        tokens,
+      };
 
-      return tokens;
+      return result;
     } catch (error) {
       if (error instanceof InvalidCredentials) {
         throw error;
@@ -123,58 +147,103 @@ export class AuthService implements IAuthService {
     }
   }
 
-  /**
-   * Validates the old_refresh_token_id(old token) in Redis and generates a new pair of tokens.
-   */
-  async processRefreshToken(oldRefreshToken: string): Promise<TokenResult> {
+  async logout({ refreshTokenId, accessToken }: LogoutParams) {
+    await this.redisRepository.blacklistRefreshToken(
+      refreshTokenId,
+      this.refreshTokenBlacklistTTL,
+    );
+
+    await this.redisRepository.deleteSession(refreshTokenId);
+
+    // 5. SET blacklist:{access_token_jti} (Optional)
+    const decoded: TokenDecodeResult = jwt.decode(
+      accessToken,
+    ) as TokenDecodeResult;
+    if (decoded && decoded.jti) {
+      const remainingTime = decoded.exp - Math.floor(Date.now() / 1000);
+      if (remainingTime > 0) {
+        await this.redisRepository.blacklistAccessToken(
+          decoded.jti,
+          remainingTime,
+        );
+      }
+    }
+    return { success: true };
+  }
+
+  async validateAccessToken(accessToken: string): Promise<ValidateTokenResult> {
     try {
-      // 1. Верифицируем refresh token
-      const decoded = jwt.verify(
-        oldRefreshToken, 
-        this.refreshTokenSecret
-      ) as TokenPayload & { jti?: string };
-      
-      const { userId, role } = decoded;
-  
-      // 2. Проверяем существование пользователя
-      // const user = await this.usersService.findById(userId);
-      // if (!user) {
-      //   throw new AuthOperationException('refresh token', 'User not found');
-      // }
-  
-      // 3. Проверяем, не заблокирован ли пользователь
-      // if (user.isBlocked || !user.isActive) {
-      //   await this.redisRepository.revokeAllUserTokens(userId);
-      //   throw new AuthOperationException('refresh token', 'User is blocked');
-      // }
-  
-      // 4. Проверяем, не отозван ли токен (по jti или самому токену)
-      // const isTokenRevoked = await this.redisRepository.isRefreshTokenRevoked(
-      //   userId, 
-      //   oldRefreshToken
-      // );
-      
-      // if (isTokenRevoked) {
-      //   // Если токен скомпрометирован - отзываем все токены пользователя
-      //   await this.redisRepository.revokeAllUserTokens(userId);
-      //   throw new AuthOperationException('refresh token', 'Token has been revoked');
-      // }
-  
-      // 5. Отзываем старый refresh token (rotation для безопасности)
-      await this.redisRepository.removeRefreshToken(userId, oldRefreshToken);
-  
-      // 6. Генерируем новую пару токенов
-      const generateTokensParams = { userId, role };
-      const tokens = this.generateTokens(generateTokensParams);
-  
-      // 7. Сохраняем новый refresh token
-      const TTL = this.parseExpiresIn(this.refreshTokenExpiresIn);
-      await this.redisRepository.storeRefreshTokenId(
-        userId, 
-        tokens.refreshToken, 
-        TTL
+      const payload = jwt.verify(
+        accessToken,
+        this.accessTokenSecret,
+      ) as TokenDecodeResult;
+      console.log(payload);
+
+      const isBlacklisted = await this.redisRepository.isAccessTokenBlacklisted(
+        payload.jti,
       );
-  
+
+      if (isBlacklisted) {
+        throw new AccessTokenInBlacklist();
+      }
+
+      const user = await this.usersService.findOne(payload.userId);
+      if (!user || user.disabled) {
+        throw new UserDisabled();
+      }
+
+      return {
+        isValid: true,
+        payload,
+      };
+    } catch (error) {
+      if (error instanceof jwt.TokenExpiredError) {
+        throw new AuthOperationException('validate token', 'Token expired');
+      }
+      if (error instanceof jwt.JsonWebTokenError) {
+        throw new AuthOperationException(
+          'validate token',
+          'Invalid token signature',
+        );
+      }
+      throw new AuthOperationException('validate token', error.message);
+    }
+  }
+
+  async processRefreshToken(oldRefreshTokenId: string): Promise<TokenResult> {
+    try {
+      const isUsed =
+        await this.redisRepository.isRefreshTokenBlacklisted(oldRefreshTokenId);
+
+      if (isUsed) {
+        await this.redisRepository.blacklistRefreshToken(
+          oldRefreshTokenId,
+          this.refreshTokenBlacklistTTL,
+        );
+        // TODO: delete all user sessions
+        throw new RefreshTokenInBlacklist();
+      }
+
+      const session =
+        await this.redisRepository.findSessionByTokenId(oldRefreshTokenId);
+      if (!session) {
+        throw new Error('Session not found by refresh token');
+      }
+
+      const isUserDisabled = await this.isUserBlocked(session.userId);
+      if (isUserDisabled) {
+        throw new UserDisabled();
+      }
+
+      await this.redisRepository.blacklistRefreshToken(
+        oldRefreshTokenId,
+        this.refreshTokenBlacklistTTL,
+      );
+
+      const tokens = await this.generateTokens({
+        userId: session.userId,
+        role: session.role,
+      });
       return tokens;
     } catch (error) {
       if (error instanceof jwt.TokenExpiredError) {
@@ -183,95 +252,43 @@ export class AuthService implements IAuthService {
       if (error instanceof jwt.JsonWebTokenError) {
         throw new AuthOperationException('refresh token', 'Invalid token');
       }
-      if (error instanceof AuthOperationException) {
-        throw error;
-      }
+
       throw new AuthOperationException('refresh token', error.message);
     }
   }
 
-  /**
-   * Checks the signature, expiration, and blacklist status of an access_token.
-   */
-  async validateToken(acessToken: string): Promise<{
-    isValid: boolean;
-    payload?: TokenPayload;
-    error?: string;
-  }> {
-    // TODO: Checks the signature, expiration, and blacklist status of an access_token.
-    try {
-      // 1. Проверяем базовую структуру токена
-      // if (!acessToken || typeof acessToken !== 'string') {
-      //   return { isValid: false, error: 'Invalid token format' };
-      // }
-  
-      // 2. Верифицируем подпись и срок действия
-      const payload = jwt.verify(
-        acessToken, 
-        this.accessTokenSecret
-      ) as TokenPayload;
-  
-      // 3. Проверяем, не находится ли токен в черном списке
-      // (например, если пользователь вышел из системы)
-      const isBlacklisted = await this.redisRepository.isAccessTokenBlacklisted(
-        acessToken
-      );
-      
-      if (isBlacklisted) {
-        return { isValid: false, error: 'Token has been revoked' };
-      }
-  
-      // 4. Дополнительная проверка пользователя (опционально)
-      // const user = await this.usersService.findById(payload.userId);
-      // if (!user || user.isBlocked || !user.isActive) {
-      //   return { isValid: false, error: 'User is not active' };
-      // }
-  
-      return {
-        isValid: true,
-        payload
-      };
-    } catch (error) {
-      if (error instanceof jwt.TokenExpiredError) {
-        return { isValid: false, error: 'Token expired' };
-      }
-      if (error instanceof jwt.JsonWebTokenError) {
-        return { isValid: false, error: 'Invalid token signature' };
-      }
-      return { isValid: false, error: 'Token validation failed' };
-    }
-  }
+  private async generateTokens(payload: TokenPayload): Promise<TokenResult> {
+    const refreshTokenId = uuidv4();
 
-  /**
-   * Exchanges the code for a user profile, finds/creates the user, and calls generateNewTokens.
-   */
-  exchageCodeForTokens(code: any) {
-    // TODO: Exchanges the code for a user profile, finds/creates the user, and calls generateNewTokens.
-
-    throw new Error('Method not implemented.');
-  }
-
-  private generateTokens(params: TokenPayload): TokenResult {
     const accessTokenExpiresIn = this.parseExpiresIn(this.accessTokenExpiresIn);
-    const accessToken = jwt.sign(params, this.accessTokenSecret, {
-      expiresIn: accessTokenExpiresIn,
-    });
+
+    const accessToken = jwt.sign(
+      { ...payload, jti: uuidv4() },
+      this.accessTokenSecret,
+      {
+        expiresIn: accessTokenExpiresIn,
+      },
+    );
 
     const refreshTokenExpiresIn = this.parseExpiresIn(
-      this.refreshTokenExpiresIn,
+      this.refreshTokenExpiresIn || '7d',
     );
-    const refreshToken = jwt.sign(params, this.refreshTokenSecret, {
-      expiresIn: refreshTokenExpiresIn,
-    });
+
+    const session = { userId: payload.userId, role: payload.role };
+
+    await this.redisRepository.storeRefreshTokenId(
+      session,
+      refreshTokenId,
+      refreshTokenExpiresIn,
+    );
 
     return {
       accessToken,
-      refreshToken,
-      expiresIn: accessTokenExpiresIn,
+      refreshToken: refreshTokenId,
     };
   }
 
-  private parseExpiresIn(expiresIn: string): number {
+  parseExpiresIn(expiresIn: string): number {
     const unit = expiresIn.slice(-1);
     const value = parseInt(expiresIn.slice(0, -1));
 
@@ -286,6 +303,16 @@ export class AuthService implements IAuthService {
         return value * 24 * 60 * 60;
       default:
         return 3600;
+    }
+  }
+
+  async isUserBlocked(userId: number): Promise<boolean> {
+    try {
+      const user = await this.usersService.findOne(userId);
+
+      return user.disabled;
+    } catch (error) {
+      throw new AuthOperationException('check user blocked', error.message);
     }
   }
 }

@@ -8,6 +8,11 @@ import { UsersService } from '../users/users.service';
 import { User } from '../entities/user.entity';
 import { Account } from '../entities/account.entity';
 import { RedisAuthRepository } from './redisAuth.repository';
+import passport from 'passport';
+import {
+  extractAccessToken,
+  extractRefreshToken,
+} from './middleware/extractTokens.middleware';
 
 export function createAuthRouter(dataSource: DataSource): Router {
   const router = Router();
@@ -27,6 +32,8 @@ export function createAuthRouter(dataSource: DataSource): Router {
 
   const authController = new AuthController(authService);
 
+  // router.use(passport.initialize());
+
   router.post('/register', (req, res, next) =>
     authController.register(req, res, next),
   );
@@ -35,9 +42,18 @@ export function createAuthRouter(dataSource: DataSource): Router {
     authController.login(req, res, next),
   );
 
-  router.post('/validate', (req, res, next) => authController.validate);
-  router.post('/refresh', (req, res, next) => authController.refreshTokens);
-  router.post('/logout', (req, res, next) => {});
+  router.post('/validate', extractAccessToken, (req, res, next) =>
+    authController.validate(req, res, next),
+  );
+  router.post('/refresh', extractRefreshToken, (req, res, next) =>
+    authController.refreshTokens(req, res, next),
+  );
+  router.post(
+    '/logout',
+    extractAccessToken,
+    extractRefreshToken,
+    (req, res, next) => authController.logout(req, res, next),
+  );
 
   return router;
 }

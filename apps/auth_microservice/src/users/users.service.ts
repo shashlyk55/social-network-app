@@ -113,7 +113,12 @@ export class UsersService implements IUsersService {
       const user = await this.userRepository
         .createQueryBuilder('user')
         .leftJoinAndSelect('user.account', 'account')
-        .select(['user.id', 'user.role'])
+        .select([
+          'user.id',
+          'user.role',
+          'account.email',
+          'account.lastLoginAt',
+        ])
         .where('account.email = :email', { email })
         .getOne();
 

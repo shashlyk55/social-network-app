@@ -1,12 +1,8 @@
-import { Account } from 'src/entities/account.entity';
 import {
   AccountResult,
   CreateAccountParams,
 } from '../types/account-service.types';
-import {
-  AuthResult,
-  ValidatePasswordResult,
-} from 'src/auth/types/auth-params.types';
+
 import { EntityManager } from 'typeorm';
 
 export interface IAccountsService {
@@ -23,8 +19,4 @@ export interface IAccountsService {
     accountId: number,
     transactionalEntityManager?: EntityManager,
   ): Promise<void>;
-  // validatePassword(
-  //   email: string,
-  //   passowrd: string,
-  // ): Promise<ValidatePasswordResult>;
 }

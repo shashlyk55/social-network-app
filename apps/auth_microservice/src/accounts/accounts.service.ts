@@ -11,10 +11,6 @@ import {
   EmailAlreadyExistsException,
 } from './exceptions/account.exceptions';
 import bcrypt from 'bcryptjs';
-import {
-  AuthResult,
-  ValidatePasswordResult,
-} from 'src/auth/types/auth-params.types';
 import { DomainException } from '../common/exceptions/domain.excpetion';
 
 export class AccountsService implements IAccountsService {
@@ -59,8 +55,6 @@ export class AccountsService implements IAccountsService {
 
       return savedAccount;
     } catch (error) {
-      //console.error(error);
-
       if (error instanceof DomainException) {
         throw error;
       }
@@ -69,11 +63,13 @@ export class AccountsService implements IAccountsService {
     }
   }
 
-  async findOneByUserId(id: number): Promise<Account> {
+  async findOneByUserId(id: number): Promise<AccountResult> {
     try {
-      const account = await this.accountRepository.findOne({
-        where: { userId: id },
-      });
+      const account = await this.accountRepository
+        .createQueryBuilder('account')
+        .select(['account.id', 'account.email', 'account.lastLoginAt'])
+        .where('account.userId = :userId', { userId: id })
+        .getOne();
 
       if (!account) {
         throw new AccountNotFoundException();
@@ -91,11 +87,13 @@ export class AccountsService implements IAccountsService {
     }
   }
 
-  async findOneByAccountId(id: number): Promise<Account> {
+  async findOneByAccountId(id: number): Promise<AccountResult> {
     try {
-      const account = await this.accountRepository.findOne({
-        where: { id },
-      });
+      const account = await this.accountRepository
+        .createQueryBuilder('account')
+        .select(['account.id', 'account.email', 'account.lastLoginAt'])
+        .where('account.id = :accountId', { accountId: id })
+        .getOne();
 
       if (!account) {
         throw new AccountNotFoundException(id);
@@ -113,7 +111,7 @@ export class AccountsService implements IAccountsService {
     }
   }
 
-  async findAll(): Promise<Account[]> {
+  async findAll(): Promise<AccountResult[]> {
     try {
       const accounts = await this.accountRepository.find();
 

@@ -1,12 +1,20 @@
 import { createClient, RedisClientType } from 'redis';
 import { IRedisRepository } from './interfaces/IRedisRepository';
+import { Session } from './types/auth-params.types';
 
 export class RedisAuthRepository implements IRedisRepository {
   private client: RedisClientType;
+  private BLACKLIST_PREFIX: string;
+
+  private readonly SESSION_PREFIX = 'refresh_tokens:';
+  private readonly BL_ACCESS_PREFIX = 'bl_access:';
+  private readonly BL_REFRESH_PREFIX = 'bl_refresh:';
 
   constructor() {
     this.client = createClient({
-      url: process.env.REDIS_URL || 'redis://:redis_password@localhost:6379',
+      url:
+        process.env.REDIS_URL ||
+        'redis://localhost:6379?passowrd=redis_password',
     });
 
     this.client.on('error', (err) =>
@@ -34,116 +42,88 @@ export class RedisAuthRepository implements IRedisRepository {
   }
 
   /**
-   * Проверяет, находится ли токен в черном списке
+   * Проверка для Middleware: не отозван ли JWT (Access Token)
    */
-  async isAccessTokenBlacklisted(accessToken: string): Promise<boolean> {
-    try {
-      const result = await this.client.get(`blacklist:${token}`);
-      return result !== null;
-    } catch (error) {
-      console.error('Error checking blacklisted token: ', error);
-      return false;
-    }
+  async isAccessTokenBlacklisted(jti: string): Promise<boolean> {
+    const result = await this.client.exists(`${this.BL_ACCESS_PREFIX}${jti}`);
+    return result === 1;
   }
 
   /**
-   * Добавляет токен в черный список с указанным временем жизни
+   * Проверка для эндпоинта Refresh: не использовался ли ID ранее
    */
-  async blacklistToken(token: string, expiresIn: Date | number): Promise<void> {
-    try {
-      const key = `blacklist:${token}`;
-      const ttl = this.calculateTTL(expiresIn);
-
-      await this.client.setEx(key, ttl, 'blacklisted');
-      console.log(`Token blacklisted for ${ttl} seconds`);
-    } catch (error) {
-      console.error('Error blacklisting token:', error);
-      throw error;
-    }
+  async isRefreshTokenBlacklisted(tokenId: string): Promise<boolean> {
+    const result = await this.client.exists(
+      `${this.BL_REFRESH_PREFIX}${tokenId}`,
+    );
+    return result === 1;
   }
 
   /**
-   * Сохраняет ID refresh токена для пользователя
+   * Блокировка Access Token (JWT)
+   * Ключ живет в Redis до момента, когда токен сам бы истек по времени (exp)
+   */
+  async blacklistAccessToken(
+    jti: string,
+    expiresInSeconds: number,
+  ): Promise<void> {
+    await this.client.set(`${this.BL_ACCESS_PREFIX}${jti}`, 'revoked', {
+      EX: expiresInSeconds,
+    });
+  }
+
+  /**
+   * Блокировка старого Refresh Token (после того как он был использован)
+   * Живет короткое время (например, 1-2 минуты) для предотвращения Race Conditions
+   */
+  async blacklistRefreshToken(
+    tokenId: string,
+    gracePeriodSeconds: number = 60,
+  ) {
+    await this.client.set(`${this.BL_REFRESH_PREFIX}${tokenId}`, 'used', {
+      EX: gracePeriodSeconds,
+    });
+  }
+
+  /**
+   * 8/12. SET refresh_tokens:{id} {userId, ...} (из схем Login/Register)
+   * Сохраняет сессию пользователя, привязанную к Refresh Token ID.
    */
   async storeRefreshTokenId(
-    userId: number,
-    refreshTokenId: string,
-    TTL: number
-  ): Promise<void> {
-    try {
-      const key = `session:${refreshTokenId}`;
-      const value = `${userId}`
+    session: Session,
+    refreshTokenId,
+    expiresIn: number,
+  ) {
+    const key = `${this.SESSION_PREFIX}${refreshTokenId}`;
+    const data = JSON.stringify({
+      session,
+      createdAt: new Date().toISOString(),
+    });
 
-      await this.client.sAdd(key, value);
-      await this.client.expire(key, TTL); 
-    } catch (error) {
-      console.error('Error storing refresh token:', error);
-      throw error;
-    }
+    await this.client.set(key, data, { EX: expiresIn });
   }
 
   /**
-   * Проверяет существование сессии по ID токена
+   * 1/2. GET refresh_tokens:{id} (из схем Refresh Token / Failed Refresh)
+   * Ищет активную сессию по ID рефреш-токена.
    */
-  async findSessionByTokenId(tokenId: string): Promise<boolean> {
-    try {
-      const result = await this.client.get(`session:${tokenId}`);
-      return result !== null;
-    } catch (error) {
-      console.error('Error finding session by token id:', error);
-      return false;
+  async findSessionByTokenId(tokenId): Promise<Session | null> {
+    const key = `${this.SESSION_PREFIX}${tokenId}`;
+    const session = await this.client.get(key);
+
+    if (!session) {
+      return null;
     }
+
+    return JSON.parse(session);
   }
 
   /**
-   * Дополнительный метод: удаление refresh токена пользователя
+   * 4. DEL refresh_tokens:{id} (из схемы Logout Flow)
+   * Удаляет сессию при выходе пользователя.
    */
-  async removeRefreshToken(
-    userId: number,
-    refreshTokenId: string,
-  ): Promise<void> {
-    try {
-      const key = `session:${refreshTokenId}`;
-      await this.client.sRem(key, refreshTokenId);
-    } catch (error) {
-      console.error('Error removing refresh token:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Дополнительный метод: удаление refresh токена пользователя
-   */
-  async removeRefreshToken(
-    userId: number,
-    refreshTokenId: string,
-  ): Promise<void> {
-    try {
-      // Удаляем mapping токена
-      // await this.client.del(`refresh_token:${refreshTokenId}`);
-      
-      // Удаляем из списка сессий пользователя
-      const userSessionsKey = `session:${refreshTokenId}`;
-      
-      await this.client.sRem(userSessionsKey, userId);
-      
-      // Удаляем метаданные сессии
-      // await this.client.del(`session_meta:${refreshTokenId}`);
-    } catch (error) {
-      console.error('Error removing refresh token:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Вспомогательный метод для расчета TTL
-   */
-  private calculateTTL(expiresIn: Date | number): number {
-    if (expiresIn instanceof Date) {
-      const now = Math.floor(Date.now() / 1000);
-      const expiry = Math.floor(expiresIn.getTime() / 1000);
-      return expiry - now;
-    }
-    return expiresIn;
+  async deleteSession(tokenId) {
+    const key = `${this.SESSION_PREFIX}${tokenId}`;
+    await this.client.del(key);
   }
 }
