@@ -7,15 +7,17 @@ import {
   OneToOne,
   JoinColumn,
   ManyToOne,
+  BeforeInsert,
+  BeforeUpdate,
 } from 'typeorm';
 import { User } from './user.entity';
 
 export enum AccountProviderType {
   LOCAL = 'local',
   GOOGLE = 'google',
-  FACEBOOK = 'facebook',
-  GITHUB = 'github',
-  TWITTER = 'twitter',
+  // FACEBOOK = 'facebook',
+  // GITHUB = 'github',
+  // TWITTER = 'twitter',
 }
 
 @Entity('accounts', { schema: 'auth' })
@@ -33,8 +35,8 @@ export class Account {
   @Column({ unique: true })
   email: string;
 
-  @Column({ name: 'password_hash' })
-  passwordHash: string;
+  @Column({ type: 'varchar', name: 'password_hash', nullable: true })
+  passwordHash: string | null;
 
   @Column({
     type: 'enum',
@@ -68,4 +70,16 @@ export class Account {
   @ManyToOne(() => User, { nullable: true })
   @JoinColumn({ name: 'updated_by' })
   updatedBy: User;
+
+  @BeforeInsert()
+  @BeforeUpdate()
+  validateProviderData() {
+    if (this.provider === AccountProviderType.LOCAL && !this.passwordHash) {
+      throw new Error('Local provider accounts must have a password');
+    }
+
+    if (this.provider !== AccountProviderType.LOCAL && !this.providerId) {
+      throw new Error('OAuth provider accounts must have a provider ID');
+    }
+  }
 }

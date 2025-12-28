@@ -36,21 +36,21 @@ export class User {
   createdAt: Date;
 
   @Column({ name: 'created_by', nullable: true })
-  createdById: number;
+  createdById: number | null;
 
   @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'created_by' })
-  createdBy: User;
+  createdBy: User | null;
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
   @Column({ name: 'updated_by', nullable: true })
-  updatedById: number;
+  updatedById: number | null;
 
   @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'updated_by' })
-  updatedBy: User;
+  updatedBy: User | null;
 
   //@Column({ name: 'account_id' })
   @RelationId((user: User) => user.account)
@@ -59,8 +59,8 @@ export class User {
   @OneToOne(() => Account, (account) => account.user)
   account: Account;
 
-  @Column({ name: 'profile_id', nullable: true })
-  profileId: number;
+  @Column({ type: 'int', name: 'profile_id', nullable: true })
+  profileId: number | null;
 
   // @OneToOne(() => Profile, (profile) => profile.user)
   // profile: Profile;

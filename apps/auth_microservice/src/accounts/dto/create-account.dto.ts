@@ -7,7 +7,7 @@ export class CreateAccountDto {
   email: string;
   password: string;
   provider: AccountProviderType;
-  providerId?: string;
+  //providerId: string | null;
 
   constructor(data: Partial<CreateAccountDto>) {
     Object.assign(this, data);
@@ -22,7 +22,7 @@ export class CreateAccountDto {
       email: dto.email,
       password: dto.password,
       provider: dto.provider,
-      providerId: dto.providerId,
+      //providerId: dto.providerId,
       createdById: createdById,
     };
     return params;

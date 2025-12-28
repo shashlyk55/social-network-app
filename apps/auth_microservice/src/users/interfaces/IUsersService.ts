@@ -7,6 +7,7 @@ import {
 } from '../types/user-service.types';
 import { PaginationResult } from 'src/common/types/service.types';
 import { EntityManager } from 'typeorm';
+import { AccountProviderType } from 'src/entities/account.entity';
 
 export interface IUsersService {
   create(
@@ -17,6 +18,10 @@ export interface IUsersService {
   findAll(params: FindUsersParams): Promise<PaginationResult<UserResult>>;
   findOne(id: number): Promise<UserResult>;
   findByEmail(email: string): Promise<UserResult>;
+  findByEmailAndProvider(
+    email: string,
+    provider: AccountProviderType,
+  ): Promise<UserResult | null>;
   update(params: UpdateUserParams): Promise<UserResult>;
   remove(id: number): Promise<void>;
   softRemove(id: number, deletedById: number): Promise<void>;

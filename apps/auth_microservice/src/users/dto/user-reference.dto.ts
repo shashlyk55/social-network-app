@@ -5,10 +5,10 @@ export class UserReferenceDto {
   role: UserRole;
   disabled: boolean;
   accountId: number;
-  createdById: number;
-  updatedById?: number;
+  createdById: number | null;
+  updatedById: number | null;
   createdAt: Date;
-  updatedAt?: Date;
+  updatedAt: Date | null;
 
   static toReference(entity: User): UserReferenceDto {
     const reference: UserReferenceDto = {
@@ -19,6 +19,7 @@ export class UserReferenceDto {
       createdById: entity.createdById,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
+      updatedById: entity.updatedById,
     };
 
     return reference;

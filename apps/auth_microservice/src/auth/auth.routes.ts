@@ -13,6 +13,7 @@ import {
   extractAccessToken,
   extractRefreshToken,
 } from './middleware/extractTokens.middleware';
+import { ExternalAuthService } from './externalAuthService';
 
 export function createAuthRouter(dataSource: DataSource): Router {
   const router = Router();
@@ -23,16 +24,26 @@ export function createAuthRouter(dataSource: DataSource): Router {
 
   const userService = new UsersService(userRepository, dataSource);
   const accountService = new AccountsService(accountRepository, dataSource);
+  const externalAuthService = new ExternalAuthService();
   const authService = new AuthService(
     accountService,
     userService,
     dataSource,
     redisAuthRepository,
+    externalAuthService,
   );
 
   const authController = new AuthController(authService);
 
   // router.use(passport.initialize());
+
+  router.get('/login/:provider', (req, res, next) =>
+    authController.loginWithOAuthProvider(req, res, next),
+  );
+
+  router.get('/callback/:provider', (req, res, next) =>
+    authController.handleCallback(req, res, next),
+  );
 
   router.post('/register', (req, res, next) =>
     authController.register(req, res, next),
@@ -45,9 +56,11 @@ export function createAuthRouter(dataSource: DataSource): Router {
   router.post('/validate', extractAccessToken, (req, res, next) =>
     authController.validate(req, res, next),
   );
+
   router.post('/refresh', extractRefreshToken, (req, res, next) =>
     authController.refreshTokens(req, res, next),
   );
+
   router.post(
     '/logout',
     extractAccessToken,

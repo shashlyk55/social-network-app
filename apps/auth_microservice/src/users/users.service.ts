@@ -13,6 +13,7 @@ import {
 import { DataSource, EntityManager, Repository } from 'typeorm';
 import { PaginationResult } from 'src/common/types/service.types';
 import { DomainException } from '../common/exceptions/domain.excpetion';
+import { AccountProviderType } from 'src/entities/account.entity';
 
 export class UsersService implements IUsersService {
   constructor(
@@ -118,6 +119,7 @@ export class UsersService implements IUsersService {
           'user.role',
           'account.email',
           'account.lastLoginAt',
+          'account.provider',
         ])
         .where('account.email = :email', { email })
         .getOne();
@@ -129,6 +131,38 @@ export class UsersService implements IUsersService {
       return user;
     } catch (error) {
       throw new UserOperationException('find user by email', error.message);
+    }
+  }
+
+  async findByEmailAndProvider(
+    email: string,
+    provider: AccountProviderType,
+  ): Promise<UserResult | null> {
+    try {
+      const user = await this.userRepository
+        .createQueryBuilder('user')
+        .leftJoinAndSelect('user.account', 'account')
+        .select([
+          'user.id',
+          'user.role',
+          'account.email',
+          'account.lastLoginAt',
+          'account.provider',
+        ])
+        .where('account.email = :email AND account.provider = :provider', {
+          email,
+          provider,
+        })
+        .getOne();
+
+      if (!user) {
+        throw new UserNotFoundException();
+      }
+
+      return user;
+    } catch (error) {
+      //throw new UserOperationException('find user by email', error.message);
+      return null;
     }
   }
 

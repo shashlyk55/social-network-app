@@ -1,18 +1,10 @@
 import { NextFunction, Request, Response } from 'express';
-import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
-import {
-  LoginParams,
-  RegisterParams,
-  TokenDecodeResult,
-  TokenPayload,
-} from './types/auth-params.types';
-import {
-  AsyncController,
-  HandleExceptions,
-} from '../app/decorators/controller.decorator';
+import { LoginParams, RegisterParams } from './types/auth-params.types';
+import { HandleExceptions } from '../app/decorators/controller.decorator';
 import { IAuthService } from './interfaces/IAuthService';
 import { LoginDto } from './dto/login-dto';
+import { AccountProviderType } from '../entities/account.entity';
 
 export class AuthController {
   constructor(private readonly authService: IAuthService) {}
@@ -120,6 +112,65 @@ export class AuthController {
       res.json({
         success: true,
         message: 'Logged out successfully',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  @HandleExceptions()
+  async loginWithOAuthProvider(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<unknown> {
+    try {
+      const { provider } = req.params as { provider: AccountProviderType };
+
+      if (
+        !Object.values(AccountProviderType).includes(provider) ||
+        provider === AccountProviderType.LOCAL
+      ) {
+        return res
+          .status(400)
+          .json({ success: false, message: 'Invalid or unsupported provider' });
+      }
+
+      const redirectUrl = this.authService.getOAuthRedirectUrl(provider);
+
+      return res.redirect(redirectUrl);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  @HandleExceptions()
+  async handleCallback(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { provider } = req.params as { provider: AccountProviderType };
+      const { code, error } = req.query;
+
+      if (error) {
+        return res.redirect(`${process.env.FRONTEND_URL}/login?error=${error}`);
+      }
+
+      if (!code) {
+        return res
+          .status(400)
+          .json({ message: 'Authorization code is missing' });
+      }
+
+      const authResult = await this.authService.exchageCodeForTokens(
+        code as string,
+        provider,
+      );
+
+      this.setRefreshCookie(res, authResult.tokens.refreshToken);
+
+      return res.status(200).json({
+        success: true,
+        accessToken: authResult.tokens.accessToken,
+        profile: authResult.profile,
       });
     } catch (error) {
       next(error);

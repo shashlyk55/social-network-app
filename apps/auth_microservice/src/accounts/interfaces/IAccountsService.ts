@@ -10,9 +10,10 @@ export interface IAccountsService {
     params: CreateAccountParams,
     transactionalEntityManager?: EntityManager,
   ): Promise<AccountResult>;
+  createWithOAuth(params, transactionalEntityManager?: EntityManager);
   findOneByUserId(id: number): Promise<AccountResult>;
   findOneByAccountId(id: number): Promise<AccountResult>;
-  getAccountPasswordByEmail(email: string): Promise<string | undefined>;
+  getAccountPasswordByEmail(email: string): Promise<string | null>;
   findAll(): Promise<AccountResult[]>;
   remove(id: number): Promise<void>;
   updateLastLogin(

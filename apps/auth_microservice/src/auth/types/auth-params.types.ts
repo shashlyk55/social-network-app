@@ -1,6 +1,6 @@
 import { AccountResult } from 'src/accounts/types/account-service.types';
-import { Account, AccountProviderType } from 'src/entities/account.entity';
-import { User, UserRole } from 'src/entities/user.entity';
+import { AccountProviderType } from 'src/entities/account.entity';
+import { UserRole } from 'src/entities/user.entity';
 import { UserResult } from 'src/users/types/user-service.types';
 
 export type LoginParams = {

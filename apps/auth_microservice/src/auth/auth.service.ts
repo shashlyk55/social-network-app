@@ -1,5 +1,5 @@
-import { IAccountsService } from 'src/accounts/interfaces/IAccountsService';
-import { IUsersService } from 'src/users/interfaces/IUsersService';
+import { IAccountsService } from '../accounts/interfaces/IAccountsService';
+import { IUsersService } from '../users/interfaces/IUsersService';
 import { IAuthService } from './interfaces/IAuthService';
 import {
   RefreshTokenParams,
@@ -14,7 +14,7 @@ import {
   TokenDecodeResult,
 } from './types/auth-params.types';
 import { DataSource } from 'typeorm';
-import { UserRole } from 'src/entities/user.entity';
+import { UserRole } from '../entities/user.entity';
 import * as jwt from 'jsonwebtoken';
 import {
   AccessTokenInBlacklist,
@@ -29,6 +29,8 @@ import { DomainException } from '../common/exceptions/domain.excpetion';
 import bcrypt from 'bcryptjs';
 import { IRedisRepository } from './interfaces/IRedisRepository';
 import { v4 as uuidv4 } from 'uuid';
+import { IExternalAuthService } from './interfaces/IExternalAuthService';
+import { OAuthProfile } from './types/external-auth.types';
 
 export class AuthService implements IAuthService {
   private readonly accessTokenSecret: string;
@@ -42,6 +44,7 @@ export class AuthService implements IAuthService {
     private readonly usersService: IUsersService,
     private readonly dataSource: DataSource,
     private readonly redisRepository: IRedisRepository,
+    private readonly externalAuthService: IExternalAuthService,
   ) {
     this.accessTokenSecret = process.env.ACCESS_TOKEN_SECRET || 'access-secren';
     this.accessTokenExpiresIn = process.env.ACCESS_TOKEN_EXPIRES_IN || '1h';
@@ -53,10 +56,79 @@ export class AuthService implements IAuthService {
   /**
    * Exchanges the code for a user profile, finds/creates the user, and calls generateNewTokens.
    */
-  exchageCodeForTokens(code: any) {
-    // TODO: Exchanges the code for a user profile, finds/creates the user, and calls generateNewTokens.
+  async exchageCodeForTokens(
+    code: string,
+    provider: AccountProviderType,
+  ): Promise<{ profile: OAuthProfile; tokens: TokenResult }> {
+    try {
+      // 8. Вызов внешнего провайдера для получения профиля
+      const profile = await this.externalAuthService.exchangeCodeForProfile(
+        code,
+        provider,
+      );
 
-    throw new Error('Method not implemented.');
+      let user = await this.usersService.findByEmailAndProvider(
+        profile.email,
+        provider,
+      );
+
+      if (!user) {
+        user = await this.dataSource.transaction(
+          async (transactionalEntityManager) => {
+            try {
+              const newUser = await this.usersService.create(
+                {
+                  role: UserRole.USER,
+                },
+                undefined,
+                transactionalEntityManager,
+              );
+
+              const account = await this.accountsService.createWithOAuth(
+                {
+                  userId: newUser.id,
+                  email: profile.email,
+                  provider: provider,
+                  providerId: profile.providerId,
+                },
+                transactionalEntityManager,
+              );
+
+              return newUser;
+            } catch (error) {
+              throw error;
+            }
+          },
+        );
+      }
+
+      const tokens = await this.generateTokens({
+        userId: user.id,
+        role: user.role,
+      });
+      const result = {
+        profile,
+        tokens,
+      };
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  getOAuthRedirectUrl(provider: AccountProviderType): string {
+    try {
+      if (provider === AccountProviderType.GOOGLE) {
+        return this.externalAuthService.getRedirectUrl(provider);
+      } else {
+        throw new Error('provider not supported');
+      }
+      // if (provider === AccountProviderType.GITHUB) {
+      //   return `https://github.com/login/oauth/authorize?client_id=...`;
+      // }
+    } catch (error) {
+      throw error;
+    }
   }
 
   async registerUser(params: RegisterParams): Promise<AuthResult> {
@@ -77,7 +149,7 @@ export class AuthService implements IAuthService {
             password: params.password,
             provider: params.provider || AccountProviderType.LOCAL,
             createdById: params.createdById,
-            providerId: params.providerId,
+            //providerId: params.providerId,
           },
           transactionalEntityManager,
         );
@@ -155,7 +227,6 @@ export class AuthService implements IAuthService {
 
     await this.redisRepository.deleteSession(refreshTokenId);
 
-    // 5. SET blacklist:{access_token_jti} (Optional)
     const decoded: TokenDecodeResult = jwt.decode(
       accessToken,
     ) as TokenDecodeResult;
