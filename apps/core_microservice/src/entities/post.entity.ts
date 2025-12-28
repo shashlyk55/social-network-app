@@ -13,7 +13,6 @@ import {
 import { PostAsset } from './many-to-many/post-asset.entity';
 import { PostLike } from './many-to-many/post-like.entity';
 import { Profile } from './profile.entity';
-import { User } from './user.entity';
 import { Comment } from './comment.entity';
 
 @Entity('posts', { schema: 'main' })
@@ -48,7 +47,7 @@ export class Post {
   updatedAt: Date;
 
   @Column({ name: 'updated_by', nullable: true })
-  updatedById: number;
+  updatedById: number | null;
 
   // @ManyToOne(() => User, { nullable: true })
   // @JoinColumn({ name: 'updated_by' })

@@ -7,7 +7,6 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { User } from './user.entity';
 
 export enum NotificationType {
   LIKE = 'like',
@@ -36,13 +35,13 @@ export class Notification {
   message: string;
 
   @Column({ type: 'jsonb', nullable: true })
-  data: any;
+  data: any | null;
 
   @Column({ name: 'is_read', default: false })
   isRead: boolean;
 
   @Column({ name: 'read_at', nullable: true })
-  readAt: Date;
+  readAt: Date | null;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
@@ -58,7 +57,7 @@ export class Notification {
   updatedAt: Date;
 
   @Column({ name: 'updated_by', nullable: true })
-  updatedById: number;
+  updatedById: number | null;
 
   // @ManyToOne(() => User, { nullable: true })
   // @JoinColumn({ name: 'updated_by' })

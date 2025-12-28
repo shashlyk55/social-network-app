@@ -1,5 +1,5 @@
-import { Account, AccountProviderType } from 'src/entities/account.entity';
-import { User, UserRole } from 'src/entities/user.entity';
+// import { Account, AccountProviderType } from 'src/entities/account.entity';
+// import { User, UserRole } from 'src/entities/user.entity';
 
 export type LoginParams = {
   email: string;
@@ -25,15 +25,15 @@ export type RefreshTokenParams = {
 export type RegisterParams = {
   email: string;
   password: string;
-  role: UserRole;
-  provider: AccountProviderType;
+  // role: UserRole;
+  // provider: AccountProviderType;
   providerId?: string;
   createdById?: number;
 };
 
 export type AuthResult = {
-  user: User;
-  account: Account;
+  // user: User;
+  // account: Account;
   tokens: {
     accessToken: string;
     refreshToken: string;

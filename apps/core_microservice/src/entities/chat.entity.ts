@@ -10,7 +10,6 @@ import {
 } from 'typeorm';
 import { ChatParticipant } from './many-to-many/chat-participants.entity';
 import { Message } from './message.entity';
-import { User } from './user.entity';
 
 export enum ChatType {
   PRIVATE = 'private',
@@ -26,7 +25,7 @@ export class Chat {
   name: string;
 
   @Column({ type: 'text', nullable: true })
-  description: string;
+  description: string | null;
 
   @Column({ type: 'enum', enum: ChatType, default: ChatType.GROUP })
   type: ChatType;

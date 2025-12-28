@@ -8,7 +8,6 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Profile } from '../profile.entity';
-import { User } from '../user.entity';
 import { Comment } from '../comment.entity';
 
 @Entity('comments_likes', { schema: 'main' })
@@ -46,7 +45,7 @@ export class CommentLike {
   updatedAt: Date;
 
   @Column({ name: 'updated_by', nullable: true })
-  updatedById: number;
+  updatedById: number | null;
 
   // @ManyToOne(() => User, { nullable: true })
   // @JoinColumn({ name: 'updated_by' })

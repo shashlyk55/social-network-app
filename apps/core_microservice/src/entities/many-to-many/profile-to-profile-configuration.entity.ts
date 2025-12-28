@@ -8,7 +8,6 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Profile } from '../profile.entity';
-import { User } from '../user.entity';
 import { ProfileConfiguration } from '../profile-configuration.entity';
 
 @Entity('profiles_to_profiles_configurations', { schema: 'main' })
@@ -50,7 +49,7 @@ export class ProfileToProfileConfiguration {
   updatedAt: Date;
 
   @Column({ name: 'updated_by', nullable: true })
-  updatedById: number;
+  updatedById: number | null;
 
   // @ManyToOne(() => User, { nullable: true })
   // @JoinColumn({ name: 'updated_by' })

@@ -10,7 +10,6 @@ import {
 } from 'typeorm';
 import { MessageAsset } from './many-to-many/message-asset.entity';
 import { PostAsset } from './many-to-many/post-asset.entity';
-import { User } from './user.entity';
 
 export enum FileType {
   IMAGE = 'image',
@@ -56,7 +55,7 @@ export class Asset {
   updatedAt: Date;
 
   @Column({ name: 'updated_by', nullable: true })
-  updatedById: number;
+  updatedById: number | null;
 
   // @ManyToOne(() => User, { nullable: true })
   // @JoinColumn({ name: 'updated_by' })

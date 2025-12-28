@@ -3,10 +3,10 @@ import { IAuthService } from './interfaces/IAuthService';
 import {
   LoginParams,
   OAuthCallbackParams,
-  RefreshParams,
+  RefreshTokenParams,
   LogoutParams,
   ValidateTokenParams,
-  SignUpParams,
+  RegisterParams,
 } from './types/auth-params.types';
 
 @Injectable()
@@ -20,7 +20,7 @@ export class AuthService implements IAuthService {
   handleOAuthCallback(params: OAuthCallbackParams) {
     throw new Error('Method not implemented.');
   }
-  handleRefresh(params: RefreshParams) {
+  handleRefresh(params: RefreshTokenParams) {
     throw new Error('Method not implemented.');
   }
   handleLogout(params: LogoutParams) {
@@ -29,7 +29,7 @@ export class AuthService implements IAuthService {
   validateToken(params: ValidateTokenParams) {
     throw new Error('Method not implemented.');
   }
-  handleSignUp(paras: SignUpParams) {
+  handleSignUp(paras: RegisterParams) {
     throw new Error('Method not implemented.');
   }
 }

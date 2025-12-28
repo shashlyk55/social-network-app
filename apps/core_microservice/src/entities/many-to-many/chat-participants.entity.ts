@@ -9,7 +9,6 @@ import {
 } from 'typeorm';
 import { Chat } from '../chat.entity';
 import { Profile } from '../profile.entity';
-import { User } from '../user.entity';
 
 export enum ChatParticipantRole {
   MEMBER = 'member',
@@ -49,7 +48,7 @@ export class ChatParticipant {
   joinedAt: Date;
 
   @Column({ name: 'left_at', nullable: true })
-  leftAt: Date;
+  leftAt: Date | null;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
@@ -65,7 +64,7 @@ export class ChatParticipant {
   updatedAt: Date;
 
   @Column({ name: 'updated_by', nullable: true })
-  updatedById: number;
+  updatedById: number | null;
 
   // @ManyToOne(() => User, { nullable: true })
   // @JoinColumn({ name: 'updated_by' })

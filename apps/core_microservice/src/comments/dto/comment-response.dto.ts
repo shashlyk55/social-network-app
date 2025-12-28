@@ -1,5 +1,4 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { UserRole } from 'src/entities/user.entity';
 
 // class UserReferenceDto {
 //   @ApiProperty({ example: 1, description: 'User ID' })

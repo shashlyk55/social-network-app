@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { NotificationType } from 'src/entities/notification.entity';
-import { UserRole } from 'src/entities/user.entity';
 
 // class UserReferenceDto {
 //   @ApiProperty({ example: 1, description: 'User ID' })

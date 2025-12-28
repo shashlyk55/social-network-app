@@ -9,7 +9,6 @@ import {
 } from 'typeorm';
 import { Asset } from '../asset.entity';
 import { Post } from '../post.entity';
-import { User } from '../user.entity';
 
 @Entity('posts_assets', { schema: 'main' })
 export class PostAsset {
@@ -47,7 +46,7 @@ export class PostAsset {
   updatedAt: Date;
 
   @Column({ name: 'updated_by', nullable: true })
-  updatedById: number;
+  updatedById: number | null;
 
   // @ManyToOne(() => User, { nullable: true })
   // @JoinColumn({ name: 'updated_by' })

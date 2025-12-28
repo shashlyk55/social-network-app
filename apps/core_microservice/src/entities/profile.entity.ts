@@ -9,7 +9,6 @@ import {
   ManyToOne,
   OneToMany,
 } from 'typeorm';
-import { User } from './user.entity';
 import { ProfileFollow } from './many-to-many/profile-follow.entity';
 import { ProfileToProfileConfiguration } from './many-to-many/profile-to-profile-configuration.entity';
 import { Post } from './post.entity';
@@ -22,9 +21,9 @@ export class Profile {
   @Column({ name: 'user_id' })
   userId: number;
 
-  @OneToOne(() => User, (user) => user.profile, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'user_id' })
-  user: User;
+  // @OneToOne(() => User, (user) => user.profile, { onDelete: 'CASCADE' })
+  // @JoinColumn({ name: 'user_id' })
+  // user: User;
 
   @Column({ unique: true })
   username: string;
@@ -36,10 +35,10 @@ export class Profile {
   birthday: Date;
 
   @Column({ type: 'text', nullable: true })
-  bio: string;
+  bio: string | null;
 
   @Column({ name: 'avatar_url', nullable: true })
-  avatarUrl: string;
+  avatarUrl: string | null;
 
   @Column({ name: 'is_public', default: true })
   isPublic: boolean;
@@ -58,7 +57,7 @@ export class Profile {
   updatedAt: Date;
 
   @Column({ name: 'updated_by', nullable: true })
-  updatedById: number;
+  updatedById: number | null;
 
   // @ManyToOne(() => User, { nullable: true, onDelete: 'CASCADE' })
   // @JoinColumn({ name: 'updated_by' })

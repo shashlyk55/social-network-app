@@ -9,7 +9,6 @@ import {
 } from 'typeorm';
 import { Post } from '../post.entity';
 import { Profile } from '../profile.entity';
-import { User } from '../user.entity';
 
 @Entity('posts_likes', { schema: 'main' })
 export class PostLike {
@@ -44,7 +43,7 @@ export class PostLike {
   updatedAt: Date;
 
   @Column({ name: 'updated_by', nullable: true })
-  updatedById: number;
+  updatedById: number | null;
 
   // @ManyToOne(() => User, { nullable: true })
   // @JoinColumn({ name: 'updated_by' })

@@ -18,23 +18,19 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('login')
-  login(@Body() credentials: LoginDto) {}
+  login() {}
 
-  @Post()
-  refresh(@Req() req: Request) {
-    const refresh_token_id = req.cookies;
-  }
+  @Post('refresh')
+  refresh() {}
 
   @Get('login/:provider')
-  handleOAuthLogin(@Param('provider') provider: string) {}
+  handleOAuthLogin() {}
 
   @Get(':provider/callback')
-  handleOAuthCallback(@Param() provider: string, @Query('id') code: string) {}
+  handleOAuthCallback() {}
 
   @Post('logout')
-  logout(@Req() req: Request) {
-    const refresh_token_id = req.cookies;
-  }
+  logout() {}
 
   @Post('signup')
   signUp() {}

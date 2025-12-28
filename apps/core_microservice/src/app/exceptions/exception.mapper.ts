@@ -7,19 +7,19 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import {
-  UserNotFoundException,
-  EmailAlreadyExistsException,
-  UsernameAlreadyExistsException,
-  UserOperationException,
-} from '../../users/exceptions/user.exceptions';
+// import {
+//   UserNotFoundException,
+//   EmailAlreadyExistsException,
+//   UsernameAlreadyExistsException,
+//   UserOperationException,
+// } from '../../users/exceptions/user.exceptions';
 import {
   CommentAccessDeniedException,
   CommentNotFoundException,
   CommentWithRepliesException,
   DomainException,
   ParentCommentNotFoundException,
-  ProfileNotFoundException,
+  //  ProfileNotFoundException,
 } from 'src/app/exceptions/domain.exception';
 import {
   PostAlreadyLikedException,
@@ -37,27 +37,27 @@ import {
 export class ExceptionMapper {
   static mapDomainToHttp(domainException: DomainException): HttpException {
     // Users domain
-    if (
-      domainException instanceof UserNotFoundException ||
-      domainException instanceof ProfileNotFoundException
-    ) {
-      return new NotFoundException(domainException.message);
-    }
+    // if (
+    //   domainException instanceof UserNotFoundException ||
+    //   domainException instanceof ProfileNotFoundException
+    // ) {
+    //   return new NotFoundException(domainException.message);
+    // }
 
-    if (domainException instanceof EmailAlreadyExistsException) {
-      return new ConflictException(domainException.message);
-    }
+    // if (domainException instanceof EmailAlreadyExistsException) {
+    //   return new ConflictException(domainException.message);
+    // }
 
-    if (
-      domainException instanceof EmailAlreadyExistsException ||
-      domainException instanceof UsernameAlreadyExistsException
-    ) {
-      return new ConflictException(domainException.message);
-    }
+    // if (
+    //   domainException instanceof EmailAlreadyExistsException ||
+    //   domainException instanceof UsernameAlreadyExistsException
+    // ) {
+    //   return new ConflictException(domainException.message);
+    // }
 
-    if (domainException instanceof UserOperationException) {
-      return new InternalServerErrorException(domainException.message);
-    }
+    // if (domainException instanceof UserOperationException) {
+    //   return new InternalServerErrorException(domainException.message);
+    // }
 
     // Post domain
     if (domainException instanceof PostNotFoundException) {
@@ -68,9 +68,9 @@ export class ExceptionMapper {
       return new ConflictException(domainException.message);
     }
 
-    if (domainException instanceof UserOperationException) {
-      return new InternalServerErrorException(domainException.message);
-    }
+    // if (domainException instanceof UserOperationException) {
+    //   return new InternalServerErrorException(domainException.message);
+    // }
 
     // Comment domain
     if (
@@ -87,9 +87,9 @@ export class ExceptionMapper {
       return new ConflictException(domainException.message);
     }
 
-    if (domainException instanceof UserOperationException) {
-      return new InternalServerErrorException(domainException.message);
-    }
+    // if (domainException instanceof UserOperationException) {
+    //   return new InternalServerErrorException(domainException.message);
+    // }
 
     // Chat domain
     if (
@@ -100,7 +100,7 @@ export class ExceptionMapper {
     }
 
     if (
-      domainException instanceof EmailAlreadyExistsException ||
+      // domainException instanceof EmailAlreadyExistsException ||
       domainException instanceof ChatParticipantAlreadyExistsException ||
       domainException instanceof InsufficientParticipantsException
     ) {
@@ -114,9 +114,9 @@ export class ExceptionMapper {
       return new ForbiddenException(domainException.message);
     }
 
-    if (domainException instanceof UserOperationException) {
-      return new InternalServerErrorException(domainException.message);
-    }
+    // if (domainException instanceof UserOperationException) {
+    //   return new InternalServerErrorException(domainException.message);
+    // }
 
     return new BadRequestException(domainException.message);
   }
