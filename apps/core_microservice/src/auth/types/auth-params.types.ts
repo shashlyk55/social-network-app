@@ -1,5 +1,15 @@
-// import { Account, AccountProviderType } from 'src/entities/account.entity';
-// import { User, UserRole } from 'src/entities/user.entity';
+export enum AccountProviderType {
+  LOCAL = 'local',
+  GOOGLE = 'google',
+  // FACEBOOK = 'facebook',
+  // GITHUB = 'github',
+  // TWITTER = 'twitter',
+}
+
+export enum UserRole {
+  USER = 'user',
+  ADMIN = 'admin',
+}
 
 export type LoginParams = {
   email: string;
@@ -25,24 +35,38 @@ export type RefreshTokenParams = {
 export type RegisterParams = {
   email: string;
   password: string;
-  // role: UserRole;
-  // provider: AccountProviderType;
+  role: UserRole;
+  provider: AccountProviderType;
   providerId?: string;
   createdById?: number;
 };
 
 export type AuthResult = {
-  // user: User;
-  // account: Account;
+  profile: ProfileResult;
+  user: UserResult;
   tokens: {
     accessToken: string;
     refreshToken: string;
-    expiresIn: number;
   };
+};
+
+export type ProfileResult = {
+  username: string;
+  displayName: string;
+  birthday: string;
+  bio?: string;
+  avatarUrl?: string;
+  isPublic: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type UserResult = {
+  role: string;
+  disabled: boolean;
 };
 
 export type TokenResult = {
   accessToken: string;
   refreshToken: string;
-  expiresIn: number;
 };

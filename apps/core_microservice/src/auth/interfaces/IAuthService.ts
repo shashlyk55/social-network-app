@@ -1,5 +1,7 @@
+import { FullAuthResponseDto } from '../dto/full-auth-response.dto';
 import { LoginDto } from '../dto/login-dto';
 import {
+  AccountProviderType,
   LoginParams,
   LogoutParams,
   OAuthCallbackParams,
@@ -12,16 +14,18 @@ export interface IAuthService {
   /**
    * Forwards credentials to the AuthenticationMicroservice.
    */
-  handleLogin(params: LoginParams) /**
+  handleLogin(params: LoginParams);
+  /**
    * Forwards tokens to the AuthenticationMicroservice for renewal.
-   */;
+   */
   handleRefresh(params: RefreshTokenParams);
   /**
    * Forwards the refresh_token_idto the AuthenticationMicroservice to terminate the session.
    */
-  handleLogout(params: LogoutParams): Promise<void> /**
+  handleLogout(params: LogoutParams): Promise<void>;
+  /**
    * Forwards registration data to the AuthenticationMicroservice
-   */;
+   */
   handleSignUp(paras: RegisterParams);
   /**
    * Called by AccessGuard. Makes an HTTP request to the AuthenticationMicroservice to validate a token.
@@ -30,9 +34,10 @@ export interface IAuthService {
   /**
    * Makes an HTTP request to the AuthenticationMicroservice to get a redirect URL.
    */
-  handleOAuthInit(provider: string): Promise<{ url: string }> /**
+  handleOAuthInit(provider: AccountProviderType): Promise<{ url: string }>;
+  /**
    * Forwards the authorization_code to the AuthenticationMicroservice.
-   */;
+   */
   handleOAuthCallback(params: OAuthCallbackParams);
 
   /**

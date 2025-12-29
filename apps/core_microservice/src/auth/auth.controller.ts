@@ -12,13 +12,27 @@ import {
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login-dto';
 import { Request } from 'express';
+import { RegistrationService } from './services/registration.service';
+import { FullRegisterDto } from './dto/full-register.dto';
+import { IAuthService } from './interfaces/IAuthService';
+import { IRegistrationService } from './interfaces/IRegistrationService';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: IAuthService,
+    private readonly registrationService: IRegistrationService,
+  ) {}
+
+  @Post('signup')
+  async signUp(@Body() dto: FullRegisterDto) {
+    return await this.registrationService.processSignup(dto);
+  }
 
   @Post('login')
-  login() {}
+  async login(@Body() dto: LoginDto) {
+    return await this.authService.handleLogin(dto);
+  }
 
   @Post('refresh')
   refresh() {}
@@ -31,7 +45,4 @@ export class AuthController {
 
   @Post('logout')
   logout() {}
-
-  @Post('signup')
-  signUp() {}
 }
