@@ -11,10 +11,13 @@ export class InternalHttpService {
       const response = await firstValueFrom(
         this.httpService.post<T>(url, data),
       );
+      console.log('HTTP SERVICE');
+      console.log(response.data);
+
       return response.data;
     } catch (error) {
       throw new InternalServerErrorException(
-        `Auth Service Error: ${error.response?.data?.message || error.message}`,
+        `Auth Microservice error: ${error.response?.data?.message || error.message}`,
       );
     }
   }

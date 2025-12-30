@@ -2,6 +2,8 @@ import { FullAuthResponseDto } from '../dto/full-auth-response.dto';
 import { LoginDto } from '../dto/login-dto';
 import {
   AccountProviderType,
+  AuthResult,
+  InternalAuthResult,
   LoginParams,
   LogoutParams,
   OAuthCallbackParams,
@@ -14,7 +16,7 @@ export interface IAuthService {
   /**
    * Forwards credentials to the AuthenticationMicroservice.
    */
-  handleLogin(params: LoginParams);
+  handleLogin(params: LoginParams): Promise<AuthResult>;
   /**
    * Forwards tokens to the AuthenticationMicroservice for renewal.
    */
@@ -26,7 +28,7 @@ export interface IAuthService {
   /**
    * Forwards registration data to the AuthenticationMicroservice
    */
-  handleSignUp(paras: RegisterParams);
+  handleSignUp(paras: RegisterParams): Promise<InternalAuthResult>;
   /**
    * Called by AccessGuard. Makes an HTTP request to the AuthenticationMicroservice to validate a token.
    */

@@ -9,45 +9,63 @@ import {
   RegisterParams,
   AccountProviderType,
   AuthResult,
+  InternalAuthResult,
 } from './types/auth-params.types';
-import { InternalHttpService } from './services/http.service';
-import { InternalAuthResponseDto } from './dto/auth-response.dto';
+import { InternalHttpService } from './services/internal-http.service';
+import { InternalAuthDto } from './dto/internal-auth-response.dto';
+import { ProfilesService } from 'src/profiles/profiles.service';
+import { IProfilesService } from 'src/profiles/interfaces/IProfilesService';
+import { AuthMapper } from './utils/auth.mapper';
 
 @Injectable()
 export class AuthService implements IAuthService {
   private readonly authUrl = process.env.AUTH_MICROSERVICE_URL;
+  private readonly authPort = process.env.AUTH_MICROSERVICE_PORT;
 
-  constructor(private readonly httpService: InternalHttpService) {}
+  constructor(
+    private readonly httpService: InternalHttpService,
+    private readonly profilesService: ProfilesService,
+  ) {}
 
-  async handleSignUp(params: RegisterParams): Promise<AuthResult> {
-    const response = this.httpService.post<InternalAuthResponseDto>(
-      `${this.authUrl}/auth/signup`,
+  async handleSignUp(params: RegisterParams): Promise<InternalAuthResult> {
+    const response = await this.httpService.post<{ data: InternalAuthDto }>(
+      `${this.authUrl}/auth/register`,
       params,
     );
 
-    const result = 
+    const responseData = response.data;
 
-    return result
+    const result: InternalAuthResult = {
+      tokens: responseData.tokens,
+      user: responseData.user,
+    };
+
+    return result;
   }
 
   async rollbackRegistration(userId: number): Promise<void> {
-    // await this.httpService.delete(`${this.authUrl}/internal/users/${userId}`);
+    await this.httpService.delete(`${this.authUrl}/users/${userId}`);
   }
 
   async handleLogin(params: LoginParams): Promise<AuthResult> {
-    const response = this.httpService.post<InternalAuthResponseDto>(
+    const response = await this.httpService.post<{ data: InternalAuthDto }>(
       `${this.authUrl}/auth/login`,
       params,
     );
 
-    const result = 
+    const responseData = response.data;
 
-    return result
+    console.log(responseData);
+    const profile = await this.profilesService.findByUserId(
+      responseData.user.id,
+    );
+
+    const result = AuthMapper.toAuthResult(responseData, profile);
+    console.log(result);
+
+    return result;
   }
 
-  // handleLogin(params: LoginParams) {
-  //   throw new Error('Method not implemented.');
-  // }
   handleOAuthInit(provider: AccountProviderType): Promise<{ url: string }> {
     throw new Error('Method not implemented.');
   }
