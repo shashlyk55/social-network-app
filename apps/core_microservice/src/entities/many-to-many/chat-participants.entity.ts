@@ -47,7 +47,7 @@ export class ChatParticipant {
   @Column({ name: 'joined_at', default: () => 'CURRENT_TIMESTAMP' })
   joinedAt: Date;
 
-  @Column({ name: 'left_at', nullable: true })
+  @Column({ type: 'date', name: 'left_at', nullable: true })
   leftAt: Date | null;
 
   @CreateDateColumn({ name: 'created_at' })
@@ -63,7 +63,7 @@ export class ChatParticipant {
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
-  @Column({ name: 'updated_by', nullable: true })
+  @Column({ type: 'int', name: 'updated_by', nullable: true })
   updatedById: number | null;
 
   // @ManyToOne(() => User, { nullable: true })

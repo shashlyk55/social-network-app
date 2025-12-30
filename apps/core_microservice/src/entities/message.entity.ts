@@ -57,7 +57,7 @@ export class Message {
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
-  @Column({ name: 'updated_by', nullable: true })
+  @Column({ type: 'int', name: 'updated_by', nullable: true })
   updatedById: number | null;
 
   // @ManyToOne(() => User, { nullable: true })

@@ -55,7 +55,7 @@ export class AuditLog {
   @UpdateDateColumn({ type: 'timestamp', name: 'updated_at' })
   updatedAt: Date;
 
-  @Column({ nullable: true, name: 'updated_by' })
+  @Column({ type: 'int', nullable: true, name: 'updated_by' })
   updatedBy: number | null;
 
   // @ManyToOne(() => User)

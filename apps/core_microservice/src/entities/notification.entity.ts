@@ -40,7 +40,7 @@ export class Notification {
   @Column({ name: 'is_read', default: false })
   isRead: boolean;
 
-  @Column({ name: 'read_at', nullable: true })
+  @Column({ type: 'date', name: 'read_at', nullable: true })
   readAt: Date | null;
 
   @CreateDateColumn({ name: 'created_at' })
@@ -56,7 +56,7 @@ export class Notification {
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
-  @Column({ name: 'updated_by', nullable: true })
+  @Column({ type: 'int', name: 'updated_by', nullable: true })
   updatedById: number | null;
 
   // @ManyToOne(() => User, { nullable: true })

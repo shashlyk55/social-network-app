@@ -37,7 +37,7 @@ export class Profile {
   @Column({ type: 'text', nullable: true })
   bio: string | null;
 
-  @Column({ name: 'avatar_url', nullable: true })
+  @Column({ type: 'varchar', name: 'avatar_url', nullable: true })
   avatarUrl: string | null;
 
   @Column({ name: 'is_public', default: true })
@@ -56,7 +56,7 @@ export class Profile {
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
-  @Column({ name: 'updated_by', nullable: true })
+  @Column({ type: 'int', name: 'updated_by', nullable: true })
   updatedById: number | null;
 
   // @ManyToOne(() => User, { nullable: true, onDelete: 'CASCADE' })

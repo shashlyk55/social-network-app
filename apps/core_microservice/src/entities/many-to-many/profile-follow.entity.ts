@@ -16,7 +16,7 @@ export class ProfileFollow {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @Column({ nullable: true })
+  @Column({ type: 'boolean', nullable: true })
   accepted: boolean | null;
 
   @CreateDateColumn({ name: 'created_at' })
@@ -32,7 +32,7 @@ export class ProfileFollow {
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
-  @Column({ name: 'updated_by', nullable: true })
+  @Column({ type: 'int', name: 'updated_by', nullable: true })
   updatedById: number | null;
 
   // @ManyToOne(() => User, { nullable: true })
