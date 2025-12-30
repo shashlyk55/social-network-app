@@ -1,3 +1,5 @@
+import { CreateProfileParams } from 'src/profiles/types/profile-params.types';
+
 export enum AccountProviderType {
   LOCAL = 'local',
   GOOGLE = 'google',
@@ -50,7 +52,16 @@ export type AuthResult = {
   };
 };
 
+export type InternalAuthResult = {
+  user: InternalUserResult;
+  tokens: {
+    accessToken: string;
+    refreshToken: string;
+  };
+};
+
 export type ProfileResult = {
+  id: number;
   username: string;
   displayName: string;
   birthday: string;
@@ -66,7 +77,18 @@ export type UserResult = {
   disabled: boolean;
 };
 
+export type InternalUserResult = {
+  id: number;
+  role: string;
+  disabled: boolean;
+};
+
 export type TokenResult = {
   accessToken: string;
   refreshToken: string;
+};
+
+export type SignUpParams = {
+  auth: RegisterParams;
+  profile: CreateProfileParams;
 };
