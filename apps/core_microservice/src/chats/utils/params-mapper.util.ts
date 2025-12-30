@@ -67,6 +67,7 @@ export class ChatMappers {
         role: participant.role,
         joinedAt: participant.joinedAt,
         leftAt: participant.leftAt,
+        createdById: participant.createdById,
         // createdBy: {
         //   id: participant.createdBy.id,
         //   role: participant.createdBy.role,
