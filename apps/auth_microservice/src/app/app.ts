@@ -7,6 +7,7 @@ import {
   errorHandler,
 } from './middleware/error-handler.middleware';
 import cookieParser from 'cookie-parser';
+import { createUsersRouter } from '../users/users.route';
 
 export function configureApp(app: Application, dataSource: DataSource) {
   app.use(express.json());
@@ -14,7 +15,9 @@ export function configureApp(app: Application, dataSource: DataSource) {
   app.use(cookieParser());
 
   const authRouter = createAuthRouter(dataSource);
+  const usersRouter = createUsersRouter(dataSource);
   app.use('/internal/auth', authRouter);
+  app.use('/internal/users', usersRouter);
 
   app.use(domainErrorHandler);
   app.use(errorHandler);
