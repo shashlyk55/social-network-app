@@ -14,7 +14,7 @@ import { OAuthProfile } from '../types/external-auth.types';
 
 export interface IAuthService {
   authenticateUser(credentials: LoginParams): Promise<AuthResult>;
-  processRefreshToken(oldRefreshToken: string): Promise<TokenResult>;
+  processRefreshToken(oldRefreshToken: string): Promise<AuthResult>;
   validateAccessToken(acessToken: string): Promise<ValidateTokenResult>;
   exchageCodeForTokens(
     code: string,

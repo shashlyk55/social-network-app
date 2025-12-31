@@ -31,6 +31,7 @@ import { IRedisRepository } from './interfaces/IRedisRepository';
 import { v4 as uuidv4 } from 'uuid';
 import { IExternalAuthService } from './interfaces/IExternalAuthService';
 import { OAuthProfile } from './types/external-auth.types';
+import { AccountNotFoundException } from '../accounts/exceptions/account.exceptions';
 
 export class AuthService implements IAuthService {
   private readonly accessTokenSecret: string;
@@ -211,8 +212,12 @@ export class AuthService implements IAuthService {
 
       return result;
     } catch (error) {
-      if (error instanceof InvalidCredentials) {
-        throw error;
+      if (
+        error instanceof InvalidCredentials ||
+        error instanceof AccountNotFoundException
+      ) {
+        //throw error;
+        throw new InvalidCredentials();
       }
 
       throw new AuthOperationException('authenticate user', error.message);
@@ -281,7 +286,7 @@ export class AuthService implements IAuthService {
     }
   }
 
-  async processRefreshToken(oldRefreshTokenId: string): Promise<TokenResult> {
+  async processRefreshToken(oldRefreshTokenId: string): Promise<AuthResult> {
     try {
       const isUsed =
         await this.redisRepository.isRefreshTokenBlacklisted(oldRefreshTokenId);
@@ -315,7 +320,19 @@ export class AuthService implements IAuthService {
         userId: session.userId,
         role: session.role,
       });
-      return tokens;
+
+      const user = await this.usersService.findOne(session.userId);
+      const account = await this.accountsService.findOneByUserId(
+        session.userId,
+      );
+
+      const result = {
+        tokens,
+        user,
+        account,
+      };
+
+      return result;
     } catch (error) {
       if (error instanceof jwt.TokenExpiredError) {
         throw new AuthOperationException('refresh token', 'Token expired');

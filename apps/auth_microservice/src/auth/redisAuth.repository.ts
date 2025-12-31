@@ -87,12 +87,15 @@ export class RedisAuthRepository implements IRedisRepository {
   async findSessionByTokenId(tokenId): Promise<Session | null> {
     const key = `${this.SESSION_PREFIX}${tokenId}`;
     const session = await this.client.get(key);
+    console.log(session);
 
     if (!session) {
       return null;
     }
 
-    return JSON.parse(session);
+    const parsedJson = JSON.parse(session);
+
+    return parsedJson.session;
   }
 
   async deleteSession(tokenId) {

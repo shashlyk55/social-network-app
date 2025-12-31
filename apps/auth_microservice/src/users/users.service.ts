@@ -91,7 +91,7 @@ export class UsersService implements IUsersService {
         relations: [
           // 'createdBy',
           // 'updatedBy',
-          'account',
+          // 'account',
           //'profile'
         ],
       });
@@ -117,6 +117,7 @@ export class UsersService implements IUsersService {
         .select([
           'user.id',
           'user.role',
+          'user.disabled',
           'account.email',
           'account.lastLoginAt',
           'account.provider',

@@ -6,9 +6,9 @@ export const extractAccessToken = (
   next: NextFunction,
 ) => {
   try {
-    const authHeader = req.headers.authorization;
+    const { accessToken } = req.body;
 
-    if (!authHeader) {
+    if (!accessToken) {
       return res.status(401).json({
         success: false,
         error: {
@@ -18,19 +18,17 @@ export const extractAccessToken = (
       });
     }
 
-    const [scheme, token] = authHeader.split(' ');
-
-    if (scheme !== 'Bearer' || !token) {
+    if (typeof accessToken !== 'string' || accessToken.trim() === '') {
       return res.status(401).json({
         success: false,
         error: {
-          code: 'INVALID_AUTH_FORMAT',
-          message: 'Format should be "Bearer <token>"',
+          code: 'INVALID_TOKEN_FORMAT',
+          message: 'Access token must be a non-empty string',
         },
       });
     }
 
-    req.accessToken = token;
+    req.accessToken = accessToken;
 
     next();
   } catch (error) {
@@ -51,7 +49,7 @@ export const extractRefreshToken = (
   next: NextFunction,
 ) => {
   try {
-    const refreshToken = req.cookies?.refreshToken;
+    const { refreshTokenId: refreshToken } = req.body;
 
     if (!refreshToken) {
       return res.status(401).json({

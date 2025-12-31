@@ -5,6 +5,7 @@ import { HandleExceptions } from '../app/decorators/controller.decorator';
 import { IAuthService } from './interfaces/IAuthService';
 import { LoginDto } from './dto/login-dto';
 import { AccountProviderType } from '../entities/account.entity';
+import { AuthResponseDto } from './dto/auth-response.dto';
 
 export class AuthController {
   constructor(private readonly authService: IAuthService) {}
@@ -20,11 +21,13 @@ export class AuthController {
       const params: RegisterParams = RegisterDto.toRegisterParams(registerDto);
       const result = await this.authService.registerUser(params);
 
-      this.setRefreshCookie(res, result.tokens.refreshToken);
+      const response: AuthResponseDto = AuthResponseDto.toResponse(result);
+
+      //this.setRefreshCookie(res, result.tokens.refreshToken);
 
       res.status(200).json({
         sucess: true,
-        data: result,
+        data: response,
         message: 'Register successfully',
       });
     } catch (error) {
@@ -39,11 +42,13 @@ export class AuthController {
       const params: LoginParams = LoginDto.toLoginParams(loginDto);
       const result = await this.authService.authenticateUser(params);
 
-      this.setRefreshCookie(res, result.tokens.refreshToken);
+      const response: AuthResponseDto = AuthResponseDto.toResponse(result);
+
+      //this.setRefreshCookie(res, response.tokens.refreshToken);
 
       res.status(200).json({
         sucess: true,
-        data: result,
+        data: response,
         message: 'Login successfully',
       });
     } catch (error) {
@@ -80,17 +85,14 @@ export class AuthController {
   ): Promise<void> {
     try {
       const refreshToken = req.refreshToken!;
-      console.log(refreshToken);
 
-      const tokens = await this.authService.processRefreshToken(refreshToken);
+      const result = await this.authService.processRefreshToken(refreshToken);
 
-      console.log(tokens);
-
-      this.setRefreshCookie(res, tokens.refreshToken);
+      const response: AuthResponseDto = AuthResponseDto.toResponse(result);
 
       res.json({
         success: true,
-        data: tokens,
+        data: response,
         message: 'Tokens updated',
       });
     } catch (error) {
@@ -108,8 +110,8 @@ export class AuthController {
 
       await this.authService.logout(params);
 
-      res.clearCookie('refreshToken');
-      res.json({
+      //res.clearCookie('refreshToken');
+      res.status(201).json({
         success: true,
         message: 'Logged out successfully',
       });
@@ -183,7 +185,7 @@ export class AuthController {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000,
-      path: '/api/auth/refresh',
+      path: '/auth/refresh',
     });
   }
 }
