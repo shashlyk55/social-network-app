@@ -1,7 +1,15 @@
-import { Controller, Get, Post, Body } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Req,
+  Res,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login-dto';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { OrchestratorAuthService } from './services/orchestrator-auth.service';
 import { FullRegisterDto } from './dto/full-register.dto';
 import { IAuthService } from './interfaces/IAuthService';
@@ -22,7 +30,7 @@ import { LoginParams } from './types/auth-params.types';
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
-    private readonly registrationService: OrchestratorAuthService,
+    private readonly orchestartorAuthService: OrchestratorAuthService,
   ) {}
 
   @Post('signup')
@@ -40,7 +48,7 @@ export class AuthController {
   @ApiBadRequestResponse({ description: 'Ошибка валидации входных данных' })
   async signUp(@Body() dto: FullRegisterDto) {
     const params = OrchestratorAuthMapper.toSignupParams(dto);
-    const result = await this.registrationService.signup(params);
+    const result = await this.orchestartorAuthService.signup(params);
 
     return result;
   }
@@ -61,7 +69,26 @@ export class AuthController {
   }
 
   @Post('refresh')
-  refresh() {}
+  async refresh(@Req() req, @Res({ passthrough: true }) res: Response) {
+    const refreshToken = req.cookies['refreshToken'];
+
+    if (!refreshToken) {
+      throw new UnauthorizedException('Refresh token not found');
+    }
+
+    const result =
+      await this.orchestartorAuthService.refreshToken(refreshToken);
+
+    res.cookie('refreshToken', result.tokens.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: '/auth/refresh',
+    });
+
+    return OrchestratorAuthMapper.toResponseDto(result);
+  }
 
   @Get('login/:provider')
   handleOAuthLogin() {}
@@ -70,5 +97,29 @@ export class AuthController {
   handleOAuthCallback() {}
 
   @Post('logout')
-  logout() {}
+  @ApiOperation({
+    summary: 'Выход из системы (инвалидация токена и очистка кук)',
+  })
+  @ApiResponse({ status: 201, description: 'Успешный выход' })
+  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const refreshToken = req.cookies['refreshToken'];
+    let accessToken = req.headers.authorization;
+
+    if (refreshToken && accessToken) {
+      accessToken = accessToken.replace('Bearer ', '');
+      await this.orchestartorAuthService.logout({
+        refreshTokenId: refreshToken,
+        accessToken,
+      });
+    }
+
+    res.status(201).clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/api/auth/refresh',
+    });
+
+    return { message: 'Logged out successfully' };
+  }
 }

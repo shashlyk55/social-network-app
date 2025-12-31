@@ -20,11 +20,11 @@ export interface IAuthService {
   /**
    * Forwards tokens to the AuthenticationMicroservice for renewal.
    */
-  handleRefresh(params: RefreshTokenParams);
+  handleRefresh(refreshToken: string);
   /**
    * Forwards the refresh_token_idto the AuthenticationMicroservice to terminate the session.
    */
-  handleLogout(params: LogoutParams): Promise<void>;
+  handleLogout(params: LogoutParams);
   /**
    * Forwards registration data to the AuthenticationMicroservice
    */

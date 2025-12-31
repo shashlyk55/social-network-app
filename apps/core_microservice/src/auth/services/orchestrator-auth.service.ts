@@ -5,16 +5,18 @@ import { AuthService } from '../auth.service';
 import {
   AuthResult,
   InternalAuthResult,
+  LogoutParams,
   SignUpParams,
 } from '../types/auth-params.types';
 import { CreateProfileParams } from 'src/profiles/types/profile-params.types';
 import { AuthMapper } from '../utils/auth.mapper';
 import { ProfilesService } from 'src/profiles/profiles.service';
 import { ProfileMapper } from 'src/profiles/utils/profile.mapper';
+import { InternalAuthDto } from '../dto/internal-auth-response.dto';
+import { InternalHttpService } from './internal-http.service';
 
 @Injectable()
 export class OrchestratorAuthService {
-  // TODO: create Orchestrator Service from Registration Service which will include logic with Profiles, Auth and other Services
   constructor(
     private readonly authService: AuthService,
     private readonly profilesService: ProfilesService,
@@ -53,5 +55,18 @@ export class OrchestratorAuthService {
       }
       throw error;
     }
+  }
+
+  async refreshToken(refreshToken: string) {
+    const authInternalDto = await this.authService.handleRefresh(refreshToken);
+
+    const profile = await this.profilesService.findByUserId(
+      authInternalDto.user.id,
+    );
+    return AuthMapper.toAuthResult(authInternalDto, profile);
+  }
+
+  async logout(params: LogoutParams) {
+    await this.authService.handleLogout(params);
   }
 }

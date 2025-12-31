@@ -24,6 +24,7 @@ export type OAuthCallbackParams = {
 
 export type LogoutParams = {
   refreshTokenId: string;
+  accessToken: string;
 };
 
 export type ValidateTokenParams = {

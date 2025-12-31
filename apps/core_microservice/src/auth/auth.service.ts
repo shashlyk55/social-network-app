@@ -72,19 +72,26 @@ export class AuthService implements IAuthService {
   handleOAuthCallback(params: OAuthCallbackParams) {
     throw new Error('Method not implemented.');
   }
-  handleRefresh(params: RefreshTokenParams) {
-    throw new Error('Method not implemented.');
+
+  async handleRefresh(refreshToken: string) {
+    const response = await this.httpService.post<{ data: InternalAuthDto }>(
+      `${this.authUrl}/auth/refresh`,
+      { refreshToken },
+    );
+
+    const responseData = response.data;
+
+    return responseData;
   }
-  handleLogout(params: LogoutParams): Promise<void> {
-    throw new Error('Method not implemented.');
+
+  async handleLogout(params: LogoutParams) {
+    const response = await this.httpService.post<void>(
+      `${this.authUrl}/auth/logout`,
+      { ...params },
+    );
   }
+
   validateToken(params: ValidateTokenParams): Promise<any> {
     throw new Error('Method not implemented.');
   }
-  // handleSignUp(paras: RegisterParams) {
-  //   throw new Error('Method not implemented.');
-  // }
-  // rollbackRegistration(userId: number): Promise<void> {
-  //   throw new Error('Method not implemented.');
-  // }
 }

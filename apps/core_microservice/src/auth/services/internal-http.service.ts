@@ -11,8 +11,6 @@ export class InternalHttpService {
       const response = await firstValueFrom(
         this.httpService.post<T>(url, data),
       );
-      console.log('HTTP SERVICE');
-      console.log(response.data);
 
       return response.data;
     } catch (error) {
