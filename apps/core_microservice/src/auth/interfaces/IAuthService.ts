@@ -32,7 +32,7 @@ export interface IAuthService {
   /**
    * Called by AccessGuard. Makes an HTTP request to the AuthenticationMicroservice to validate a token.
    */
-  validateToken(params: ValidateTokenParams): Promise<any>;
+  validateToken(accessToken: string): Promise<any>;
   /**
    * Makes an HTTP request to the AuthenticationMicroservice to get a redirect URL.
    */

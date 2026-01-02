@@ -10,6 +10,8 @@ import {
   AccountProviderType,
   AuthResult,
   InternalAuthResult,
+  TokenPayload,
+  ValidateTokenResult,
 } from './types/auth-params.types';
 import { InternalHttpService } from './services/internal-http.service';
 import { InternalAuthDto } from './dto/internal-auth-response.dto';
@@ -91,7 +93,12 @@ export class AuthService implements IAuthService {
     );
   }
 
-  validateToken(params: ValidateTokenParams): Promise<any> {
-    throw new Error('Method not implemented.');
+  async validateToken(accessToken: string): Promise<ValidateTokenResult> {
+    const response = await this.httpService.post<{ data: ValidateTokenResult }>(
+      `${this.authUrl}/auth/validate`,
+      { accessToken },
+    );
+
+    return response.data;
   }
 }

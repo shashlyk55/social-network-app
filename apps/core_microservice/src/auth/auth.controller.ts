@@ -6,6 +6,7 @@ import {
   Req,
   Res,
   UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login-dto';
@@ -25,6 +26,7 @@ import {
 import { FullAuthResponseDto } from './dto/full-auth-response.dto';
 import { AuthMapper } from './utils/auth.mapper';
 import { LoginParams } from './types/auth-params.types';
+import { AccessGuard } from './guards/access.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -97,6 +99,7 @@ export class AuthController {
   handleOAuthCallback() {}
 
   @Post('logout')
+  @UseGuards(AccessGuard)
   @ApiOperation({
     summary: 'Выход из системы (инвалидация токена и очистка кук)',
   })

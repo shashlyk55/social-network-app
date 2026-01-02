@@ -93,3 +93,13 @@ export type SignUpParams = {
   auth: RegisterParams;
   profile: CreateProfileParams;
 };
+
+export type ValidateTokenResult = {
+  isValid: boolean;
+  payload: TokenPayload;
+};
+
+export type TokenPayload = {
+  userId: number;
+  role: UserRole;
+};
