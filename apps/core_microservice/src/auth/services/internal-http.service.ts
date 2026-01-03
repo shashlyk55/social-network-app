@@ -20,6 +20,18 @@ export class InternalHttpService {
     }
   }
 
+  async get<T>(url: string, data: any): Promise<T> {
+    try {
+      const response = await firstValueFrom(this.httpService.get<T>(url, data));
+
+      return response.data;
+    } catch (error) {
+      throw new InternalServerErrorException(
+        `Auth Microservice error: ${error.response?.data?.message || error.message}`,
+      );
+    }
+  }
+
   async delete(url: string): Promise<void> {
     try {
       await firstValueFrom(this.httpService.delete(url));

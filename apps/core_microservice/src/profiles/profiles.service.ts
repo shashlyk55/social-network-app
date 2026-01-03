@@ -75,6 +75,15 @@ export class ProfilesService implements IProfilesService {
     }
   }
 
+  async getByUserId(userId: number): Promise<Profile | null> {
+    const profile = await this.profileRepository.findOne({
+      where: { userId, deleted: false },
+      relations: ['posts', 'followers', 'following'],
+    });
+
+    return profile;
+  }
+
   async update(id: number, params: UpdateProfileParams): Promise<Profile> {
     const profile = await this.findOne(id);
     const queryRunner = this.dataSource.createQueryRunner();

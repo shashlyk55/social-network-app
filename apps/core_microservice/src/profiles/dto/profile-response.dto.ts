@@ -13,8 +13,8 @@ export class ProfileResponseDto {
   @ApiProperty()
   displayName: string;
 
-  @ApiProperty({ type: Date })
-  birthday: Date;
+  @ApiProperty({ type: Date, nullable: true })
+  birthday?: Date | null;
 
   @ApiPropertyOptional({ type: String, nullable: true })
   bio?: string | null;

@@ -29,6 +29,7 @@ export class OrchestratorAuthMapper {
 
   static toResponseDto(result: AuthResult): FullAuthResponseDto {
     const profile = result.profile;
+
     return {
       tokens: {
         accessToken: result.tokens.accessToken,
@@ -39,7 +40,7 @@ export class OrchestratorAuthMapper {
         id: profile.id,
         username: profile.username,
         displayName: profile.displayName,
-        birthday: new Date(result.profile.birthday),
+        birthday: profile.birthday ? new Date(profile.birthday) : undefined,
         bio: profile.bio ? profile.bio : undefined,
         avatarUrl: profile.avatarUrl ? profile.avatarUrl : undefined,
         isPublic: profile.isPublic,

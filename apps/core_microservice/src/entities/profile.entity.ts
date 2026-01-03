@@ -31,8 +31,8 @@ export class Profile {
   @Column({ name: 'display_name' })
   displayName: string;
 
-  @Column({ type: 'date' })
-  birthday: Date;
+  @Column({ type: 'date', nullable: true })
+  birthday: Date | null;
 
   @Column({ type: 'text', nullable: true })
   bio: string | null;

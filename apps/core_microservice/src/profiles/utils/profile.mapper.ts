@@ -37,15 +37,21 @@ export class ProfileMapper {
   }
 
   static toResult(profile: Profile): ProfileResult {
+    let birthday;
+    if (profile.birthday) {
+      birthday =
+        profile.birthday instanceof Date
+          ? profile.birthday.toISOString()
+          : new Date(profile.birthday).toISOString();
+    } else {
+      birthday = undefined;
+    }
+
     return {
       id: profile.id,
       username: profile.username,
       displayName: profile.displayName,
-      birthday:
-        profile.birthday instanceof Date
-          ? profile.birthday.toISOString()
-          : new Date(profile.birthday).toISOString(),
-
+      birthday: birthday,
       bio: profile.bio ?? undefined,
       avatarUrl: profile.avatarUrl ?? undefined,
 

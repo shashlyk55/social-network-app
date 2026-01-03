@@ -2,7 +2,7 @@ export interface UpdateProfileParams {
   id: number;
   username?: string;
   displayName?: string;
-  birthday?: Date;
+  birthday?: Date | null;
   bio?: string | null;
   avatarUrl?: string | null;
   isPublic?: boolean;
@@ -12,7 +12,7 @@ export type CreateProfileParams = {
   userId: number;
   username: string;
   displayName: string;
-  birthday: Date;
+  birthday?: Date | null;
   bio?: string | null;
   avatarUrl?: string | null;
   isPublic?: boolean;

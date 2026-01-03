@@ -18,6 +18,7 @@ import { InternalAuthDto } from './dto/internal-auth-response.dto';
 import { ProfilesService } from 'src/profiles/profiles.service';
 import { IProfilesService } from 'src/profiles/interfaces/IProfilesService';
 import { AuthMapper } from './utils/auth.mapper';
+import { InternalOAuthResponseDto } from './dto/internal-oauth-response.dto';
 
 @Injectable()
 export class AuthService implements IAuthService {
@@ -63,16 +64,37 @@ export class AuthService implements IAuthService {
     );
 
     const result = AuthMapper.toAuthResult(responseData, profile);
-    console.log(result);
 
     return result;
   }
 
-  handleOAuthInit(provider: AccountProviderType): Promise<{ url: string }> {
-    throw new Error('Method not implemented.');
+  async handleOAuthInit(
+    provider: AccountProviderType,
+  ): Promise<{ url: string }> {
+    const response = await this.httpService.get<{ data: { url: string } }>(
+      `${this.authUrl}/auth/login/${provider}`,
+      {},
+    );
+
+    //console.log(response);
+
+    const responseData = response.data;
+
+    return responseData;
   }
-  handleOAuthCallback(params: OAuthCallbackParams) {
-    throw new Error('Method not implemented.');
+
+  async handleOAuthCallback(params: OAuthCallbackParams) {
+    const response = await this.httpService.get<{
+      data: InternalOAuthResponseDto;
+    }>(`${this.authUrl}/auth/callback/${params.provider}`, {
+      params: { code: params.authorizationCode, error: params.error },
+    });
+
+    //console.log(response);
+
+    const responseData = response.data;
+
+    return responseData;
   }
 
   async handleRefresh(refreshToken: string) {

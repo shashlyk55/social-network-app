@@ -1,3 +1,4 @@
+import { Profile } from 'src/entities/profile.entity';
 import {
   CreateProfileParams,
   UpdateProfileParams,
@@ -8,5 +9,6 @@ export interface IProfilesService {
   findOne(id: number);
   update(id: number, updateProfileDto: UpdateProfileParams);
   remove(id: number);
-  findByUserId(userId: number);
+  findByUserId(userId: number): Promise<Profile>;
+  getByUserId(userId: number): Promise<Profile | null>;
 }

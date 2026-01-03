@@ -3,10 +3,13 @@ import { DataSource } from 'typeorm';
 import { AuthService } from '../auth.service';
 
 import {
+  AccountProviderType,
   AuthResult,
   InternalAuthResult,
   LogoutParams,
+  OAuthCallbackParams,
   SignUpParams,
+  TokenResult,
 } from '../types/auth-params.types';
 import { CreateProfileParams } from 'src/profiles/types/profile-params.types';
 import { AuthMapper } from '../utils/auth.mapper';
@@ -68,5 +71,61 @@ export class OrchestratorAuthService {
 
   async logout(params: LogoutParams) {
     await this.authService.handleLogout(params);
+  }
+
+  async handleOAuthInit(
+    provider: AccountProviderType,
+  ): Promise<{ url: string }> {
+    return await this.authService.handleOAuthInit(provider);
+  }
+
+  async handleOAuthCallback(params: OAuthCallbackParams): Promise<TokenResult> {
+    //console.log('HANDLE OAUTH CALLBACK');
+
+    let isProfileCreated: boolean = false;
+    let createdUserId: number | null = null;
+
+    try {
+      const authData = await this.authService.handleOAuthCallback(params);
+      //console.log(authData);
+
+      let profile = await this.profilesService.getByUserId(authData.user.id);
+
+      if (!profile) {
+        createdUserId = authData.user.id;
+        const username = authData.profile.email.split('@')[0];
+
+        profile = await this.profilesService.create({
+          userId: authData.user.id,
+          displayName: authData.profile.name,
+          avatarUrl: authData.profile.avatarUrl,
+          createdById: authData.user.id,
+          isPublic: true,
+          username: username,
+        });
+
+        isProfileCreated = true;
+      }
+
+      //console.log(profile);
+      //const result = AuthMapper.toAuthResult(authData, profile);
+      const result: TokenResult = {
+        accessToken: authData.tokens.accessToken,
+        refreshToken: authData.tokens.refreshToken,
+      };
+
+      return result;
+    } catch (error) {
+      // console.log('ERROR');
+      // console.log(createdUserId);
+      // console.log(isProfileCreated);
+
+      if (createdUserId && !isProfileCreated) {
+        //console.log('ROLLBACK REGISTRATION');
+
+        await this.authService.rollbackRegistration(createdUserId);
+      }
+      throw error;
+    }
   }
 }

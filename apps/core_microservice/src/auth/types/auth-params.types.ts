@@ -19,7 +19,9 @@ export type LoginParams = {
 };
 
 export type OAuthCallbackParams = {
-  authorizationCode: string;
+  authorizationCode?: string;
+  error?: string;
+  provider: AccountProviderType;
 };
 
 export type LogoutParams = {
@@ -65,7 +67,7 @@ export type ProfileResult = {
   id: number;
   username: string;
   displayName: string;
-  birthday: string;
+  birthday?: string;
   bio?: string;
   avatarUrl?: string;
   isPublic: boolean;

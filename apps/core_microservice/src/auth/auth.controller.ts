@@ -7,6 +7,8 @@ import {
   Res,
   UnauthorizedException,
   UseGuards,
+  Param,
+  Query,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login-dto';
@@ -25,7 +27,11 @@ import {
 } from '@nestjs/swagger';
 import { FullAuthResponseDto } from './dto/full-auth-response.dto';
 import { AuthMapper } from './utils/auth.mapper';
-import { LoginParams } from './types/auth-params.types';
+import {
+  AccountProviderType,
+  LoginParams,
+  OAuthCallbackParams,
+} from './types/auth-params.types';
 import { AccessGuard } from './guards/access.guard';
 
 @Controller('auth')
@@ -93,10 +99,54 @@ export class AuthController {
   }
 
   @Get('login/:provider')
-  handleOAuthLogin() {}
+  async handleOAuthLogin(
+    @Param('provider') provider: AccountProviderType,
+    @Res() res: Response,
+  ) {
+    const { url: authUrl } =
+      await this.orchestartorAuthService.handleOAuthInit(provider);
+
+    return res.redirect(authUrl);
+  }
 
   @Get(':provider/callback')
-  handleOAuthCallback() {}
+  async handleOAuthCallback(
+    @Param('provider') provider: AccountProviderType,
+    @Query('code') code: string,
+    @Query('error') error: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    // if (error) {
+    //   return res.redirect(`${process.env.FRONTEND_URL}/login?error=${error}`);
+    // }
+
+    try {
+      const params: OAuthCallbackParams = {
+        authorizationCode: code,
+        provider,
+        error,
+      };
+      const result =
+        await this.orchestartorAuthService.handleOAuthCallback(params);
+
+      console.log(result);
+
+      res.cookie('refreshToken', result.refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+        path: '/auth/refresh',
+      });
+
+      const frontendUrl = `${process.env.FRONTEND_URL}/auth/success?token=${result.accessToken}`;
+      return res.redirect(frontendUrl);
+    } catch (error) {
+      return res.redirect(
+        `${process.env.FRONTEND_URL}/login?error=oauth_failed`,
+      );
+    }
+  }
 
   @Post('logout')
   @UseGuards(AccessGuard)
@@ -120,7 +170,7 @@ export class AuthController {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      path: '/api/auth/refresh',
+      path: '/auth/refresh',
     });
 
     return { message: 'Logged out successfully' };

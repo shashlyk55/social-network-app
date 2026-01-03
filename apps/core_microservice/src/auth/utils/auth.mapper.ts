@@ -5,6 +5,16 @@ import { ProfileMapper } from 'src/profiles/utils/profile.mapper';
 
 export class AuthMapper {
   static toAuthResult(authDto: InternalAuthDto, profile: Profile): AuthResult {
+    let birthday;
+    if (profile.birthday) {
+      birthday =
+        profile.birthday instanceof Date
+          ? profile.birthday.toISOString()
+          : new Date(profile.birthday).toISOString();
+    } else {
+      birthday = undefined;
+    }
+
     return {
       tokens: authDto.tokens,
       user: {
@@ -16,10 +26,7 @@ export class AuthMapper {
         id: profile.id,
         username: profile.username,
         displayName: profile.displayName,
-        birthday:
-          profile.birthday instanceof Date
-            ? profile.birthday.toISOString()
-            : new Date(profile.birthday).toISOString(),
+        birthday: birthday,
         bio: profile.bio ?? undefined,
         avatarUrl: profile.avatarUrl ?? undefined,
         isPublic: profile.isPublic,
