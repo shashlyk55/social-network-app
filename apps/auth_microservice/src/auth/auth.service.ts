@@ -12,6 +12,7 @@ import {
   LogoutParams,
   ValidateTokenResult,
   TokenDecodeResult,
+  OAuthResult,
 } from './types/auth-params.types';
 import { DataSource } from 'typeorm';
 import { UserRole } from '../entities/user.entity';
@@ -60,13 +61,16 @@ export class AuthService implements IAuthService {
   async exchageCodeForTokens(
     code: string,
     provider: AccountProviderType,
-  ): Promise<{ profile: OAuthProfile; tokens: TokenResult }> {
+  ): Promise<OAuthResult> {
     try {
-      // 8. Вызов внешнего провайдера для получения профиля
       const profile = await this.externalAuthService.exchangeCodeForProfile(
         code,
         provider,
       );
+
+      console.log('EXCHANGE CODE FOR TOKENS');
+
+      console.log(profile);
 
       let user = await this.usersService.findByEmailAndProvider(
         profile.email,
@@ -107,9 +111,14 @@ export class AuthService implements IAuthService {
         userId: user.id,
         role: user.role,
       });
+
+      //const account = await this.accountsService.findOneByUserId(user.id);
+
       const result = {
-        profile,
+        externalProfile: profile,
         tokens,
+        user,
+        //account,
       };
       return result;
     } catch (error) {

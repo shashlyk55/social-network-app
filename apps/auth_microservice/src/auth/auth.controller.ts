@@ -1,11 +1,17 @@
 import { NextFunction, Request, Response } from 'express';
 import { RegisterDto } from './dto/register.dto';
-import { LoginParams, RegisterParams } from './types/auth-params.types';
+import {
+  LoginParams,
+  OAuthResult,
+  RegisterParams,
+} from './types/auth-params.types';
 import { HandleExceptions } from '../app/decorators/controller.decorator';
 import { IAuthService } from './interfaces/IAuthService';
 import { LoginDto } from './dto/login-dto';
 import { AccountProviderType } from '../entities/account.entity';
 import { AuthResponseDto } from './dto/auth-response.dto';
+import { profile } from 'console';
+import { OAuthResponseDto } from './dto/oauth-response.dto';
 
 export class AuthController {
   constructor(private readonly authService: IAuthService) {}
@@ -22,8 +28,6 @@ export class AuthController {
       const result = await this.authService.registerUser(params);
 
       const response: AuthResponseDto = AuthResponseDto.toResponse(result);
-
-      //this.setRefreshCookie(res, result.tokens.refreshToken);
 
       res.status(200).json({
         sucess: true,
@@ -43,8 +47,6 @@ export class AuthController {
       const result = await this.authService.authenticateUser(params);
 
       const response: AuthResponseDto = AuthResponseDto.toResponse(result);
-
-      //this.setRefreshCookie(res, response.tokens.refreshToken);
 
       res.status(200).json({
         sucess: true,
@@ -110,7 +112,6 @@ export class AuthController {
 
       await this.authService.logout(params);
 
-      //res.clearCookie('refreshToken');
       res.status(201).json({
         success: true,
         message: 'Logged out successfully',
@@ -140,7 +141,12 @@ export class AuthController {
 
       const redirectUrl = this.authService.getOAuthRedirectUrl(provider);
 
-      return res.redirect(redirectUrl);
+      //return res.redirect(redirectUrl);
+
+      return res.status(200).json({
+        success: true,
+        data: { url: redirectUrl },
+      });
     } catch (error) {
       next(error);
     }
@@ -152,8 +158,18 @@ export class AuthController {
       const { provider } = req.params as { provider: AccountProviderType };
       const { code, error } = req.query;
 
+      // if (error) {
+      //   return res.redirect(`${process.env.FRONTEND_URL}/login?error=${error}`);
+      // }
+
+      // if (!code) {
+      //   return res
+      //     .status(400)
+      //     .json({ message: 'Authorization code is missing' });
+      // }
+
       if (error) {
-        return res.redirect(`${process.env.FRONTEND_URL}/login?error=${error}`);
+        return res.status(400).json({ error });
       }
 
       if (!code) {
@@ -162,30 +178,25 @@ export class AuthController {
           .json({ message: 'Authorization code is missing' });
       }
 
-      const authResult = await this.authService.exchageCodeForTokens(
-        code as string,
-        provider,
-      );
+      const authResult: OAuthResult =
+        await this.authService.exchageCodeForTokens(code as string, provider);
 
-      this.setRefreshCookie(res, authResult.tokens.refreshToken);
+      const data = {
+        user: authResult.user,
+        //account: authResult.account,
+        externalProfile: authResult.externalProfile,
+        tokens: authResult.tokens,
+      };
+
+      const response = OAuthResponseDto.toResponse(data);
 
       return res.status(200).json({
         success: true,
-        accessToken: authResult.tokens.accessToken,
-        profile: authResult.profile,
+        data: response,
+        message: 'Login successfully',
       });
     } catch (error) {
       next(error);
     }
-  }
-
-  private setRefreshCookie(res: Response, refreshToken: string) {
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      path: '/auth/refresh',
-    });
   }
 }

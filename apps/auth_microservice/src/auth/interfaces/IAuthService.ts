@@ -9,6 +9,7 @@ import {
   TokenResult,
   AuthResult,
   ValidateTokenResult,
+  OAuthResult,
 } from '../types/auth-params.types';
 import { OAuthProfile } from '../types/external-auth.types';
 
@@ -19,7 +20,7 @@ export interface IAuthService {
   exchageCodeForTokens(
     code: string,
     provider: AccountProviderType,
-  ): Promise<{ profile: OAuthProfile; tokens: TokenResult }>;
+  ): Promise<OAuthResult>;
   registerUser(params: RegisterParams): Promise<AuthResult>;
   logout(params: LogoutParams);
 
