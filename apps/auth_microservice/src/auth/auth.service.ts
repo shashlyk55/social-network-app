@@ -232,18 +232,18 @@ export class AuthService implements IAuthService {
   }
 
   async logout({ refreshTokenId, accessToken }: LogoutParams) {
+    await this.redisRepository.blacklistRefreshToken(
+      refreshTokenId,
+      this.refreshTokenBlacklistTTL,
+    );
+
+    await this.redisRepository.deleteSession(refreshTokenId);
+
     try {
-      await this.redisRepository.blacklistRefreshToken(
-        refreshTokenId,
-        this.refreshTokenBlacklistTTL,
-      );
-
-      await this.redisRepository.deleteSession(refreshTokenId);
-
       const decoded: TokenDecodeResult = jwt.decode(
         accessToken,
       ) as TokenDecodeResult;
-      if (decoded && decoded.jti) {
+      if (decoded?.jti && decoded?.exp) {
         const remainingTime = decoded.exp - Math.floor(Date.now() / 1000);
         if (remainingTime > 0) {
           await this.redisRepository.blacklistAccessToken(
@@ -252,15 +252,9 @@ export class AuthService implements IAuthService {
           );
         }
       }
+    } catch (error) {}
 
-      return { success: true };
-    } catch (error) {
-      if (error instanceof DomainException) {
-        throw error;
-      }
-
-      throw new AuthOperationException('logout', error);
-    }
+    return { success: true };
   }
 
   async validateAccessToken(accessToken: string): Promise<ValidateTokenResult> {
