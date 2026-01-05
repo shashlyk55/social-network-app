@@ -152,13 +152,6 @@ export class AuthController {
       provider,
     );
 
-    // const data = {
-    //   user: authResult.user,
-    //   //account: authResult.account,
-    //   externalProfile: authResult.externalProfile,
-    //   tokens: authResult.tokens,
-    // };
-
     const response = OAuthResponseDto.toResponse(authResult);
 
     return res.status(200).json({

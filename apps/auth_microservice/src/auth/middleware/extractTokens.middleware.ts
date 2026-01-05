@@ -49,14 +49,14 @@ export const extractRefreshToken = (
   next: NextFunction,
 ) => {
   try {
-    const { refreshTokenId: refreshToken } = req.body;
+    const { refreshToken } = req.body;
 
     if (!refreshToken) {
       return res.status(401).json({
         success: false,
         error: {
           code: 'REFRESH_TOKEN_REQUIRED',
-          message: 'Refresh token cookie is required',
+          message: 'Refresh token is required',
         },
       });
     }

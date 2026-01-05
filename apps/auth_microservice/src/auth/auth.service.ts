@@ -20,6 +20,7 @@ import {
   AuthOperationException,
   InvalidCredentials,
   RefreshTokenInBlacklist,
+  SessionNotFound,
 } from './exceptions/auth.exceptions';
 import { AccountProviderType } from '../entities/account.entity';
 import { DomainException } from '../common/exceptions/domain.exception';
@@ -294,22 +295,25 @@ export class AuthService implements IAuthService {
 
   async processRefreshToken(oldRefreshTokenId: string): Promise<AuthResult> {
     try {
-      const isUsed =
+      const isRefreshTokenBlacklisted =
         await this.redisRepository.isRefreshTokenBlacklisted(oldRefreshTokenId);
 
-      if (isUsed) {
+      if (isRefreshTokenBlacklisted) {
         await this.redisRepository.blacklistRefreshToken(
           oldRefreshTokenId,
           this.refreshTokenBlacklistTTL,
         );
         // TODO: delete all user sessions
+
+        await this.redisRepository.deleteSession(oldRefreshTokenId);
+
         throw new RefreshTokenInBlacklist();
       }
 
       const session =
         await this.redisRepository.findSessionByTokenId(oldRefreshTokenId);
       if (!session) {
-        throw new Error('Session not found by refresh token');
+        throw new SessionNotFound();
       }
 
       await this.usersService.isUserDisabled(session.userId);
@@ -323,6 +327,8 @@ export class AuthService implements IAuthService {
         userId: session.userId,
         role: session.role,
       });
+
+      await this.redisRepository.deleteSession(oldRefreshTokenId);
 
       const user = await this.usersService.findOne(session.userId);
       const account = await this.accountsService.findOneByUserId(

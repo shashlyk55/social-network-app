@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { HttpExceptionMapper } from '../utils/http-exception.mapper';
-import { InfrastructureException } from 'src/common/exceptions/infrastructure.exception';
-import { DomainException } from 'src/common/exceptions/domain.exception';
+import { InfrastructureException } from '../../common/exceptions/infrastructure.exception';
+import { DomainException } from '../../common/exceptions/domain.exception';
 
 export const errorHandler = (
   error: Error,

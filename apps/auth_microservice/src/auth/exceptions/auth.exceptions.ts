@@ -33,6 +33,14 @@ export class RefreshTokenInBlacklist extends DomainException {
   }
 }
 
+export class SessionNotFound extends DomainException {
+  code = 'SESSION_NOT_FOUND';
+
+  constructor() {
+    super('Session not found');
+  }
+}
+
 export class AuthOperationException extends InfrastructureException {
   code = 'AUTH_OPERATION_FAILED';
 

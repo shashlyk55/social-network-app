@@ -13,7 +13,7 @@ import {
   extractRefreshToken,
 } from './middleware/extractTokens.middleware';
 import { ExternalAuthService } from './external-auth.service';
-import { ConfigService } from 'src/config/config.service';
+import { ConfigService } from '../config/config.service';
 
 export function createAuthRouter(dataSource: DataSource): Router {
   const router = Router();
@@ -36,8 +36,6 @@ export function createAuthRouter(dataSource: DataSource): Router {
   );
 
   const authController = new AuthController(authService);
-
-  // router.use(passport.initialize());
 
   router.get('/login/:provider', (req, res, next) =>
     authController.loginWithOAuthProvider(req, res, next),

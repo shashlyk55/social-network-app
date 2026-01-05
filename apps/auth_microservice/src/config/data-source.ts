@@ -11,6 +11,6 @@ export const AppDataSource = new DataSource({
   database: process.env.POSTGRES_DB || 'innogram_db',
   synchronize: process.env.POSTGRES_SYNCHRONIZE === 'true' ? true : false,
   schema: process.env.POSTGRES_SCHEMA || 'auth',
-  logging: true,
+  logging: false,
   entities: [User, Account],
 });
