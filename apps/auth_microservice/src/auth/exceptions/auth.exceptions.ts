@@ -1,4 +1,5 @@
-import { DomainException } from '../../common/exceptions/domain.excpetion';
+import { InfrastructureException } from '../../common/exceptions/infrastructure.exception';
+import { DomainException } from '../../common/exceptions/domain.exception';
 
 export class InvalidCredentials extends DomainException {
   code = 'INVALID_CREDENTIALS';
@@ -8,11 +9,11 @@ export class InvalidCredentials extends DomainException {
   }
 }
 
-export class InvalidTokenFormat extends DomainException {
-  code = 'INVALID_TOKEN_FORMAT';
+export class InvalidToken extends DomainException {
+  code = 'INVALID_TOKEN';
 
   constructor() {
-    super('Invalid token format');
+    super('Invalid token');
   }
 }
 
@@ -32,20 +33,12 @@ export class RefreshTokenInBlacklist extends DomainException {
   }
 }
 
-export class UserDisabled extends DomainException {
-  code = 'USER_DISABLED';
-
-  constructor() {
-    super('User disabled');
-  }
-}
-
-export class AuthOperationException extends DomainException {
+export class AuthOperationException extends InfrastructureException {
   code = 'AUTH_OPERATION_FAILED';
 
-  constructor(operation: string, reason?: string) {
-    super(
-      reason ? `Failed to ${operation}: ${reason}` : `Failed to ${operation}`,
-    );
-  }
+  // constructor(operation: string, reason?: string) {
+  //   super(
+  //     reason ? `Failed to ${operation}: ${reason}` : `Failed to ${operation}`,
+  //   );
+  // }
 }

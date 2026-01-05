@@ -1,6 +1,7 @@
 import { createClient, RedisClientType } from 'redis';
 import { IRedisRepository } from './interfaces/IRedisRepository';
 import { Session } from './types/auth-params.types';
+import { ConfigService } from 'src/config/config.service';
 
 export class RedisAuthRepository implements IRedisRepository {
   private client: RedisClientType;
@@ -9,11 +10,12 @@ export class RedisAuthRepository implements IRedisRepository {
   private readonly BL_ACCESS_PREFIX = 'bl_access:';
   private readonly BL_REFRESH_PREFIX = 'bl_refresh:';
 
-  constructor() {
+  constructor(private readonly configService: ConfigService) {
     this.client = createClient({
-      url:
-        process.env.REDIS_URL ||
+      url: this.configService.get(
+        'REDIS_URL',
         'redis://localhost:6379?passowrd=redis_password',
+      ),
     });
 
     this.client.on('error', (err) =>
@@ -87,7 +89,6 @@ export class RedisAuthRepository implements IRedisRepository {
   async findSessionByTokenId(tokenId): Promise<Session | null> {
     const key = `${this.SESSION_PREFIX}${tokenId}`;
     const session = await this.client.get(key);
-    console.log(session);
 
     if (!session) {
       return null;

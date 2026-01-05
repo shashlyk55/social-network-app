@@ -1,11 +1,8 @@
-import { Application, NextFunction, Request, Response } from 'express';
+import { Application } from 'express';
 import { DataSource } from 'typeorm';
 import express from 'express';
 import { createAuthRouter } from '../auth/auth.routes';
-import {
-  domainErrorHandler,
-  errorHandler,
-} from './middleware/error-handler.middleware';
+import { errorHandler } from './middleware/error-handler.middleware';
 import cookieParser from 'cookie-parser';
 import { createUsersRouter } from '../users/users.route';
 
@@ -19,7 +16,6 @@ export function configureApp(app: Application, dataSource: DataSource) {
   app.use('/internal/auth', authRouter);
   app.use('/internal/users', usersRouter);
 
-  app.use(domainErrorHandler);
   app.use(errorHandler);
   app.use((req, res) => {
     res.status(404).json({

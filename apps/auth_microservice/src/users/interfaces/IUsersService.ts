@@ -25,4 +25,8 @@ export interface IUsersService {
   update(params: UpdateUserParams): Promise<UserResult>;
   remove(id: number): Promise<void>;
   softRemove(id: number, deletedById: number): Promise<void>;
+  /**
+   * Throw UserDisabled exception if user is disabled
+   */
+  isUserDisabled(id: number): Promise<void>;
 }

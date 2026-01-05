@@ -10,193 +10,161 @@ import { IAuthService } from './interfaces/IAuthService';
 import { LoginDto } from './dto/login-dto';
 import { AccountProviderType } from '../entities/account.entity';
 import { AuthResponseDto } from './dto/auth-response.dto';
-import { profile } from 'console';
 import { OAuthResponseDto } from './dto/oauth-response.dto';
 
 export class AuthController {
   constructor(private readonly authService: IAuthService) {}
 
-  @HandleExceptions()
+  @HandleExceptions
   async register(
     req: Request,
     res: Response,
     next: NextFunction,
   ): Promise<void> {
-    try {
-      const registerDto: RegisterDto = req.body;
-      const params: RegisterParams = RegisterDto.toRegisterParams(registerDto);
-      const result = await this.authService.registerUser(params);
+    const registerDto: RegisterDto = req.body;
+    const params: RegisterParams = RegisterDto.toRegisterParams(registerDto);
+    const result = await this.authService.registerUser(params);
 
-      const response: AuthResponseDto = AuthResponseDto.toResponse(result);
+    const response: AuthResponseDto = AuthResponseDto.toResponse(result);
 
-      res.status(200).json({
-        sucess: true,
-        data: response,
-        message: 'Register successfully',
-      });
-    } catch (error) {
-      next(error);
-    }
+    res.status(200).json({
+      sucess: true,
+      data: response,
+      message: 'Register successfully',
+    });
   }
 
-  @HandleExceptions()
+  @HandleExceptions
   async login(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-      const loginDto: LoginDto = req.body;
-      const params: LoginParams = LoginDto.toLoginParams(loginDto);
-      const result = await this.authService.authenticateUser(params);
+    const loginDto: LoginDto = req.body;
+    const params: LoginParams = LoginDto.toLoginParams(loginDto);
+    const result = await this.authService.authenticateUser(params);
 
-      const response: AuthResponseDto = AuthResponseDto.toResponse(result);
+    const response: AuthResponseDto = AuthResponseDto.toResponse(result);
 
-      res.status(200).json({
-        sucess: true,
-        data: response,
-        message: 'Login successfully',
-      });
-    } catch (error) {
-      next(error);
-    }
+    res.status(200).json({
+      sucess: true,
+      data: response,
+      message: 'Login successfully',
+    });
   }
 
-  @HandleExceptions()
+  @HandleExceptions
   async validate(
     req: Request,
     res: Response,
     next: NextFunction,
   ): Promise<void> {
-    try {
-      const accessToken = req.accessToken!;
+    const accessToken = req.accessToken!;
 
-      const result = await this.authService.validateAccessToken(accessToken);
+    const result = await this.authService.validateAccessToken(accessToken);
 
-      res.status(200).json({
-        sucess: true,
-        data: result,
-        message: 'Token validated',
-      });
-    } catch (error) {
-      next(error);
-    }
+    res.status(200).json({
+      sucess: true,
+      data: result,
+      message: 'Token validated',
+    });
   }
 
-  @HandleExceptions()
+  @HandleExceptions
   async refreshTokens(
     req: Request,
     res: Response,
     next: NextFunction,
   ): Promise<void> {
-    try {
-      const refreshToken = req.refreshToken!;
+    const refreshToken = req.refreshToken!;
 
-      const result = await this.authService.processRefreshToken(refreshToken);
+    const result = await this.authService.processRefreshToken(refreshToken);
 
-      const response: AuthResponseDto = AuthResponseDto.toResponse(result);
+    const response: AuthResponseDto = AuthResponseDto.toResponse(result);
 
-      res.json({
-        success: true,
-        data: response,
-        message: 'Tokens updated',
-      });
-    } catch (error) {
-      next(error);
-    }
+    res.status(200).json({
+      success: true,
+      data: response,
+      message: 'Tokens updated',
+    });
   }
 
-  @HandleExceptions()
+  @HandleExceptions
   async logout(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-      const accessToken = req.accessToken!;
-      const refreshToken = req.refreshToken!;
+    const accessToken = req.accessToken!;
+    const refreshToken = req.refreshToken!;
 
-      const params = { accessToken, refreshTokenId: refreshToken };
+    const params = { accessToken, refreshTokenId: refreshToken };
 
-      await this.authService.logout(params);
+    await this.authService.logout(params);
 
-      res.status(201).json({
-        success: true,
-        message: 'Logged out successfully',
-      });
-    } catch (error) {
-      next(error);
-    }
+    res.status(201).json({
+      success: true,
+      message: 'Logged out successfully',
+    });
   }
 
-  @HandleExceptions()
+  @HandleExceptions
   async loginWithOAuthProvider(
     req: Request,
     res: Response,
     next: NextFunction,
   ): Promise<unknown> {
-    try {
-      const { provider } = req.params as { provider: AccountProviderType };
+    const { provider } = req.params as { provider: AccountProviderType };
 
-      if (
-        !Object.values(AccountProviderType).includes(provider) ||
-        provider === AccountProviderType.LOCAL
-      ) {
-        return res
-          .status(400)
-          .json({ success: false, message: 'Invalid or unsupported provider' });
-      }
-
-      const redirectUrl = this.authService.getOAuthRedirectUrl(provider);
-
-      //return res.redirect(redirectUrl);
-
-      return res.status(200).json({
-        success: true,
-        data: { url: redirectUrl },
+    if (
+      !Object.values(AccountProviderType).includes(provider) ||
+      provider === AccountProviderType.LOCAL
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or unsupported provider',
       });
-    } catch (error) {
-      next(error);
     }
+
+    const redirectUrl = this.authService.getOAuthRedirectUrl(provider);
+
+    //return res.redirect(redirectUrl);
+
+    return res.status(200).json({
+      success: true,
+      data: { url: redirectUrl },
+    });
   }
 
-  @HandleExceptions()
+  @HandleExceptions
   async handleCallback(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { provider } = req.params as { provider: AccountProviderType };
-      const { code, error } = req.query;
+    const { provider } = req.params as { provider: AccountProviderType };
+    const { code, error } = req.query;
 
-      // if (error) {
-      //   return res.redirect(`${process.env.FRONTEND_URL}/login?error=${error}`);
-      // }
-
-      // if (!code) {
-      //   return res
-      //     .status(400)
-      //     .json({ message: 'Authorization code is missing' });
-      // }
-
-      if (error) {
-        return res.status(400).json({ error });
-      }
-
-      if (!code) {
-        return res
-          .status(400)
-          .json({ message: 'Authorization code is missing' });
-      }
-
-      const authResult: OAuthResult =
-        await this.authService.exchageCodeForTokens(code as string, provider);
-
-      const data = {
-        user: authResult.user,
-        //account: authResult.account,
-        externalProfile: authResult.externalProfile,
-        tokens: authResult.tokens,
-      };
-
-      const response = OAuthResponseDto.toResponse(data);
-
-      return res.status(200).json({
-        success: true,
-        data: response,
-        message: 'Login successfully',
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        error,
       });
-    } catch (error) {
-      next(error);
     }
+
+    if (!code) {
+      return res.status(400).json({
+        success: false,
+        message: 'Authorization code is missing',
+      });
+    }
+
+    const authResult: OAuthResult = await this.authService.exchageCodeForTokens(
+      code as string,
+      provider,
+    );
+
+    // const data = {
+    //   user: authResult.user,
+    //   //account: authResult.account,
+    //   externalProfile: authResult.externalProfile,
+    //   tokens: authResult.tokens,
+    // };
+
+    const response = OAuthResponseDto.toResponse(authResult);
+
+    return res.status(200).json({
+      success: true,
+      data: response,
+      message: 'Login successfully',
+    });
   }
 }

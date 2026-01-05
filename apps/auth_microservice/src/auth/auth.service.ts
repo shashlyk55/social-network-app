@@ -2,8 +2,6 @@ import { IAccountsService } from '../accounts/interfaces/IAccountsService';
 import { IUsersService } from '../users/interfaces/IUsersService';
 import { IAuthService } from './interfaces/IAuthService';
 import {
-  RefreshTokenParams,
-  ValidateTokenParams,
   RegisterParams,
   TokenResult,
   AuthResult,
@@ -21,18 +19,16 @@ import {
   AccessTokenInBlacklist,
   AuthOperationException,
   InvalidCredentials,
-  InvalidTokenFormat,
   RefreshTokenInBlacklist,
-  UserDisabled,
 } from './exceptions/auth.exceptions';
 import { AccountProviderType } from '../entities/account.entity';
-import { DomainException } from '../common/exceptions/domain.excpetion';
+import { DomainException } from '../common/exceptions/domain.exception';
 import bcrypt from 'bcryptjs';
 import { IRedisRepository } from './interfaces/IRedisRepository';
 import { v4 as uuidv4 } from 'uuid';
 import { IExternalAuthService } from './interfaces/IExternalAuthService';
-import { OAuthProfile } from './types/external-auth.types';
 import { AccountNotFoundException } from '../accounts/exceptions/account.exceptions';
+import { ConfigService } from 'src/config/config.service';
 
 export class AuthService implements IAuthService {
   private readonly accessTokenSecret: string;
@@ -47,12 +43,24 @@ export class AuthService implements IAuthService {
     private readonly dataSource: DataSource,
     private readonly redisRepository: IRedisRepository,
     private readonly externalAuthService: IExternalAuthService,
+    private readonly configService: ConfigService,
   ) {
-    this.accessTokenSecret = process.env.ACCESS_TOKEN_SECRET || 'access-secren';
-    this.accessTokenExpiresIn = process.env.ACCESS_TOKEN_EXPIRES_IN || '1h';
-    this.refreshTokenSecret =
-      process.env.REFRESH_TOKEN_SECRET || 'refresh-secren';
-    this.refreshTokenExpiresIn = process.env.REFRESH_TOKEN_EXPIRES_IN || '7d';
+    this.accessTokenSecret = this.configService.get(
+      'ACCESS_TOKEN_SECRET',
+      'access-secret',
+    );
+    this.accessTokenExpiresIn = this.configService.get(
+      'ACCESS_TOKEN_EXPIRES_IN',
+      '1h',
+    );
+    this.refreshTokenSecret = this.configService.get(
+      'REFRESH_TOKEN_SECRET',
+      'refresh-secret',
+    );
+    this.refreshTokenExpiresIn = this.configService.get(
+      'REFRESH_TOKEN_EXPIRES_IN',
+      '7d',
+    );
   }
 
   /**
@@ -62,68 +70,56 @@ export class AuthService implements IAuthService {
     code: string,
     provider: AccountProviderType,
   ): Promise<OAuthResult> {
-    try {
-      const profile = await this.externalAuthService.exchangeCodeForProfile(
-        code,
-        provider,
+    const profile = await this.externalAuthService.exchangeCodeForProfile(
+      code,
+      provider,
+    );
+
+    let user = await this.usersService.findByEmailAndProvider(
+      profile.email,
+      provider,
+    );
+
+    if (!user) {
+      user = await this.dataSource.transaction(
+        async (transactionalEntityManager) => {
+          try {
+            const newUser = await this.usersService.create(
+              {
+                role: UserRole.USER,
+              },
+              undefined,
+              transactionalEntityManager,
+            );
+
+            const account = await this.accountsService.createWithOAuth(
+              {
+                userId: newUser.id,
+                email: profile.email,
+                provider: provider,
+                providerId: profile.providerId,
+              },
+              transactionalEntityManager,
+            );
+
+            return newUser;
+          } catch (error) {
+            throw error;
+          }
+        },
       );
-
-      console.log('EXCHANGE CODE FOR TOKENS');
-
-      console.log(profile);
-
-      let user = await this.usersService.findByEmailAndProvider(
-        profile.email,
-        provider,
-      );
-
-      if (!user) {
-        user = await this.dataSource.transaction(
-          async (transactionalEntityManager) => {
-            try {
-              const newUser = await this.usersService.create(
-                {
-                  role: UserRole.USER,
-                },
-                undefined,
-                transactionalEntityManager,
-              );
-
-              const account = await this.accountsService.createWithOAuth(
-                {
-                  userId: newUser.id,
-                  email: profile.email,
-                  provider: provider,
-                  providerId: profile.providerId,
-                },
-                transactionalEntityManager,
-              );
-
-              return newUser;
-            } catch (error) {
-              throw error;
-            }
-          },
-        );
-      }
-
-      const tokens = await this.generateTokens({
-        userId: user.id,
-        role: user.role,
-      });
-
-      //const account = await this.accountsService.findOneByUserId(user.id);
-
-      const result = {
-        externalProfile: profile,
-        tokens,
-        user,
-        //account,
-      };
-      return result;
-    } catch (error) {
-      throw error;
     }
+
+    const tokens = await this.generateTokens({
+      userId: user.id,
+      role: user.role,
+    });
+
+    return {
+      externalProfile: profile,
+      tokens,
+      user,
+    };
   }
 
   getOAuthRedirectUrl(provider: AccountProviderType): string {
@@ -137,7 +133,11 @@ export class AuthService implements IAuthService {
       //   return `https://github.com/login/oauth/authorize?client_id=...`;
       // }
     } catch (error) {
-      throw error;
+      if (error instanceof DomainException) {
+        throw error;
+      }
+
+      throw new AuthOperationException('get OAut redirect url', error);
     }
   }
 
@@ -159,7 +159,6 @@ export class AuthService implements IAuthService {
             password: params.password,
             provider: params.provider || AccountProviderType.LOCAL,
             createdById: params.createdById,
-            //providerId: params.providerId,
           },
           transactionalEntityManager,
         );
@@ -169,13 +168,11 @@ export class AuthService implements IAuthService {
           role: user.role,
         });
 
-        const result = {
+        return {
           user,
           account,
           tokens,
         };
-
-        return result;
       } catch (error) {
         if (error instanceof DomainException) {
           throw error;
@@ -204,6 +201,7 @@ export class AuthService implements IAuthService {
       }
 
       const user = await this.usersService.findByEmail(email);
+      await this.usersService.isUserDisabled(user.id);
       const account = await this.accountsService.findOneByUserId(user.id);
 
       const payload = {
@@ -221,39 +219,48 @@ export class AuthService implements IAuthService {
 
       return result;
     } catch (error) {
-      if (
-        error instanceof InvalidCredentials ||
-        error instanceof AccountNotFoundException
-      ) {
-        //throw error;
+      if (error instanceof AccountNotFoundException) {
         throw new InvalidCredentials();
       }
 
-      throw new AuthOperationException('authenticate user', error.message);
+      if (error instanceof DomainException) {
+        throw error;
+      }
+
+      throw new AuthOperationException('authenticate user', error);
     }
   }
 
   async logout({ refreshTokenId, accessToken }: LogoutParams) {
-    await this.redisRepository.blacklistRefreshToken(
-      refreshTokenId,
-      this.refreshTokenBlacklistTTL,
-    );
+    try {
+      await this.redisRepository.blacklistRefreshToken(
+        refreshTokenId,
+        this.refreshTokenBlacklistTTL,
+      );
 
-    await this.redisRepository.deleteSession(refreshTokenId);
+      await this.redisRepository.deleteSession(refreshTokenId);
 
-    const decoded: TokenDecodeResult = jwt.decode(
-      accessToken,
-    ) as TokenDecodeResult;
-    if (decoded && decoded.jti) {
-      const remainingTime = decoded.exp - Math.floor(Date.now() / 1000);
-      if (remainingTime > 0) {
-        await this.redisRepository.blacklistAccessToken(
-          decoded.jti,
-          remainingTime,
-        );
+      const decoded: TokenDecodeResult = jwt.decode(
+        accessToken,
+      ) as TokenDecodeResult;
+      if (decoded && decoded.jti) {
+        const remainingTime = decoded.exp - Math.floor(Date.now() / 1000);
+        if (remainingTime > 0) {
+          await this.redisRepository.blacklistAccessToken(
+            decoded.jti,
+            remainingTime,
+          );
+        }
       }
+
+      return { success: true };
+    } catch (error) {
+      if (error instanceof DomainException) {
+        throw error;
+      }
+
+      throw new AuthOperationException('logout', error);
     }
-    return { success: true };
   }
 
   async validateAccessToken(accessToken: string): Promise<ValidateTokenResult> {
@@ -262,20 +269,12 @@ export class AuthService implements IAuthService {
         accessToken,
         this.accessTokenSecret,
       ) as TokenDecodeResult;
-      console.log(payload);
 
-      const isBlacklisted = await this.redisRepository.isAccessTokenBlacklisted(
-        payload.jti,
-      );
-
-      if (isBlacklisted) {
+      if (await this.redisRepository.isAccessTokenBlacklisted(payload.jti)) {
         throw new AccessTokenInBlacklist();
       }
 
-      const user = await this.usersService.findOne(payload.userId);
-      if (!user || user.disabled) {
-        throw new UserDisabled();
-      }
+      await this.usersService.isUserDisabled(payload.userId);
 
       return {
         isValid: true,
@@ -291,7 +290,11 @@ export class AuthService implements IAuthService {
           'Invalid token signature',
         );
       }
-      throw new AuthOperationException('validate token', error.message);
+      if (error instanceof DomainException) {
+        throw error;
+      }
+
+      throw new AuthOperationException('validate token', error);
     }
   }
 
@@ -315,10 +318,7 @@ export class AuthService implements IAuthService {
         throw new Error('Session not found by refresh token');
       }
 
-      const isUserDisabled = await this.isUserBlocked(session.userId);
-      if (isUserDisabled) {
-        throw new UserDisabled();
-      }
+      await this.usersService.isUserDisabled(session.userId);
 
       await this.redisRepository.blacklistRefreshToken(
         oldRefreshTokenId,
@@ -335,13 +335,11 @@ export class AuthService implements IAuthService {
         session.userId,
       );
 
-      const result = {
+      return {
         tokens,
         user,
         account,
       };
-
-      return result;
     } catch (error) {
       if (error instanceof jwt.TokenExpiredError) {
         throw new AuthOperationException('refresh token', 'Token expired');
@@ -349,40 +347,53 @@ export class AuthService implements IAuthService {
       if (error instanceof jwt.JsonWebTokenError) {
         throw new AuthOperationException('refresh token', 'Invalid token');
       }
+      if (error instanceof DomainException) {
+        throw error;
+      }
 
-      throw new AuthOperationException('refresh token', error.message);
+      throw new AuthOperationException('refresh token', error);
     }
   }
 
   private async generateTokens(payload: TokenPayload): Promise<TokenResult> {
-    const refreshTokenId = uuidv4();
+    try {
+      const refreshTokenId = uuidv4();
 
-    const accessTokenExpiresIn = this.parseExpiresIn(this.accessTokenExpiresIn);
+      const accessTokenExpiresIn = this.parseExpiresIn(
+        this.accessTokenExpiresIn,
+      );
 
-    const accessToken = jwt.sign(
-      { ...payload, jti: uuidv4() },
-      this.accessTokenSecret,
-      {
-        expiresIn: accessTokenExpiresIn,
-      },
-    );
+      const accessToken = jwt.sign(
+        { ...payload, jti: uuidv4() },
+        this.accessTokenSecret,
+        {
+          expiresIn: accessTokenExpiresIn,
+        },
+      );
 
-    const refreshTokenExpiresIn = this.parseExpiresIn(
-      this.refreshTokenExpiresIn || '7d',
-    );
+      const refreshTokenExpiresIn = this.parseExpiresIn(
+        this.refreshTokenExpiresIn,
+      );
 
-    const session = { userId: payload.userId, role: payload.role };
+      const session = { userId: payload.userId, role: payload.role };
 
-    await this.redisRepository.storeRefreshTokenId(
-      session,
-      refreshTokenId,
-      refreshTokenExpiresIn,
-    );
+      await this.redisRepository.storeRefreshTokenId(
+        session,
+        refreshTokenId,
+        refreshTokenExpiresIn,
+      );
 
-    return {
-      accessToken,
-      refreshToken: refreshTokenId,
-    };
+      return {
+        accessToken,
+        refreshToken: refreshTokenId,
+      };
+    } catch (error) {
+      if (error instanceof DomainException) {
+        throw error;
+      }
+
+      throw new AuthOperationException('generate tokens', error);
+    }
   }
 
   parseExpiresIn(expiresIn: string): number {
@@ -400,16 +411,6 @@ export class AuthService implements IAuthService {
         return value * 24 * 60 * 60;
       default:
         return 3600;
-    }
-  }
-
-  async isUserBlocked(userId: number): Promise<boolean> {
-    try {
-      const user = await this.usersService.findOne(userId);
-
-      return user.disabled;
-    } catch (error) {
-      throw new AuthOperationException('check user blocked', error.message);
     }
   }
 }

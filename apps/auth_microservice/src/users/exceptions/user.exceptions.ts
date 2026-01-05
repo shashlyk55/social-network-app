@@ -1,4 +1,5 @@
-import { DomainException } from '../../common/exceptions/domain.excpetion';
+import { InfrastructureException } from '../../common/exceptions/infrastructure.exception';
+import { DomainException } from '../../common/exceptions/domain.exception';
 
 export class UserNotFoundException extends DomainException {
   code = 'USER_NOT_FOUND';
@@ -36,7 +37,15 @@ export class EmailAlreadyExistsException extends DomainException {
   }
 }
 
-export class UserOperationException extends DomainException {
+export class UserDisabled extends DomainException {
+  code = 'USER_DISABLED';
+
+  constructor() {
+    super('User disabled');
+  }
+}
+
+export class UserOperationException extends InfrastructureException {
   code = 'USER_OPERATION_FAILED';
 
   constructor(operation: string, reason?: string) {

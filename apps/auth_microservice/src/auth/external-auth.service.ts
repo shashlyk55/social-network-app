@@ -8,13 +8,17 @@ import {
 import { google } from 'googleapis';
 import { v4 as uuidv4 } from 'uuid';
 import { Octokit } from 'octokit';
+import { ConfigService } from 'src/config/config.service';
+import { ProviderNotSupported } from './exceptions/external-auth.exceptions';
 
 export class ExternalAuthService implements IExternalAuthService {
+  constructor(private readonly configServide: ConfigService) {}
+
   private createGoogleClient() {
     return new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET,
-      process.env.GOOGLE_OAUTH_REDIRECT_URI,
+      this.configServide.get('GOOGLE_CLIENT_ID'),
+      this.configServide.get('GOOGLE_CLIENT_SECRET'),
+      this.configServide.get('GOOGLE_OAUTH_REDIRECT_URI'),
     );
   }
 
@@ -40,7 +44,7 @@ export class ExternalAuthService implements IExternalAuthService {
     //   return `https://github.com/login/oauth/authorize?${params.toString()}`;
     // }
 
-    throw new Error('Provider not supported');
+    throw new ProviderNotSupported();
   }
 
   async exchangeCodeForProfile(
@@ -53,7 +57,7 @@ export class ExternalAuthService implements IExternalAuthService {
     // if (provider === AccountProviderType.GITHUB) {
     //   return this.handleGithubExchange(code);
     // }
-    throw new Error('Provider not supported');
+    throw new ProviderNotSupported();
   }
 
   private async handleGoogleExchange(code: string): Promise<OAuthProfile> {
@@ -65,8 +69,6 @@ export class ExternalAuthService implements IExternalAuthService {
     const oauth2 = google.oauth2({ version: 'v2', auth: client });
     const { data } = await oauth2.userinfo.get();
 
-    console.log(data);
-
     return {
       email: data.email!,
       name: data.name || data.given_name!,
@@ -75,32 +77,32 @@ export class ExternalAuthService implements IExternalAuthService {
     };
   }
 
-  private async handleGithubExchange(code: string): Promise<OAuthProfile> {
-    const response = await fetch(
-      'https://github.com/login/oauth/access_token',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-        body: JSON.stringify({
-          client_id: process.env.GITHUB_CLIENT_ID,
-          client_secret: process.env.GITHUB_CLIENT_SECRET,
-          code,
-        }),
-      },
-    );
-    const { access_token } = await response.json();
+  // private async handleGithubExchange(code: string): Promise<OAuthProfile> {
+  //   const response = await fetch(
+  //     'https://github.com/login/oauth/access_token',
+  //     {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //         Accept: 'application/json',
+  //       },
+  //       body: JSON.stringify({
+  //         client_id: process.env.GITHUB_CLIENT_ID,
+  //         client_secret: process.env.GITHUB_CLIENT_SECRET,
+  //         code,
+  //       }),
+  //     },
+  //   );
+  //   const { access_token } = await response.json();
 
-    const octokit = new Octokit({ auth: access_token });
-    const { data } = await octokit.users.getAuthenticated();
+  //   const octokit = new Octokit({ auth: access_token });
+  //   const { data } = await octokit.users.getAuthenticated();
 
-    return {
-      email: data.email || data.login,
-      name: data.name || data.login,
-      providerId: String(data.id),
-      avatarUrl: data.avatar_url,
-    };
-  }
+  //   return {
+  //     email: data.email || data.login,
+  //     name: data.name || data.login,
+  //     providerId: String(data.id),
+  //     avatarUrl: data.avatar_url,
+  //   };
+  // }
 }

@@ -1,4 +1,5 @@
-import { DomainException } from '../../common/exceptions/domain.excpetion';
+import { InfrastructureException } from '../../common/exceptions/infrastructure.exception';
+import { DomainException } from '../../common/exceptions/domain.exception';
 
 export class AccountNotFoundException extends DomainException {
   code = 'ACCOUNT_NOT_FOUND';
@@ -20,7 +21,7 @@ export class EmailAlreadyExistsException extends DomainException {
   }
 }
 
-export class AccountOperationException extends DomainException {
+export class AccountOperationException extends InfrastructureException {
   code = 'ACCOUNT_OPERATION_FAILED';
 
   constructor(operation: string, reason?: string) {

@@ -25,6 +25,5 @@ export interface IAuthService {
   logout(params: LogoutParams);
 
   parseExpiresIn(expiresIn: string): number;
-  isUserBlocked(userId: number): Promise<boolean>;
   getOAuthRedirectUrl(provider: AccountProviderType): string;
 }

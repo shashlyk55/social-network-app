@@ -4,6 +4,7 @@ import {
   AccountResult,
   CreateAccountParams,
   CreateOAuthAccountParams,
+  FindAccountsParams,
 } from './types/account-service.types';
 import { DataSource, EntityManager, Repository } from 'typeorm';
 import {
@@ -12,12 +13,14 @@ import {
   EmailAlreadyExistsException,
 } from './exceptions/account.exceptions';
 import bcrypt from 'bcryptjs';
-import { DomainException } from '../common/exceptions/domain.excpetion';
+import { DomainException } from '../common/exceptions/domain.exception';
+import { PaginationResult } from 'src/common/types/service.types';
+import { ConfigService } from 'src/config/config.service';
 
 export class AccountsService implements IAccountsService {
   constructor(
     private readonly accountRepository: Repository<Account>,
-    private readonly dataSource: DataSource,
+    private readonly configService: ConfigService,
   ) {}
 
   async create(
@@ -36,11 +39,8 @@ export class AccountsService implements IAccountsService {
         throw new EmailAlreadyExistsException(params.email);
       }
 
-      const salt = parseInt(process.env.BCRYPT_SALT_ROUNDS || '10');
-
+      const salt = this.configService.getNumber('BCRYPT_SALT_ROUNDS', 10);
       const passwordHash = await bcrypt.hash(params.password, salt);
-
-      console.log(params);
 
       const account = manager.create(Account, {
         email: params.email,
@@ -48,7 +48,6 @@ export class AccountsService implements IAccountsService {
         passwordHash: passwordHash,
         provider: params.provider,
         userId: params.userId,
-        //providerId: params.providerId,
         lastLoginAt: new Date(),
       });
 
@@ -60,7 +59,7 @@ export class AccountsService implements IAccountsService {
         throw error;
       }
 
-      throw new AccountOperationException('create account', error.message);
+      throw new AccountOperationException('create account', error);
     }
   }
 
@@ -72,11 +71,6 @@ export class AccountsService implements IAccountsService {
       const manager =
         transactionalEntityManager || this.accountRepository.manager;
 
-      // 9. Проверка: не занят ли email другим LOCAL или OAuth аккаунтом
-      // Важно: в OAuth обычно проверяют связку email + provider
-      // const existing = await manager.findOne(Account, {
-      //   where: { email: params.email, provider: params.provider },
-      // });
       const existing = await manager
         .createQueryBuilder(Account, 'account')
         .where('account.email = :email', { email: params.email })
@@ -85,13 +79,10 @@ export class AccountsService implements IAccountsService {
         })
         .getOne();
 
-      console.log(existing);
-
       if (existing) {
-        return existing; // Или бросаем ошибку, если логика требует уникальности
+        return existing;
       }
 
-      // 12. Создание записи аккаунта (Шаг 12 на схеме)
       const account = manager.create(Account, {
         email: params.email,
         userId: params.userId,
@@ -100,84 +91,69 @@ export class AccountsService implements IAccountsService {
         createdById: params.userId,
         lastLoginAt: new Date(),
         passwordHash: null,
-        // email: params.email,
-        // userId: params.userId,
-        // provider: params.provider,
-        // providerId: params.providerId,
-        // createdById: null,
-        // lastLoginAt: new Date(),
-        // passwordHash: null,
-
-        // email: params.email,
-        // createdById: params.userId,
-        // passwordHash: passwordHash,
-        // provider: params.provider,
-        // userId: params.userId,
-        // lastLoginAt: new Date(),
       });
 
       return await manager.save(Account, account);
     } catch (error) {
-      throw new AccountOperationException('create account', error.message);
+      throw new AccountOperationException('create account', error);
     }
   }
 
   async findOneByUserId(id: number): Promise<AccountResult> {
+    let account;
     try {
-      const account = await this.accountRepository
+      account = await this.accountRepository
         .createQueryBuilder('account')
         .select(['account.id', 'account.email', 'account.lastLoginAt'])
         .where('account.userId = :userId', { userId: id })
         .getOne();
-
-      if (!account) {
-        throw new AccountNotFoundException();
-      }
-
-      return account;
     } catch (error) {
-      if (error instanceof AccountNotFoundException) {
-        throw error;
-      }
-      throw new AccountOperationException(
-        'find account by user id',
-        error.message,
-      );
+      throw new AccountOperationException('find account by user id', error);
     }
+
+    if (!account) {
+      throw new AccountNotFoundException();
+    }
+
+    return account;
   }
 
   async findOneByAccountId(id: number): Promise<AccountResult> {
+    let account;
     try {
-      const account = await this.accountRepository
+      account = await this.accountRepository
         .createQueryBuilder('account')
         .select(['account.id', 'account.email', 'account.lastLoginAt'])
         .where('account.id = :accountId', { accountId: id })
         .getOne();
-
-      if (!account) {
-        throw new AccountNotFoundException(id);
-      }
-
-      return account;
     } catch (error) {
-      if (error instanceof AccountNotFoundException) {
-        throw error;
-      }
-      throw new AccountOperationException(
-        'find account by user id',
-        error.message,
-      );
+      throw new AccountOperationException('find account by user id', error);
     }
+    if (!account) {
+      throw new AccountNotFoundException(id);
+    }
+
+    return account;
   }
 
-  async findAll(): Promise<AccountResult[]> {
-    try {
-      const accounts = await this.accountRepository.find();
+  async findAll(
+    params: FindAccountsParams,
+  ): Promise<PaginationResult<AccountResult>> {
+    const { page = 1, limit = 10 } = params;
+    const skip = (page - 1) * limit;
 
-      return accounts;
-    } catch (error) {
-      throw new AccountOperationException('find accounts', error.message);
-    }
+    const queryBuilder = this.accountRepository.createQueryBuilder('account');
+
+    const [data, total] = await queryBuilder
+      .skip(skip)
+      .take(limit)
+      .orderBy('account.createdAt', 'DESC')
+      .getManyAndCount();
+
+    return {
+      data,
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+    };
   }
 
   async remove(id: number): Promise<void> {
@@ -186,7 +162,7 @@ export class AccountsService implements IAccountsService {
     try {
       await this.accountRepository.delete(id);
     } catch (error) {
-      throw new AccountOperationException('delete account', error.message);
+      throw new AccountOperationException('remove account', error);
     }
   }
 
@@ -203,28 +179,31 @@ export class AccountsService implements IAccountsService {
         lastLoginAt: new Date(),
       });
     } catch (error) {
-      throw new AccountOperationException('set last login at', error.message);
+      throw new AccountOperationException('update last login at', error);
     }
   }
 
-  async getAccountPasswordByEmail(email: string): Promise<string | null> {
+  async getAccountPasswordByEmail(email: string): Promise<string> {
     try {
-      const account = await this.accountRepository.findOne({
-        select: ['passwordHash'],
-        where: { email },
-      });
+      const result = await this.accountRepository
+        .createQueryBuilder('account')
+        .select('account.passwordHash', 'passwordHash')
+        .where('account.email = :email', { email })
+        .andWhere('account.provider = :provider', {
+          provider: AccountProviderType.LOCAL,
+        })
+        .getRawOne<{ passwordHash: string }>();
 
-      if (!account) {
+      if (!result) {
         throw new AccountNotFoundException();
       }
 
-      return account.passwordHash;
+      return result.passwordHash;
     } catch (error) {
       if (error instanceof DomainException) {
         throw error;
       }
-
-      throw new AccountOperationException('validate passowrd', error.message);
+      throw new AccountOperationException('get account passowrd', error);
     }
   }
 }

@@ -5,17 +5,20 @@ export type CreateAccountParams = {
   email: string;
   password: string;
   provider: AccountProviderType;
-  //providerId?: string;
   createdById?: number;
 };
 
 export type CreateOAuthAccountParams = {
   userId: number;
   email: string;
-  //password: string;
   provider: AccountProviderType;
   providerId?: string;
   createdById?: number;
+};
+
+export type FindAccountsParams = {
+  page?: number;
+  limit?: number;
 };
 
 export type UpdateAccountParams = {};

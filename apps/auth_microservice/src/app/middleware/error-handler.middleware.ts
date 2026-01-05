@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { HttpExceptionMapper } from '../utils/http-exception.mapper';
+import { InfrastructureException } from 'src/common/exceptions/infrastructure.exception';
+import { DomainException } from 'src/common/exceptions/domain.exception';
 
 export const errorHandler = (
   error: Error,
@@ -7,27 +9,16 @@ export const errorHandler = (
   res: Response,
   next: NextFunction,
 ): void => {
-  // Логирование ошибки
   logError(error, req);
 
-  // Маппинг через маппер
   HttpExceptionMapper.mapToHttpResponse(error, res);
 };
 
-// Дополнительная middleware для логирования
-export const domainErrorHandler = (
-  error: Error,
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): void => {
-  if (HttpExceptionMapper.isDomainException(error)) {
-    req.app.locals.lastDomainError = error;
-  }
-  next(error);
-};
-
 function logError(error: Error, req: Request): void {
+  const internalDetails =
+    error instanceof InfrastructureException ? error.rawError : null;
+  const errorCode = (error as any).code || 'INTERNAL_ERROR';
+
   const logEntry = {
     timestamp: new Date().toISOString(),
     method: req.method,
@@ -44,12 +35,20 @@ function logError(error: Error, req: Request): void {
   if (process.env.NODE_ENV === 'production') {
     console.error(JSON.stringify(logEntry));
   } else {
-    console.error('\n=== ERROR ===');
-    console.error(`Path: ${req.method} ${req.url}`);
-    console.error(`Error: ${error.name}: ${error.message}`);
-    if (error.stack) {
-      console.error('Stack:', error.stack);
+    console.error('\n=== [ERROR LOG] ===');
+    console.error(`Status: ${req.method} ${req.url}`);
+    console.error(`Code:   ${errorCode}`);
+    console.error(`Msg:    ${error.message}`);
+
+    if (internalDetails) {
+      console.error('--- Internal Details ---');
+      console.dir(internalDetails, { depth: null });
     }
-    console.error('=============\n');
+
+    if (error.stack && !(error instanceof DomainException)) {
+      console.error('--- Stack Trace ---');
+      console.error(error.stack);
+    }
+    console.error('====================\n');
   }
 }
