@@ -5,11 +5,9 @@ import {
   ArgumentsHost,
   HttpStatus,
   Logger,
-  HttpException,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { ExceptionMapper } from 'src/app/exceptions/exception.mapper';
-import { DomainException } from './domain.exception';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
@@ -19,40 +17,17 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
 
-    let httpException: HttpException;
+    const { status, body } = ExceptionMapper.mapToResponse(exception);
 
-    if (exception instanceof DomainException) {
-      // Маппим доменное исключение в HTTP
-      httpException = ExceptionMapper.mapDomainToHttp(exception);
-    } else if (exception instanceof HttpException) {
-      // Уже HTTP исключение
-      httpException = exception;
-    } else if (exception instanceof Error) {
-      // Неизвестная ошибка
+    if (status === HttpStatus.INTERNAL_SERVER_ERROR) {
       this.logger.error(
-        `Unhandled error: ${exception.message}`,
-        exception.stack,
-      );
-      httpException = new HttpException(
-        'Internal server error',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    } else {
-      // Неизвестный тип ошибки
-      httpException = new HttpException(
-        'Unknown error occurred',
-        HttpStatus.INTERNAL_SERVER_ERROR,
+        exception instanceof Error ? exception.stack : exception,
       );
     }
 
-    response.status(httpException.getStatus()).json({
-      success: false,
-      error: {
-        //code: httpException.code,
-        message: httpException.message,
-        //details: httpException.details,
-        timestamp: new Date().toISOString(),
-      },
+    response.status(status).json({
+      ...body,
+      timestamp: new Date().toISOString(),
     });
   }
 }

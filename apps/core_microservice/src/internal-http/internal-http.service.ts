@@ -1,6 +1,7 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
+import { MicroserviceException } from './exceptions/microservice-http.exceptions';
 
 @Injectable()
 export class InternalHttpService {
@@ -14,8 +15,15 @@ export class InternalHttpService {
 
       return response.data;
     } catch (error) {
+      if (error.response) {
+        throw new MicroserviceException(
+          error.response.data,
+          error.response.status,
+        );
+      }
+
       throw new InternalServerErrorException(
-        `Auth Microservice error: ${error.response?.data?.message || error.message}`,
+        `Service at ${url} is unavailable`,
       );
     }
   }
@@ -26,8 +34,15 @@ export class InternalHttpService {
 
       return response.data;
     } catch (error) {
+      if (error.response) {
+        throw new MicroserviceException(
+          error.response.data,
+          error.response.status,
+        );
+      }
+
       throw new InternalServerErrorException(
-        `Auth Microservice error: ${error.response?.data?.message || error.message}`,
+        `Service at ${url} is unavailable`,
       );
     }
   }
@@ -36,7 +51,17 @@ export class InternalHttpService {
     try {
       await firstValueFrom(this.httpService.delete(url));
     } catch (error) {
-      console.error(`Rollback request failed at ${url}`);
+      //console.error(`Rollback request failed at ${url}`);
+      if (error.response) {
+        throw new MicroserviceException(
+          error.response.data,
+          error.response.status,
+        );
+      }
+
+      throw new InternalServerErrorException(
+        `Service at ${url} is unavailable`,
+      );
     }
   }
 }

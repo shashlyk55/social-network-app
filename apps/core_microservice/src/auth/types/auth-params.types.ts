@@ -25,7 +25,7 @@ export type OAuthCallbackParams = {
 };
 
 export type LogoutParams = {
-  refreshTokenId: string;
+  refreshToken: string;
   accessToken: string;
 };
 

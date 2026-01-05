@@ -15,8 +15,6 @@ import { CreateProfileParams } from 'src/profiles/types/profile-params.types';
 import { AuthMapper } from '../utils/auth.mapper';
 import { ProfilesService } from 'src/profiles/profiles.service';
 import { ProfileMapper } from 'src/profiles/utils/profile.mapper';
-import { InternalAuthDto } from '../dto/internal-auth-response.dto';
-import { InternalHttpService } from './internal-http.service';
 
 @Injectable()
 export class OrchestratorAuthService {

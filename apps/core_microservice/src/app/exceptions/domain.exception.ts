@@ -7,14 +7,6 @@ export abstract class DomainException extends Error {
   }
 }
 
-// export {
-//   UserNotFoundException,
-//   ProfileNotFoundException,
-//   UsernameAlreadyExistsException,
-//   EmailAlreadyExistsException,
-//   UserOperationException,
-// } from '../../users/exceptions/user.exceptions';
-
 export {
   PostNotFoundException,
   PostAlreadyLikedException,

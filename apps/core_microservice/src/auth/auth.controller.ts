@@ -77,8 +77,11 @@ export class AuthController {
   }
 
   @Post('refresh')
-  async refresh(@Req() req, @Res({ passthrough: true }) res: Response) {
-    const refreshToken = req.cookies['refreshToken'];
+  async refresh(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const refreshToken = req.cookies['refreshToken'] || null;
 
     if (!refreshToken) {
       throw new UnauthorizedException('Refresh token not found');
@@ -161,7 +164,7 @@ export class AuthController {
     if (refreshToken && accessToken) {
       accessToken = accessToken.replace('Bearer ', '');
       await this.orchestartorAuthService.logout({
-        refreshTokenId: refreshToken,
+        refreshToken: refreshToken,
         accessToken,
       });
     }

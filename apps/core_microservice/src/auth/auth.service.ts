@@ -10,20 +10,17 @@ import {
   AccountProviderType,
   AuthResult,
   InternalAuthResult,
-  TokenPayload,
   ValidateTokenResult,
 } from './types/auth-params.types';
-import { InternalHttpService } from './services/internal-http.service';
 import { InternalAuthDto } from './dto/internal-auth-response.dto';
 import { ProfilesService } from 'src/profiles/profiles.service';
-import { IProfilesService } from 'src/profiles/interfaces/IProfilesService';
 import { AuthMapper } from './utils/auth.mapper';
 import { InternalOAuthResponseDto } from './dto/internal-oauth-response.dto';
+import { InternalHttpService } from 'src/internal-http/internal-http.service';
 
 @Injectable()
 export class AuthService implements IAuthService {
   private readonly authUrl = process.env.AUTH_MICROSERVICE_URL;
-  private readonly authPort = process.env.AUTH_MICROSERVICE_PORT;
 
   constructor(
     private readonly httpService: InternalHttpService,
