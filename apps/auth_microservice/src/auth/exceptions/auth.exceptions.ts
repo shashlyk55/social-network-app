@@ -41,6 +41,22 @@ export class SessionNotFound extends DomainException {
   }
 }
 
+export class TokenExpired extends DomainException {
+  code = 'TOKEN_EXPIRED';
+
+  constructor() {
+    super('Token expired');
+  }
+}
+
+export class InvalidTokenSignature extends DomainException {
+  code = 'INVALID_TOKEN_SIGNATURE';
+
+  constructor() {
+    super('Invalid token signature');
+  }
+}
+
 export class AuthOperationException extends InfrastructureException {
   code = 'AUTH_OPERATION_FAILED';
 
