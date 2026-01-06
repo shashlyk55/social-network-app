@@ -26,6 +26,7 @@ export class ExceptionMapper {
     status: number;
     body: Record<string, any>;
   } {
+    // exceptions from other microservices
     if (exception instanceof MicroserviceException) {
       return {
         status: exception.getStatus(),
@@ -33,6 +34,18 @@ export class ExceptionMapper {
       };
     }
 
+    // exceptions in current microservice
+    if (exception instanceof DomainException) {
+      return {
+        status: this.statusMap[exception.code] || HttpStatus.BAD_REQUEST,
+        body: {
+          success: false,
+          error: { code: exception.code, message: exception.message },
+        },
+      };
+    }
+
+    // standart nest js exceptions(http exceptions)
     if (exception instanceof HttpException) {
       const response = exception.getResponse();
       const status = exception.getStatus();

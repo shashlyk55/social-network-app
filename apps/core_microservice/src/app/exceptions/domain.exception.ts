@@ -6,32 +6,3 @@ export abstract class DomainException extends Error {
     this.name = this.constructor.name;
   }
 }
-
-export {
-  PostNotFoundException,
-  PostAlreadyLikedException,
-  PostOperationException,
-  PostAccessDeniedException,
-} from '../../posts/exceptions/post-domain.exceptions';
-
-export {
-  CommentNotFoundException,
-  ParentCommentNotFoundException,
-  CommentWithRepliesException,
-  CommentAlreadyLikedException,
-  CommentOperationException,
-  CommentAccessDeniedException,
-} from '../../comments/exceptions/comment-domain.exceptions';
-
-export {
-  ChatNotFoundException,
-  ChatParticipantNotFoundException,
-  ChatAlreadyExistsException,
-  ChatParticipantAlreadyExistsException,
-  ChatAccessDeniedException,
-  ChatOperationException,
-  ChatValidationException,
-  InsufficientParticipantsException,
-  InvalidChatTypeException,
-  ChatParticipantRoleException,
-} from '../../chats/exceptions/chat-domain.exceptions';

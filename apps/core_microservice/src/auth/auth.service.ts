@@ -55,7 +55,7 @@ export class AuthService implements IAuthService {
 
     const responseData = response.data;
 
-    console.log(responseData);
+    //console.log(responseData);
     const profile = await this.profilesService.findByUserId(
       responseData.user.id,
     );
