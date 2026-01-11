@@ -1,17 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-// class UserReferenceDto {
-//   @ApiProperty({ example: 1, description: 'User ID' })
-//   id: number;
-
-//   @ApiProperty({
-//     example: UserRole.ADMIN,
-//     enum: UserRole,
-//     description: 'User role',
-//   })
-//   role: UserRole;
-// }
-
 class ProfileReferenceDto {
   @ApiProperty({ example: 1, description: 'Profile ID' })
   id: number;
@@ -87,19 +75,6 @@ export class PostResponseDto {
     description: 'Post author profile',
   })
   profile: ProfileReferenceDto;
-
-  // @ApiProperty({
-  //   type: UserReferenceDto,
-  //   description: 'User who created this post',
-  // })
-  // createdBy: UserReferenceDto;
-
-  // @ApiProperty({
-  //   type: UserReferenceDto,
-  //   description: 'User who updated this post',
-  //   nullable: true,
-  // })
-  // updatedBy?: UserReferenceDto;
 
   @ApiProperty({ type: [PostAssetResponseDto], description: 'Post assets' })
   assets: PostAssetResponseDto[];

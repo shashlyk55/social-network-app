@@ -21,11 +21,6 @@ export class CreatePostDto {
   @IsNotEmpty()
   content: string;
 
-  @ApiProperty({ description: 'Profile ID of the post author' })
-  @IsNumber()
-  @IsNotEmpty()
-  profileId: number;
-
   @ApiPropertyOptional({
     example: false,
     description: 'Whether post is archived',
@@ -33,11 +28,6 @@ export class CreatePostDto {
   @IsBoolean()
   @IsOptional()
   isArchived?: boolean;
-
-  @ApiProperty({ description: 'ID of user creating the post' })
-  @IsNumber()
-  @IsNotEmpty()
-  createdById: number;
 
   @ApiPropertyOptional({
     //example: [1, 2, 3],

@@ -7,12 +7,16 @@ import { Asset } from 'src/entities/asset.entity';
 import { PostAsset } from 'src/entities/many-to-many/post-asset.entity';
 import { PostLike } from 'src/entities/many-to-many/post-like.entity';
 import { Profile } from 'src/entities/profile.entity';
+import { ProfilesModule } from 'src/profiles/profiles.module';
+import { AssetsModule } from 'src/assets/assets.module';
 
 @Module({
   controllers: [PostsController],
   providers: [PostsService],
   imports: [
-    TypeOrmModule.forFeature([Post, Asset, PostAsset, PostLike, Profile]),
+    TypeOrmModule.forFeature([Post, PostAsset, PostLike, Profile]),
+    ProfilesModule,
+    AssetsModule,
   ],
   exports: [PostsService],
 })

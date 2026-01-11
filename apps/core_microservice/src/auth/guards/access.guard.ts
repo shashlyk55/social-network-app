@@ -21,10 +21,9 @@ export class AccessGuard implements CanActivate {
     try {
       accessToken = accessToken.replace('Bearer ', '');
 
-      const user = await this.authService.validateToken(accessToken);
-      console.log(user.payload);
+      const authData = await this.authService.validateToken(accessToken);
 
-      request['user'] = user;
+      request['user'] = authData.payload;
 
       return true;
     } catch (error) {

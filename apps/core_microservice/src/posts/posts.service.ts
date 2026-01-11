@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  ConflictException,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PostLike } from 'src/entities/many-to-many/post-like.entity';
 import { Post, Post as PostEntity } from 'src/entities/post.entity';
@@ -14,16 +9,15 @@ import {
   FindPostsParams,
   PostPaginationResult,
   UpdatePostParams,
-  CreatePostLikeParams,
-  FindProfilePostsParams,
 } from './types/post-service.types';
-import { Asset } from 'src/entities/asset.entity';
 import {
   PostNotFoundException,
   PostOperationException,
 } from './exceptions/post-domain.exceptions';
 import { DomainException } from 'src/app/exceptions/domain.exception';
-import { Profile } from 'src/entities/profile.entity';
+import { ProfilesService } from 'src/profiles/profiles.service';
+import { PostAsset } from 'src/entities/many-to-many/post-asset.entity';
+import { AssetsService } from 'src/assets/assets.service';
 
 @Injectable()
 export class PostsService implements IPostsService {
@@ -32,26 +26,18 @@ export class PostsService implements IPostsService {
     private readonly postRepository: Repository<PostEntity>,
     @InjectRepository(PostLike)
     private readonly postLikeRepository: Repository<PostLike>,
-    @InjectRepository(Asset)
-    private readonly postAssetRepository: Repository<Asset>,
-    //private readonly userService: UsersService,
-    @InjectRepository(Profile)
-    private readonly profileRepository: Repository<Profile>,
+    @InjectRepository(PostAsset)
+    private readonly postAssetRepository: Repository<PostAsset>,
     private readonly dataSource: DataSource,
+    private readonly profilesService: ProfilesService,
+    private readonly assetsService: AssetsService,
   ) {}
 
-  async create(params: CreatePostParams): Promise<PostEntity> {
-    // TODO: check existing user
-
-    const profile = await this.profileRepository.findOne({
-      where: { id: params.profileId },
-    });
-
-    // if (!profile) {
-    //   throw new ProfileNotFoundException(params.profileId);
-    // }
-
-    // TODO: check asset existing
+  async create(
+    params: CreatePostParams,
+    createdById: number,
+  ): Promise<PostEntity> {
+    const profile = await this.profilesService.findByUserId(createdById);
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -60,14 +46,25 @@ export class PostsService implements IPostsService {
     try {
       const post = this.postRepository.create({
         content: params.content,
-        profileId: params.profileId,
+        profileId: profile.id,
         isArchived: params.isArchived || false,
-        createdById: params.createdById,
+        createdById: createdById,
       });
 
       const savedPost = await queryRunner.manager.save(post);
 
-      // TODO: add asset adding in when create post
+      if (params.assetIds && params.assetIds.length > 0) {
+        const postAssets = params.assetIds.map((assetId, orderIndex) => {
+          return this.postAssetRepository.create({
+            postId: savedPost.id,
+            assetId: assetId,
+            createdById: createdById,
+            orderIndex: orderIndex,
+          });
+        });
+
+        await queryRunner.manager.save(PostAsset, postAssets);
+      }
 
       await queryRunner.commitTransaction();
 
@@ -85,24 +82,35 @@ export class PostsService implements IPostsService {
     }
   }
 
-  async findAll(params: FindPostsParams): Promise<PostPaginationResult> {
+  async findAll(
+    params: FindPostsParams,
+    userId?: number,
+  ): Promise<PostPaginationResult> {
     try {
-      const { page = 1, limit = 10, isArchived } = params;
+      const { page = 1, limit = 10, isArchived, search } = params;
       const skip = (page - 1) * limit;
 
       const queryBuilder = this.postRepository
         .createQueryBuilder('post')
         .leftJoinAndSelect('post.profile', 'profile')
-        // .leftJoinAndSelect('post.createdBy', 'createdBy')
-        // .leftJoinAndSelect('post.updatedBy', 'updatedBy')
         .leftJoinAndSelect('post.postAssets', 'postAssets')
+        .leftJoinAndSelect('postAssets.asset', 'asset')
         .leftJoinAndSelect('post.postLikes', 'postLikes')
-        //.leftJoinAndSelect('postLikes.profile', 'likeProfile')
+        .leftJoinAndSelect('postLikes.profile', 'likeProfile')
         .leftJoinAndSelect('post.comments', 'comments')
         .where('post.isArchived = :isArchived', { isArchived: false });
 
+      if (userId != undefined) {
+        queryBuilder.andWhere('post.createdById = :userId', { userId });
+      }
       if (isArchived !== undefined) {
         queryBuilder.andWhere('post.isArchived = :isArchived', { isArchived });
+      }
+
+      if (search) {
+        queryBuilder.andWhere('LOWER(post.content) LIKE LOWER(:search)', {
+          search: `%${search}%`,
+        });
       }
 
       const [data, total] = await queryBuilder
@@ -123,24 +131,23 @@ export class PostsService implements IPostsService {
         throw error;
       }
 
-      throw new PostOperationException('create post', error.message);
+      throw new PostOperationException('find posts', error.message);
     }
   }
 
   async findOne(id: number): Promise<PostEntity> {
     try {
-      const post = await this.postRepository.findOne({
-        where: { id },
-        relations: [
-          'profile',
-          // 'createdBy',
-          // 'updatedBy',
-          'postAssets',
-          'postLikes',
-          'postLikes.profile',
-          'comments',
-        ],
-      });
+      const queryBuilder = this.postRepository
+        .createQueryBuilder('post')
+        .leftJoinAndSelect('post.profile', 'profile')
+        .leftJoinAndSelect('post.postAssets', 'postAssets')
+        .leftJoinAndSelect('postAssets.asset', 'asset')
+        .leftJoinAndSelect('post.postLikes', 'postLikes')
+        .leftJoinAndSelect('postLikes.profile', 'likeProfile')
+        .leftJoinAndSelect('post.comments', 'comments')
+        .where('post.id = :postId', { postId: id });
+
+      const post = await queryBuilder.getOne();
 
       if (!post) {
         throw new PostNotFoundException(id);
@@ -155,14 +162,13 @@ export class PostsService implements IPostsService {
     }
   }
 
-  async update(params: UpdatePostParams): Promise<PostEntity> {
+  async update(
+    params: UpdatePostParams,
+    updatedById: number,
+  ): Promise<PostEntity> {
     const { id, assetIds, ...updateData } = params;
 
-    const post = await this.findOne(id);
-
-    // TODO: check user existing
-
-    // TODO: check asset existing
+    await this.findOne(id);
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -171,16 +177,28 @@ export class PostsService implements IPostsService {
     try {
       const updatePayload: Partial<PostEntity> = {};
 
+      updatePayload.updatedById = updatedById;
       if (updateData.content !== undefined)
         updatePayload.content = updateData.content;
-      if (updateData.updatedById !== undefined)
-        updatePayload.updatedById = updateData.updatedById;
 
       if (Object.keys(updatePayload).length > 0) {
         await queryRunner.manager.update(Post, id, updatePayload);
       }
 
-      // TODO: add asset updating
+      if (assetIds !== undefined) {
+        await queryRunner.manager.delete(PostAsset, { postId: id });
+
+        if (assetIds.length > 0) {
+          const newAssets = assetIds.map((assetId) =>
+            this.postAssetRepository.create({
+              postId: id,
+              assetId: assetId,
+              createdById: updatedById,
+            }),
+          );
+          await queryRunner.manager.save(PostAsset, newAssets);
+        }
+      }
 
       await queryRunner.commitTransaction();
 
@@ -191,7 +209,6 @@ export class PostsService implements IPostsService {
       if (error instanceof DomainException) {
         throw error;
       }
-
       throw new PostOperationException('update post', error.message);
     } finally {
       await queryRunner.release();
@@ -199,7 +216,7 @@ export class PostsService implements IPostsService {
   }
 
   async remove(id: number): Promise<void> {
-    const post = await this.findOne(id);
+    await this.findOne(id);
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -210,6 +227,10 @@ export class PostsService implements IPostsService {
       await queryRunner.commitTransaction();
     } catch (error) {
       await queryRunner.rollbackTransaction();
+
+      if (error instanceof DomainException) {
+        throw error;
+      }
       throw new PostOperationException('remove post', error.message);
     } finally {
       await queryRunner.release();
@@ -217,151 +238,65 @@ export class PostsService implements IPostsService {
   }
 
   async archive(id: number, updatedById: number): Promise<PostEntity> {
-    const post = await this.findOne(id);
-
-    // TODO: check user existing
-
-    // const queryRunner = this.dataSource.createQueryRunner();
-    // await queryRunner.connect();
-    // await queryRunner.startTransaction();
-
+    await this.findOne(id);
     try {
       await this.postRepository.update(id, {
         isArchived: true,
         updatedById,
       });
-
-      //await queryRunner.commitTransaction();
-
       return await this.findOne(id);
     } catch (error) {
-      //await queryRunner.rollbackTransaction();
+      if (error instanceof DomainException) {
+        throw error;
+      }
       throw new PostOperationException('archive post', error.message);
-    } finally {
-      //await queryRunner.release();
     }
   }
 
   async unarchive(id: number, updatedById: number): Promise<PostEntity> {
-    const post = await this.findOne(id);
-
-    // TODO: check user existing
-
-    // const queryRunner = this.dataSource.createQueryRunner();
-    // await queryRunner.connect();
-    // await queryRunner.startTransaction();
-
+    await this.findOne(id);
     try {
       await this.postRepository.update(id, {
         isArchived: false,
         updatedById,
       });
-
-      //await queryRunner.commitTransaction();
-
       return await this.findOne(id);
     } catch (error) {
-      //await queryRunner.rollbackTransaction();
+      if (error instanceof DomainException) {
+        throw error;
+      }
       throw new PostOperationException('unarchive post', error.message);
-    } finally {
-      //await queryRunner.release();
     }
   }
 
-  async likePost(params: CreatePostLikeParams): Promise<PostLike> {
-    const { postId, profileId, createdById } = params;
-
-    const post = await this.findOne(postId);
-
-    const profile = await this.profileRepository.findOne({
-      where: { id: params.profileId },
-    });
-
-    // if (!profile) {
-    //   throw new ProfileNotFoundException(params.profileId);
-    // }
+  async likePost(postId: number, createdById: number): Promise<PostLike> {
+    await this.findOne(postId);
+    const profile = await this.profilesService.findByUserId(createdById);
 
     const existingLike = await this.postLikeRepository.findOne({
-      where: { postId, profileId },
+      where: { postId, profileId: profile.id },
     });
-
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
 
     try {
       if (existingLike) {
-        return await queryRunner.manager.remove(PostLike, existingLike);
+        return await this.postLikeRepository.remove(existingLike);
       }
 
       const like = this.postLikeRepository.create({
         postId,
-        profileId,
+        profileId: profile.id,
         createdById,
       });
 
-      const savedPostLike = await queryRunner.manager.save(PostLike, like);
-
-      await queryRunner.commitTransaction();
+      const savedPostLike = await this.postLikeRepository.save(like);
 
       return savedPostLike;
     } catch (error) {
-      await queryRunner.rollbackTransaction();
-
       if (error instanceof DomainException) {
         throw error;
       }
 
       throw new PostOperationException('like post', error.message);
-    } finally {
-      await queryRunner.release();
-    }
-  }
-
-  async findProfilePosts(
-    params: FindProfilePostsParams,
-  ): Promise<PostPaginationResult> {
-    const profile = await this.profileRepository.findOne({
-      where: { id: params.profileId },
-    });
-
-    // if (!profile) {
-    //   throw new ProfileNotFoundException(params.profileId);
-    // }
-
-    try {
-      const { page = 1, limit = 10 } = params;
-      const skip = (page - 1) * limit;
-
-      const queryBuilder = this.postRepository
-        .createQueryBuilder('post')
-        .leftJoinAndSelect('post.profile', 'profile')
-        // .leftJoinAndSelect('post.createdBy', 'createdBy')
-        // .leftJoinAndSelect('post.updatedBy', 'updatedBy')
-        .leftJoinAndSelect('post.postLikes', 'postLikes')
-        .leftJoinAndSelect('postLikes.profile', 'likeProfile')
-        .leftJoinAndSelect('post.comments', 'comments')
-        .where('post.profileId = :profileId', { profileId: params.profileId });
-
-      queryBuilder.andWhere('post.isArchived = :isArchived', {
-        isArchived: false,
-      });
-
-      const [data, total] = await queryBuilder
-        .skip(skip)
-        .take(limit)
-        .orderBy('post.createdAt', 'DESC')
-        .getManyAndCount();
-
-      return {
-        data,
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      };
-    } catch (error) {
-      throw new PostOperationException('find profile posts', error.message);
     }
   }
 }

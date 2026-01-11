@@ -15,8 +15,6 @@ import { LoginDto } from './dto/login-dto';
 import { Request, Response } from 'express';
 import { OrchestratorAuthService } from './services/orchestrator-auth.service';
 import { FullRegisterDto } from './dto/full-register.dto';
-import { IAuthService } from './interfaces/IAuthService';
-import { IRegistrationService } from './interfaces/IOrchestratorAuthService';
 import { OrchestratorAuthMapper } from './utils/orchestrator-auth.mapper';
 import {
   ApiOperation,
@@ -24,9 +22,9 @@ import {
   ApiResponse,
   ApiConflictResponse,
   ApiBadRequestResponse,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import { FullAuthResponseDto } from './dto/full-auth-response.dto';
-import { AuthMapper } from './utils/auth.mapper';
 import {
   AccountProviderType,
   LoginParams,
@@ -152,6 +150,7 @@ export class AuthController {
   }
 
   @Post('logout')
+  @ApiBearerAuth('access-token')
   @UseGuards(AccessGuard)
   @ApiOperation({
     summary: 'Выход из системы (инвалидация токена и очистка кук)',
