@@ -40,11 +40,12 @@ export class PostMappers {
         id: post.profile.id,
         username: post.profile.username,
         displayName: post.profile.displayName,
+        avatarUrl: post.profile.avatarUrl,
       },
       assets: [],
-      //likes: [],
-      commentsCount: post.comments ? post.comments.length : 0,
-      likesCount: post.postLikes ? post.postLikes.length : 0,
+      commentsCount: post.commentsCount,
+      likesCount: post.likesCount,
+      isLiked: post.isLiked || false,
     };
 
     if (post.postAssets) {

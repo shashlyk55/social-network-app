@@ -20,6 +20,14 @@ export class ParentCommentNotFoundException extends DomainException {
   }
 }
 
+export class CommentNestingLevelException extends DomainException {
+  code = 'UNACCEPTABLE_COMMENT_NESTING_LEVEL';
+
+  constructor() {
+    super('Unacceptable level of comment nesting');
+  }
+}
+
 export class CommentWithRepliesException extends DomainException {
   code = 'COMMENT_HAS_REPLIES';
 
@@ -46,10 +54,10 @@ export class CommentOperationException extends DomainException {
   }
 }
 
-export class CommentAccessDeniedException extends DomainException {
+export class CommentAccessDenied extends DomainException {
   code = 'COMMENT_ACCESS_DENIED';
 
-  constructor(profileId: number, commentId: number) {
-    super(`Profile ${profileId} does not have access to comment ${commentId}`);
+  constructor() {
+    super(`User does not have access to comment`);
   }
 }

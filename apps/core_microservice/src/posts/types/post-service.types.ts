@@ -20,7 +20,6 @@ export type FindPostsParams = {
 };
 
 export type GetFeedParams = {
-  userId: number;
   page?: number;
   limit?: number;
 };

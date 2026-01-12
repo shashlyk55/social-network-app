@@ -74,28 +74,12 @@ export class CommentResponseDto {
   })
   profile: ProfileReferenceDto;
 
-  // @ApiProperty({
-  //   type: UserReferenceDto,
-  //   description: 'User who created this comment',
-  // })
-  // createdBy: UserReferenceDto;
-
-  // @ApiProperty({
-  //   type: UserReferenceDto,
-  //   description: 'User who updated this comment',
-  //   nullable: true,
-  // })
-  // updatedBy?: UserReferenceDto;
-
-  // @ApiProperty({ type: [CommentLikeResponseDto], description: 'Comment likes' })
-  // likes: CommentLikeResponseDto[];
-
-  // @ApiProperty({ type: [CommentResponseDto], description: 'Comment replies' })
-  // replies: CommentResponseDto[];
-
   @ApiProperty({ example: 5, description: 'Number of likes' })
   likesCount: number;
 
   @ApiProperty({ example: 3, description: 'Number of replies' })
   repliesCount: number;
+
+  @ApiProperty({ example: false, description: 'Is current user like' })
+  isLiked: boolean;
 }

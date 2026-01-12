@@ -19,18 +19,8 @@ export class CreateCommentDto {
   @IsNotEmpty()
   postId: number;
 
-  @ApiProperty({ description: 'Profile ID of the comment author' })
-  @IsNumber()
-  @IsNotEmpty()
-  profileId: number;
-
   @ApiPropertyOptional({ description: 'Parent comment ID for replies' })
   @IsNumber()
   @IsOptional()
   parentCommentId?: number;
-
-  @ApiProperty({ description: 'ID of user creating the comment' })
-  @IsNumber()
-  @IsNotEmpty()
-  createdById: number;
 }

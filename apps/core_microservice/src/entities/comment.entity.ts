@@ -7,12 +7,17 @@ import {
   ManyToOne,
   OneToMany,
   JoinColumn,
+  Index,
+  RelationCount,
+  VirtualColumn,
 } from 'typeorm';
 import { CommentLike } from './many-to-many/comment-like.entity';
 import { Post } from './post.entity';
 import { Profile } from './profile.entity';
 
 @Entity('comments', { schema: 'main' })
+@Index(['postId'])
+@Index(['parentCommentId'])
 export class Comment {
   @PrimaryGeneratedColumn('increment')
   id: number;
@@ -50,23 +55,32 @@ export class Comment {
   @Column({ name: 'created_by' })
   createdById: number;
 
-  // @ManyToOne(() => User)
-  // @JoinColumn({ name: 'created_by' })
-  // createdBy: User;
-
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
   @Column({ type: 'int', name: 'updated_by', nullable: true })
   updatedById: number | null;
 
-  // @ManyToOne(() => User, { nullable: true })
-  // @JoinColumn({ name: 'updated_by' })
-  // updatedBy: User;
-
   @OneToMany(() => Comment, (comment) => comment.parentComment)
   replies: Comment[];
 
   @OneToMany(() => CommentLike, (commentLike) => commentLike.comment)
   commentLikes: CommentLike[];
+
+  @VirtualColumn({
+    query: (alias) =>
+      `SELECT COUNT("id") FROM "main"."comments" WHERE "parent_comment_id" = ${alias}.id`,
+  })
+  repliesCount: number;
+
+  @VirtualColumn({
+    query: (alias) =>
+      `SELECT COUNT("id") FROM "main"."comment_likes" WHERE "comment_id" = ${alias}.id`,
+  })
+  likesCount: number;
+
+  @VirtualColumn({
+    query: (alias) => `SELECT false`,
+  })
+  isLiked: boolean;
 }

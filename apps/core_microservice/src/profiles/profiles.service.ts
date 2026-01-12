@@ -47,7 +47,6 @@ export class ProfilesService implements IProfilesService {
     try {
       const profile = await this.profileRepository.findOne({
         where: { id, deleted: false },
-        relations: ['posts', 'followers', 'following'],
       });
 
       if (!profile) throw new ProfileNotFoundException(id);
@@ -63,7 +62,6 @@ export class ProfilesService implements IProfilesService {
     try {
       const profile = await this.profileRepository.findOne({
         where: { userId, deleted: false },
-        relations: ['posts', 'followers', 'following'],
       });
 
       if (!profile) throw new ProfileNotFoundException();
@@ -78,7 +76,6 @@ export class ProfilesService implements IProfilesService {
   async getByUserId(userId: number): Promise<Profile | null> {
     const profile = await this.profileRepository.findOne({
       where: { userId, deleted: false },
-      relations: ['posts', 'followers', 'following'],
     });
 
     return profile;

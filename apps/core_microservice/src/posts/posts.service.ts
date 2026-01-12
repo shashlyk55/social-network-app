@@ -12,6 +12,7 @@ import {
   UpdatePostParams,
 } from './types/post-service.types';
 import {
+  PostAccessDeniedException,
   PostNotFoundException,
   PostOperationException,
 } from './exceptions/post-domain.exceptions';
@@ -84,92 +85,109 @@ export class PostsService implements IPostsService {
 
   async findAll(
     params: FindPostsParams,
+    authorId?: number,
     userId?: number,
   ): Promise<PostPaginationResult> {
-    try {
-      const { page = 1, limit = 10, isArchived, search } = params;
-      const skip = (page - 1) * limit;
+    const { page = 1, limit = 10, isArchived = false, search } = params;
+    const skip = (page - 1) * limit;
 
-      const queryBuilder = this.postRepository
-        .createQueryBuilder('post')
-        .leftJoinAndSelect('post.profile', 'profile')
-        .leftJoinAndSelect('post.postAssets', 'postAssets')
-        .leftJoinAndSelect('postAssets.asset', 'asset')
-        .leftJoinAndSelect('post.postLikes', 'postLikes')
-        .leftJoinAndSelect('postLikes.profile', 'likeProfile')
-        .leftJoinAndSelect('post.comments', 'comments')
-        .where('post.isArchived = :isArchived', { isArchived: false });
+    const queryBuilder = this.postRepository
+      .createQueryBuilder('post')
+      .leftJoinAndSelect('post.profile', 'profile')
+      .leftJoinAndSelect('post.postAssets', 'postAssets')
+      .leftJoinAndSelect('postAssets.asset', 'asset');
 
-      if (userId != undefined) {
-        queryBuilder.andWhere('post.createdById = :userId', { userId });
-      }
-      if (isArchived !== undefined) {
-        queryBuilder.andWhere('post.isArchived = :isArchived', { isArchived });
-      }
-
-      if (search) {
-        queryBuilder.andWhere('LOWER(post.content) LIKE LOWER(:search)', {
-          search: `%${search}%`,
-        });
-      }
-
-      const [data, total] = await queryBuilder
-        .skip(skip)
-        .take(limit)
-        .orderBy('post.createdAt', 'DESC')
-        .getManyAndCount();
-
-      return {
-        data,
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      };
-    } catch (error) {
-      if (error instanceof DomainException) {
-        throw error;
-      }
-
-      throw new PostOperationException('find posts', error.message);
+    if (authorId != undefined) {
+      queryBuilder.andWhere('post.createdById = :authorId', { authorId });
     }
+    if (isArchived !== undefined) {
+      queryBuilder.andWhere('post.isArchived = :isArchived', { isArchived });
+    }
+
+    if (userId != undefined) {
+      queryBuilder.addSelect((subQuery) => {
+        return subQuery
+          .select('COUNT(l.id) > 0', 'isLiked')
+          .from('posts_likes', 'l')
+          .where('l.post_id = post.id')
+          .andWhere('l.created_by = :currentUserId', {
+            currentUserId: userId,
+          });
+      }, 'post_isLiked');
+    }
+
+    if (search) {
+      queryBuilder.andWhere('LOWER(post.content) LIKE LOWER(:search)', {
+        search: `%${search}%`,
+      });
+    }
+
+    const [data, total] = await queryBuilder
+      .skip(skip)
+      .take(limit)
+      .orderBy('post.createdAt', 'DESC')
+      .getManyAndCount();
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
-  async findOne(id: number): Promise<PostEntity> {
-    try {
-      const queryBuilder = this.postRepository
-        .createQueryBuilder('post')
-        .leftJoinAndSelect('post.profile', 'profile')
-        .leftJoinAndSelect('post.postAssets', 'postAssets')
-        .leftJoinAndSelect('postAssets.asset', 'asset')
-        .leftJoinAndSelect('post.postLikes', 'postLikes')
-        .leftJoinAndSelect('postLikes.profile', 'likeProfile')
-        .leftJoinAndSelect('post.comments', 'comments')
-        .where('post.id = :postId', { postId: id });
+  async findOne(postId: number, userId?: number): Promise<PostEntity> {
+    const queryBuilder = this.postRepository
+      .createQueryBuilder('post')
+      .leftJoinAndSelect('post.profile', 'profile')
+      .leftJoinAndSelect('post.postAssets', 'postAssets')
+      .leftJoinAndSelect('postAssets.asset', 'asset')
+      .where('post.id = :postId', { postId });
 
-      const post = await queryBuilder.getOne();
-
-      if (!post) {
-        throw new PostNotFoundException(id);
-      }
-
-      return post;
-    } catch (error) {
-      if (error instanceof PostNotFoundException) {
-        throw error;
-      }
-      throw new PostOperationException('find post', error.message);
+    if (userId != undefined) {
+      queryBuilder.addSelect((subQuery) => {
+        return subQuery
+          .select('COUNT(l.id) > 0', 'isLiked')
+          .from('posts_likes', 'l')
+          .where('l.post_id = post.id')
+          .andWhere('l.created_by = :currentUserId', {
+            currentUserId: userId,
+          });
+      }, 'post_isLiked');
     }
+
+    const post = await queryBuilder.getOne();
+
+    if (!post) {
+      throw new PostNotFoundException(postId);
+    }
+
+    return post;
   }
 
-  async getFollowedFeed(params: GetFeedParams): Promise<PostPaginationResult> {
-    const { userId, page = 1, limit = 10 } = params;
+  async getFollowedFeed(
+    params: GetFeedParams,
+    userId: number,
+  ): Promise<PostPaginationResult> {
+    const { page = 1, limit = 10 } = params;
     const skip = (page - 1) * limit;
 
     const profile = await this.profilesService.findByUserId(userId);
 
     const [data, total] = await this.postRepository
       .createQueryBuilder('post')
+      .leftJoinAndSelect('post.profile', 'profile')
+      .leftJoinAndSelect('post.postAssets', 'postAssets')
+      .leftJoinAndSelect('postAssets.asset', 'asset')
+      .addSelect((subQuery) => {
+        return subQuery
+          .select('COUNT(l.id) > 0', 'isLiked')
+          .from('posts_likes', 'l')
+          .where('l.post_id = post.id')
+          .andWhere('l.created_by = :currentUserId', { currentUserId: userId });
+      }, 'post_isLiked')
+
       .innerJoin(
         'profiles_follows',
         'follow',
@@ -180,6 +198,7 @@ export class PostsService implements IPostsService {
         myProfileId: profile.id,
       })
       .andWhere('follow.accepted = :isAccepted', { isAccepted: true })
+      .andWhere('post.isArchived = :isArchived', { isArchived: false })
       .orderBy('post.createdAt', 'DESC')
       .take(limit)
       .skip(skip)
@@ -194,13 +213,13 @@ export class PostsService implements IPostsService {
     };
   }
 
-  async update(
-    params: UpdatePostParams,
-    updatedById: number,
-  ): Promise<PostEntity> {
+  async update(params: UpdatePostParams, userId: number): Promise<PostEntity> {
     const { id, assetIds, ...updateData } = params;
 
-    await this.findOne(id);
+    const post = await this.findOne(id);
+    if (post.createdById != userId) {
+      throw new PostAccessDeniedException();
+    }
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -209,7 +228,7 @@ export class PostsService implements IPostsService {
     try {
       const updatePayload: Partial<PostEntity> = {};
 
-      updatePayload.updatedById = updatedById;
+      updatePayload.updatedById = userId;
       if (updateData.content !== undefined)
         updatePayload.content = updateData.content;
 
@@ -225,7 +244,7 @@ export class PostsService implements IPostsService {
             this.postAssetRepository.create({
               postId: id,
               assetId: assetId,
-              createdById: updatedById,
+              createdById: userId,
             }),
           );
           await queryRunner.manager.save(PostAsset, newAssets);
@@ -247,15 +266,18 @@ export class PostsService implements IPostsService {
     }
   }
 
-  async remove(id: number): Promise<void> {
-    await this.findOne(id);
+  async remove(postId: number, userId: number): Promise<void> {
+    const post = await this.findOne(postId);
+    if (post.createdById != userId) {
+      throw new PostAccessDeniedException();
+    }
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     try {
-      await queryRunner.manager.delete(Post, id);
+      await queryRunner.manager.delete(Post, postId);
       await queryRunner.commitTransaction();
     } catch (error) {
       await queryRunner.rollbackTransaction();
@@ -269,14 +291,17 @@ export class PostsService implements IPostsService {
     }
   }
 
-  async archive(id: number, updatedById: number): Promise<PostEntity> {
-    await this.findOne(id);
+  async archive(postId: number, userId: number): Promise<PostEntity> {
+    const post = await this.findOne(postId);
+    if (post.createdById != userId) {
+      throw new PostAccessDeniedException();
+    }
     try {
-      await this.postRepository.update(id, {
+      await this.postRepository.update(postId, {
         isArchived: true,
-        updatedById,
+        updatedById: userId,
       });
-      return await this.findOne(id);
+      return await this.findOne(postId);
     } catch (error) {
       if (error instanceof DomainException) {
         throw error;
@@ -285,14 +310,17 @@ export class PostsService implements IPostsService {
     }
   }
 
-  async unarchive(id: number, updatedById: number): Promise<PostEntity> {
-    await this.findOne(id);
+  async unarchive(postId: number, userId: number): Promise<PostEntity> {
+    const post = await this.findOne(postId);
+    if (post.createdById != userId) {
+      throw new PostAccessDeniedException();
+    }
     try {
-      await this.postRepository.update(id, {
+      await this.postRepository.update(postId, {
         isArchived: false,
-        updatedById,
+        updatedById: userId,
       });
-      return await this.findOne(id);
+      return await this.findOne(postId);
     } catch (error) {
       if (error instanceof DomainException) {
         throw error;

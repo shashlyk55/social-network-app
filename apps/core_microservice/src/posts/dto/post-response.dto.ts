@@ -9,6 +9,13 @@ class ProfileReferenceDto {
 
   @ApiProperty({ example: 'John Doe', description: 'Display name' })
   displayName: string;
+
+  @ApiProperty({
+    example: 'https://example.com/avatar.jpg',
+    description: 'Profile avatar',
+    nullable: true,
+  })
+  avatarUrl: string | null;
 }
 
 class PostAssetResponseDto {
@@ -24,23 +31,6 @@ class PostAssetResponseDto {
   @ApiProperty({ description: 'Creation date' })
   createdAt: Date;
 }
-
-// class PostLikeResponseDto {
-//   @ApiProperty({ example: 1, description: 'Post like ID' })
-//   id: number;
-
-//   @ApiProperty({ example: 1, description: 'Profile ID' })
-//   profileId: number;
-
-//   @ApiProperty({ description: 'Creation date' })
-//   createdAt: Date;
-
-//   @ApiProperty({
-//     type: ProfileReferenceDto,
-//     description: 'Profile that liked the post',
-//   })
-//   profile: ProfileReferenceDto;
-// }
 
 export class PostResponseDto {
   @ApiProperty({ example: 1, description: 'Post ID' })
@@ -79,12 +69,12 @@ export class PostResponseDto {
   @ApiProperty({ type: [PostAssetResponseDto], description: 'Post assets' })
   assets: PostAssetResponseDto[];
 
-  // @ApiProperty({ type: [PostLikeResponseDto], description: 'Post likes' })
-  // likes: PostLikeResponseDto[];
-
   @ApiProperty({ example: 5, description: 'Number of comments' })
   commentsCount: number;
 
   @ApiProperty({ example: 10, description: 'Number of likes' })
   likesCount: number;
+
+  @ApiProperty({ example: true, description: 'Is current user liked post' })
+  isLiked: boolean;
 }

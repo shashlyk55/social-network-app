@@ -21,10 +21,6 @@ export class Profile {
   @Column({ name: 'user_id' })
   userId: number;
 
-  // @OneToOne(() => User, (user) => user.profile, { onDelete: 'CASCADE' })
-  // @JoinColumn({ name: 'user_id' })
-  // user: User;
-
   @Column({ unique: true })
   username: string;
 

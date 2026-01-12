@@ -13,6 +13,10 @@ export class ExceptionMapper {
     // Posts
     POST_NOT_FOUND: HttpStatus.NOT_FOUND,
     POST_ALREADY_LIKED: HttpStatus.CONFLICT,
+    POST_ACCESS_DENIED: HttpStatus.FORBIDDEN,
+
+    // Comments
+    COMMENT_ACCESS_DENIED: HttpStatus.FORBIDDEN,
 
     // Chats
     CHAT_NOT_FOUND: HttpStatus.NOT_FOUND,
