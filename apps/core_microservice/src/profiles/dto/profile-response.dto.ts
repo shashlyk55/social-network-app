@@ -4,9 +4,6 @@ export class ProfileResponseDto {
   @ApiProperty()
   id: number;
 
-  // @ApiProperty()
-  // userId: number;
-
   @ApiProperty()
   username: string;
 

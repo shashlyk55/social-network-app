@@ -59,7 +59,7 @@ export class AuthController {
     return result;
   }
 
-  @Post('login')
+  @Post('login/local')
   @ApiOperation({ summary: 'Авторизация пользователя (Local Provider)' })
   @ApiBody({ type: LoginDto })
   @ApiResponse({

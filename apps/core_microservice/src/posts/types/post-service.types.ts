@@ -19,6 +19,12 @@ export type FindPostsParams = {
   search?: string;
 };
 
+export type GetFeedParams = {
+  userId: number;
+  page?: number;
+  limit?: number;
+};
+
 export type PostPaginationResult = {
   data: Post[];
   total: number;

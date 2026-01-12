@@ -2,11 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PostLike } from 'src/entities/many-to-many/post-like.entity';
 import { Post, Post as PostEntity } from 'src/entities/post.entity';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import { IPostsService } from './interfaces/IPostsService';
 import {
   CreatePostParams,
   FindPostsParams,
+  GetFeedParams,
   PostPaginationResult,
   UpdatePostParams,
 } from './types/post-service.types';
@@ -17,7 +18,7 @@ import {
 import { DomainException } from 'src/app/exceptions/domain.exception';
 import { ProfilesService } from 'src/profiles/profiles.service';
 import { PostAsset } from 'src/entities/many-to-many/post-asset.entity';
-import { AssetsService } from 'src/assets/assets.service';
+import { FollowService } from 'src/follow/follow.service';
 
 @Injectable()
 export class PostsService implements IPostsService {
@@ -30,7 +31,6 @@ export class PostsService implements IPostsService {
     private readonly postAssetRepository: Repository<PostAsset>,
     private readonly dataSource: DataSource,
     private readonly profilesService: ProfilesService,
-    private readonly assetsService: AssetsService,
   ) {}
 
   async create(
@@ -160,6 +160,38 @@ export class PostsService implements IPostsService {
       }
       throw new PostOperationException('find post', error.message);
     }
+  }
+
+  async getFollowedFeed(params: GetFeedParams): Promise<PostPaginationResult> {
+    const { userId, page = 1, limit = 10 } = params;
+    const skip = (page - 1) * limit;
+
+    const profile = await this.profilesService.findByUserId(userId);
+
+    const [data, total] = await this.postRepository
+      .createQueryBuilder('post')
+      .innerJoin(
+        'profiles_follows',
+        'follow',
+        'follow.followed_profile_id = post.profile_id',
+      )
+      .leftJoinAndSelect('post.profile', 'author')
+      .where('follow.follower_profile_id = :myProfileId', {
+        myProfileId: profile.id,
+      })
+      .andWhere('follow.accepted = :isAccepted', { isAccepted: true })
+      .orderBy('post.createdAt', 'DESC')
+      .take(limit)
+      .skip(skip)
+      .getManyAndCount();
+
+    return {
+      data,
+      total,
+      page,
+      limit: limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   async update(

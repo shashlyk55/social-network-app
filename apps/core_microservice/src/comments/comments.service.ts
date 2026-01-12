@@ -18,13 +18,9 @@ import {
 import {
   CommentNotFoundException,
   CommentOperationException,
-  CommentWithRepliesException,
   ParentCommentNotFoundException,
 } from './exceptions/comment-domain.exceptions';
-import {
-  DomainException,
-  // ProfileNotFoundException,
-} from 'src/app/exceptions/domain.exception';
+import { DomainException } from 'src/app/exceptions/domain.exception';
 import { PostsService } from 'src/posts/posts.service';
 import { Profile } from 'src/entities/profile.entity';
 

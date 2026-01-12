@@ -149,6 +149,43 @@ export class PostsController {
     return PostMappers.toPaginationResponse(result);
   }
 
+  @Get('following')
+  @ApiOperation({
+    summary: 'Получить ленту постов на основе подписок',
+    description:
+      'Возвращает посты пользователей, на которых подписан текущий пользователь и чьи заявки одобрены.',
+  })
+  @ApiResponse({
+    status: 200,
+    type: PaginationResponseDto<PostResponseDto>,
+    description: 'Список постов с информацией об авторах',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page',
+  })
+  async getFollowedFeed(
+    @CurrentUser('userId') userId: number,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ): Promise<PaginationResponseDto<PostResponseDto>> {
+    return PostMappers.toPaginationResponse(
+      await this.postService.getFollowedFeed({
+        userId,
+        limit,
+        page,
+      }),
+    );
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get post by ID' })
   @ApiParam({ name: 'id', type: Number, description: 'Post ID' })

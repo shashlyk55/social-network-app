@@ -15,8 +15,7 @@ import { GlobalExceptionFilter } from './exceptions/global-exception.filter';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { AssetsModule } from 'src/assets/assets.module';
-import { FilesModule } from 'src/files/files.module';
-import { AccessGuard } from 'src/auth/guards/access.guard';
+import { FollowModule } from 'src/follow/follow.module';
 
 @Module({
   imports: [
@@ -41,6 +40,7 @@ import { AccessGuard } from 'src/auth/guards/access.guard';
     }),
     AuthModule,
     PostsModule,
+    FollowModule,
     AssetsModule,
     CommentsModule,
     ChatsModule,
