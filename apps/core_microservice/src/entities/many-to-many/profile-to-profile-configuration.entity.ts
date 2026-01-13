@@ -6,11 +6,19 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { Profile } from '../profile.entity';
 import { ProfileConfiguration } from '../profile-configuration.entity';
 
+export enum PrivacyValue {
+  ALL = 'all',
+  FOLLOWERS = 'followers',
+  NONE = 'none',
+}
+
 @Entity('profiles_to_profiles_configurations', { schema: 'main' })
+@Index(['profileId', 'profileConfigurationId'], { unique: true })
 export class ProfileToProfileConfiguration {
   @PrimaryGeneratedColumn('increment')
   id: number;
@@ -24,8 +32,12 @@ export class ProfileToProfileConfiguration {
   @JoinColumn({ name: 'profile_id' })
   profile: Profile;
 
-  @Column({ name: 'config_value' })
-  configValue: boolean;
+  @Column({
+    type: 'varchar',
+    name: 'config_value',
+    default: PrivacyValue.ALL,
+  })
+  configValue: PrivacyValue;
 
   @Column({ name: 'profile_configuration_id' })
   profileConfigurationId: number;
