@@ -19,6 +19,8 @@ import {
   ApiQuery,
   ApiBody,
   ApiBearerAuth,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
 } from '@nestjs/swagger';
 import { PaginationResponseDto } from 'src/common/dto/pagination-response.dto';
 import { CommentsService } from './comments.service';
@@ -30,7 +32,9 @@ import { AccessGuard } from 'src/auth/guards/access.guard';
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 
 @ApiTags('comments')
-@ApiBearerAuth()
+@ApiBearerAuth('access-token')
+@ApiUnauthorizedResponse({ description: 'Unauthorized' })
+@ApiForbiddenResponse({ description: 'Forbidden resource' })
 @UseGuards(AccessGuard)
 @Controller('comments')
 export class CommentsController {

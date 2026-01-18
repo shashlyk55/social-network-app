@@ -20,6 +20,8 @@ import {
 import { DomainException } from 'src/app/exceptions/domain.exception';
 import { PostsService } from 'src/posts/posts.service';
 import { ProfilesService } from 'src/profiles/profiles.service';
+import { NotificationsProducerService } from 'src/notifications/producer/notifications-producer.service';
+import { NotificationType } from 'src/common/types/notification-type';
 
 @Injectable()
 export class CommentsService implements ICommentsService {
@@ -30,10 +32,11 @@ export class CommentsService implements ICommentsService {
     private readonly commentLikeRepository: Repository<CommentLike>,
     private readonly postService: PostsService,
     private readonly profilesService: ProfilesService,
+    private readonly notificationsProducer: NotificationsProducerService,
   ) {}
 
   async create(userId: number, params: CreateCommentParams): Promise<Comment> {
-    await this.postService.findOne(params.postId);
+    const post = await this.postService.findOne(params.postId);
 
     const profile = await this.profilesService.findByUserId(userId);
 
@@ -61,6 +64,15 @@ export class CommentsService implements ICommentsService {
       });
 
       const savedComment = await this.commentRepository.save(comment);
+
+      await this.notificationsProducer.emitNotification({
+        recipientIds: [post.createdById],
+        senderId: userId,
+        type: NotificationType.COMMENT,
+        title: 'New comment',
+        message: `User write a comment`,
+        data: { postId: params.postId, commentText: params.content },
+      });
 
       return await this.findOne(savedComment.id);
     } catch (error) {

@@ -1,17 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { NotificationType } from 'src/entities/notification.entity';
-
-// class UserReferenceDto {
-//   @ApiProperty({ example: 1, description: 'User ID' })
-//   id: number;
-
-//   @ApiProperty({
-//     example: UserRole.USER,
-//     description: 'User role',
-//     enum: UserRole,
-//   })
-//   role: UserRole;
-// }
+import { NotificationType } from 'src/common/types/notification-type';
 
 export class NotificationResponseDto {
   @ApiProperty({ example: 1, description: 'Notification ID' })
@@ -55,23 +43,4 @@ export class NotificationResponseDto {
 
   @ApiProperty({ description: 'Update date' })
   updatedAt: Date;
-
-  @ApiProperty({ example: 1, description: 'Creator ID' })
-  createdById: number;
-
-  @ApiProperty({ example: 2, description: 'Updater ID', nullable: true })
-  updatedById: number | null;
-
-  // @ApiProperty({
-  //   type: UserReferenceDto,
-  //   description: 'User who created this notification',
-  // })
-  // createdBy: UserReferenceDto;
-
-  // @ApiProperty({
-  //   type: UserReferenceDto,
-  //   description: 'User who updated this notification',
-  //   nullable: true,
-  // })
-  // updatedBy?: UserReferenceDto;
 }

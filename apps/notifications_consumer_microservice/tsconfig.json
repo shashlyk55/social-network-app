@@ -1,25 +1,44 @@
 {
   "compilerOptions": {
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
-    "resolvePackageJsonExports": true,
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "target": "ES2023",
+    "lib": ["ES2023"],
+
+    // Строгие проверки (рекомендуется NestJS)
+    "strict": true,
+    "strictPropertyInitialization": false,
+    "noImplicitAny": false,
+
+    // Декораторы
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+
+    // Модули
     "esModuleInterop": true,
-    "isolatedModules": true,
+    "allowSyntheticDefaultImports": true,
+
+    // Пути
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+
+    // Вывод
+    "outDir": "./dist",
     "declaration": true,
     "removeComments": true,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "allowSyntheticDefaultImports": true,
-    "target": "ES2023",
     "sourceMap": true,
-    "outDir": "./dist",
-    "baseUrl": "./",
+
+    // Оптимизации
     "incremental": true,
     "skipLibCheck": true,
-    "strictNullChecks": true,
     "forceConsistentCasingInFileNames": true,
-    "noImplicitAny": false,
-    "strictBindCallApply": false,
+
+    // Совместимость
+    "strictNullChecks": true,
     "noFallthroughCasesInSwitch": false
-  }
+  },
+  "include": ["src/**/*", "test/**/*", "db"],
+  "exclude": ["node_modules", "dist"]
 }

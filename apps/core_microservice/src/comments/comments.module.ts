@@ -7,6 +7,7 @@ import { Post } from 'src/entities/post.entity';
 import { CommentLike } from 'src/entities/many-to-many/comment-like.entity';
 import { PostsModule } from 'src/posts/posts.module';
 import { ProfilesModule } from 'src/profiles/profiles.module';
+import { NotificationsModule } from 'src/notifications/notifications.module';
 
 @Module({
   controllers: [CommentsController],
@@ -16,6 +17,7 @@ import { ProfilesModule } from 'src/profiles/profiles.module';
     TypeOrmModule.forFeature([Comment, Post, CommentLike]),
     PostsModule,
     ProfilesModule,
+    NotificationsModule,
   ],
 })
 export class CommentsModule {}

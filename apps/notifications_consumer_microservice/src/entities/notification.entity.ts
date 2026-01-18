@@ -4,8 +4,6 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  ManyToOne,
-  JoinColumn,
 } from 'typeorm';
 
 export enum NotificationType {
@@ -35,13 +33,13 @@ export class Notification {
   message: string;
 
   @Column({ type: 'jsonb', nullable: true })
-  data: any | null;
+  data: Record<string, unknown> | null;
 
-  @Column({ name: 'is_read', default: false })
-  isRead: boolean;
+  // @Column({ name: 'is_read', default: false })
+  // isRead: boolean;
 
-  @Column({ type: 'date', name: 'read_at', nullable: true })
-  readAt: Date | null;
+  // @Column({ type: 'date', name: 'read_at', nullable: true })
+  // readAt: Date | null;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
