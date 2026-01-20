@@ -11,7 +11,6 @@ import {
   IsOptional,
   IsBoolean,
 } from 'class-validator';
-import { FullRegisterDto } from 'src/auth/dto/full-register.dto';
 
 export class UpdateProfileDto {
   // extends PartialType(

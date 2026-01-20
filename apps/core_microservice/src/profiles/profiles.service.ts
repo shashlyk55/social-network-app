@@ -1,11 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { CreateProfileDto } from './dto/create-profile.dto';
-import { UpdateProfileDto } from './dto/update-profile.dto';
-import { IProfilesService } from './interfaces/IProfilesService';
+
 import { InjectRepository } from '@nestjs/typeorm';
 import { DomainException } from 'src/app/exceptions/domain.exception';
 import { Profile } from 'src/entities/profile.entity';
-import { Repository, DataSource } from 'typeorm';
+import { Repository } from 'typeorm';
 import {
   UsernameAlreadyExistsException,
   ProfileOperationException,
@@ -15,13 +13,15 @@ import {
   CreateProfileParams,
   UpdateProfileParams,
 } from './types/profile-params.types';
+import { ProfileFollow } from 'src/entities/many-to-many/profile-follow.entity';
 
 @Injectable()
-export class ProfilesService implements IProfilesService {
+export class ProfilesService {
   constructor(
     @InjectRepository(Profile)
     private readonly profileRepository: Repository<Profile>,
-    private readonly dataSource: DataSource,
+    @InjectRepository(ProfileFollow)
+    private readonly followRepository: Repository<ProfileFollow>,
   ) {}
 
   async create(params: CreateProfileParams): Promise<Profile> {
@@ -43,34 +43,60 @@ export class ProfilesService implements IProfilesService {
     }
   }
 
+  async findFollow(
+    followerProfileId: number,
+    targetProfileId: number,
+  ): Promise<ProfileFollow | null> {
+    const existingFollow = await this.followRepository.findOne({
+      where: {
+        followerProfileId: followerProfileId,
+        followedProfileId: targetProfileId,
+      },
+    });
+
+    return existingFollow;
+  }
+
+  async findByUsername(username: string): Promise<Profile> {
+    const profile = await this.profileRepository.findOne({
+      where: {
+        username: username,
+      },
+    });
+
+    if (!profile) throw new ProfileNotFoundException();
+
+    return profile;
+  }
+
+  async getMyProfile(id: number): Promise<Profile> {
+    const profile = await this.profileRepository.findOne({
+      where: { id, deleted: false },
+    });
+
+    if (!profile) throw new ProfileNotFoundException(id);
+
+    return profile;
+  }
+
   async findOne(id: number): Promise<Profile> {
-    try {
-      const profile = await this.profileRepository.findOne({
-        where: { id, deleted: false },
-      });
+    const profile = await this.profileRepository.findOne({
+      where: { id, deleted: false },
+    });
 
-      if (!profile) throw new ProfileNotFoundException(id);
+    if (!profile) throw new ProfileNotFoundException(id);
 
-      return profile;
-    } catch (error) {
-      if (error instanceof ProfileNotFoundException) throw error;
-      throw new ProfileOperationException('find profile', error.message);
-    }
+    return profile;
   }
 
   async findByUserId(userId: number): Promise<Profile> {
-    try {
-      const profile = await this.profileRepository.findOne({
-        where: { userId, deleted: false },
-      });
+    const profile = await this.profileRepository.findOne({
+      where: { userId, deleted: false },
+    });
 
-      if (!profile) throw new ProfileNotFoundException();
+    if (!profile) throw new ProfileNotFoundException();
 
-      return profile;
-    } catch (error) {
-      if (error instanceof ProfileNotFoundException) throw error;
-      throw new ProfileOperationException('find profile', error.message);
-    }
+    return profile;
   }
 
   async getByUserId(userId: number): Promise<Profile | null> {

@@ -1,15 +1,15 @@
 import { ProfileMapper } from 'src/profiles/utils/profile.mapper';
 import { FullAuthResponseDto } from '../dto/full-auth-response.dto';
 import { FullRegisterDto } from '../dto/full-register.dto';
-import { AuthResult, SignUpParams } from '../types/auth-params.types';
+import { AuthResult, SignupParams } from '../types/auth-params.types';
 
 export class OrchestratorAuthMapper {
-  static toSignupParams(dto: FullRegisterDto): SignUpParams {
+  static toSignupParams(dto: FullRegisterDto): SignupParams {
     return {
       auth: {
         email: dto.email,
         password: dto.password,
-        role: dto.role,
+        // role: dto.role,
         provider: dto.provider,
         providerId: dto.providerId,
         createdById: dto.createdById,

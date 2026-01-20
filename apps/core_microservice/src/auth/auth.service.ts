@@ -1,33 +1,27 @@
 import { Injectable } from '@nestjs/common';
-import { IAuthService } from './interfaces/IAuthService';
 import {
   LoginParams,
   OAuthCallbackParams,
-  RefreshTokenParams,
   LogoutParams,
-  ValidateTokenParams,
-  RegisterParams,
+  InternalSignupParams,
   AccountProviderType,
-  AuthResult,
   InternalAuthResult,
   ValidateTokenResult,
+  TokenResult,
 } from './types/auth-params.types';
 import { InternalAuthDto } from './dto/internal-auth-response.dto';
-import { ProfilesService } from 'src/profiles/profiles.service';
-import { AuthMapper } from './utils/auth.mapper';
 import { InternalOAuthResponseDto } from './dto/internal-oauth-response.dto';
 import { InternalHttpService } from 'src/internal-http/internal-http.service';
 
 @Injectable()
-export class AuthService implements IAuthService {
+export class AuthService {
   private readonly authUrl = process.env.AUTH_MICROSERVICE_URL;
 
-  constructor(
-    private readonly httpService: InternalHttpService,
-    private readonly profilesService: ProfilesService,
-  ) {}
+  constructor(private readonly httpService: InternalHttpService) {}
 
-  async handleSignUp(params: RegisterParams): Promise<InternalAuthResult> {
+  async handleSignup(
+    params: InternalSignupParams,
+  ): Promise<InternalAuthResult> {
     const response = await this.httpService.post<{ data: InternalAuthDto }>(
       `${this.authUrl}/auth/register`,
       params,
@@ -47,7 +41,7 @@ export class AuthService implements IAuthService {
     await this.httpService.delete(`${this.authUrl}/users/${userId}`);
   }
 
-  async handleLogin(params: LoginParams): Promise<AuthResult> {
+  async handleLogin(params: LoginParams): Promise<TokenResult> {
     const response = await this.httpService.post<{ data: InternalAuthDto }>(
       `${this.authUrl}/auth/login`,
       params,
@@ -56,13 +50,13 @@ export class AuthService implements IAuthService {
     const responseData = response.data;
 
     //console.log(responseData);
-    const profile = await this.profilesService.findByUserId(
-      responseData.user.id,
-    );
+    // const profile = await this.profilesService.findByUserId(
+    //   responseData.user.id,
+    // );
 
-    const result = AuthMapper.toAuthResult(responseData, profile);
+    // const result = AuthMapper.toAuthResult(responseData, profile);
 
-    return result;
+    return responseData.tokens;
   }
 
   async handleOAuthInit(

@@ -9,6 +9,8 @@ import {
   UseGuards,
   Param,
   Query,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login-dto';
@@ -52,14 +54,33 @@ export class AuthController {
   })
   @ApiConflictResponse({ description: 'Username или Email уже заняты' })
   @ApiBadRequestResponse({ description: 'Ошибка валидации входных данных' })
-  async signUp(@Body() dto: FullRegisterDto) {
+  async signUp(
+    @Body() dto: FullRegisterDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const params = OrchestratorAuthMapper.toSignupParams(dto);
     const result = await this.orchestartorAuthService.signup(params);
 
-    return result;
+    res.cookie('accessToken', result.tokens.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 1000,
+    });
+
+    res.cookie('refreshToken', result.tokens.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: '/auth/refresh',
+    });
+
+    //return result;
   }
 
   @Post('login/local')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Авторизация пользователя (Local Provider)' })
   @ApiBody({ type: LoginDto })
   @ApiResponse({
@@ -68,10 +89,30 @@ export class AuthController {
     type: FullAuthResponseDto,
   })
   @ApiResponse({ status: 401, description: 'Неверные учетные данные' })
-  async login(@Body() dto: LoginDto) {
+  async login(
+    @Body() dto: LoginDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const params = dto as LoginParams;
 
-    return await this.authService.handleLogin(params);
+    const result = await this.authService.handleLogin(params);
+
+    res.cookie('accessToken', result.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 1000,
+    });
+
+    res.cookie('refreshToken', result.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: '/auth/refresh',
+    });
+
+    //return result;
   }
 
   @Post('refresh')
@@ -88,6 +129,13 @@ export class AuthController {
     const result =
       await this.orchestartorAuthService.refreshToken(refreshToken);
 
+    res.cookie('accessToken', result.tokens.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 1000,
+    });
+
     res.cookie('refreshToken', result.tokens.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -96,7 +144,7 @@ export class AuthController {
       path: '/auth/refresh',
     });
 
-    return OrchestratorAuthMapper.toResponseDto(result);
+    //return OrchestratorAuthMapper.toResponseDto(result);
   }
 
   @Get('login/:provider')
@@ -132,6 +180,13 @@ export class AuthController {
 
       console.log(result);
 
+      res.cookie('accessToken', result.accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 1000,
+      });
+
       res.cookie('refreshToken', result.refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
@@ -140,7 +195,9 @@ export class AuthController {
         path: '/auth/refresh',
       });
 
-      const frontendUrl = `${process.env.FRONTEND_URL}/auth/success?token=${result.accessToken}`;
+      // const frontendUrl = `${process.env.FRONTEND_URL}/profile?token=${result.accessToken}`;
+      const frontendUrl = `${process.env.FRONTEND_URL}/profile`;
+
       return res.redirect(frontendUrl);
     } catch (error) {
       return res.redirect(

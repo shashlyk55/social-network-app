@@ -28,13 +28,13 @@ export class ExceptionMapper {
 
   static mapToResponse(exception: unknown): {
     status: number;
-    body: Record<string, any>;
+    data: Record<string, any>;
   } {
     // exceptions from other microservices
     if (exception instanceof MicroserviceException) {
       return {
         status: exception.getStatus(),
-        body: exception.getResponse() as Record<string, any>,
+        data: exception.getResponse() as Record<string, any>,
       };
     }
 
@@ -42,7 +42,7 @@ export class ExceptionMapper {
     if (exception instanceof DomainException) {
       return {
         status: this.statusMap[exception.code] || HttpStatus.BAD_REQUEST,
-        body: {
+        data: {
           success: false,
           error: { code: exception.code, message: exception.message },
         },
@@ -56,7 +56,7 @@ export class ExceptionMapper {
 
       return {
         status,
-        body: {
+        data: {
           success: false,
           error: {
             code: (response as any).code || this.getErrorCodeByStatus(status),
@@ -70,7 +70,7 @@ export class ExceptionMapper {
       const status = this.statusMap[exception.code] || HttpStatus.BAD_REQUEST;
       return {
         status: status,
-        body: {
+        data: {
           success: false,
           error: {
             code: exception.code,
@@ -82,7 +82,7 @@ export class ExceptionMapper {
 
     return {
       status: HttpStatus.INTERNAL_SERVER_ERROR,
-      body: {
+      data: {
         success: false,
         error: {
           code: 'INTERNAL_SERVER_ERROR',

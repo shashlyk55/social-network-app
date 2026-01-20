@@ -18,7 +18,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
-    const { status, body } = ExceptionMapper.mapToResponse(exception);
+    const { status, data } = ExceptionMapper.mapToResponse(exception);
 
     this.logError(exception, request, status);
 
@@ -29,7 +29,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     }
 
     response.status(status).json({
-      ...body,
+      ...data,
       timestamp: new Date().toISOString(),
       path: request.url,
     });

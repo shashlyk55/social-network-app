@@ -4,7 +4,16 @@
     "lib": ["ES2022"],
     "allowJs": true,
     "skipLibCheck": true,
+
+    // Строгие проверки 
     "strict": true,
+    "strictPropertyInitialization": false,
+    "noImplicitAny": false,
+
+    // Декораторы
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
     "esModuleInterop": true,

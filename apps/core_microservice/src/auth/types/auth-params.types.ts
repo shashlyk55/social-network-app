@@ -37,10 +37,10 @@ export type RefreshTokenParams = {
   refreshToken: string;
 };
 
-export type RegisterParams = {
+export type InternalSignupParams = {
   email: string;
   password: string;
-  role: UserRole;
+  // role: UserRole;
   provider: AccountProviderType;
   providerId?: string;
   createdById?: number;
@@ -91,8 +91,8 @@ export type TokenResult = {
   refreshToken: string;
 };
 
-export type SignUpParams = {
-  auth: RegisterParams;
+export type SignupParams = {
+  auth: InternalSignupParams;
   profile: CreateProfileParams;
 };
 

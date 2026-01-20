@@ -5,14 +5,16 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { AuthService } from '../auth.service';
+import { Request } from 'express';
 
 @Injectable()
 export class AccessGuard implements CanActivate {
   constructor(private readonly authService: AuthService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
-    let accessToken = request.headers.authorization;
+    const request: Request = context.switchToHttp().getRequest();
+    //let accessToken = request.headers.authorization;
+    let accessToken = request.cookies['accessToken'];
 
     if (!accessToken) {
       throw new UnauthorizedException('Access token missing');

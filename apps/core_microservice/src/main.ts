@@ -32,12 +32,38 @@ async function bootstrap() {
     )
     .build();
 
-  const documnet = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('api', app, documnet);
+  const document = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('api', app, document);
 
+  app.use((req, res, next) => {
+    const origin = req.headers.origin;
+
+    // Проверяем, что запрос идет с нашего фронтенда
+    if (origin === 'http://localhost:3000') {
+      res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
+    }
+
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader(
+      'Access-Control-Allow-Methods',
+      'GET,POST,PUT,PATCH,DELETE,OPTIONS',
+    );
+    res.setHeader(
+      'Access-Control-Allow-Headers',
+      'Origin, X-Requested-With, Content-Type, Accept, Authorization',
+    );
+
+    // КРИТИЧНО: Обработка Preflight запроса
+    if (req.method === 'OPTIONS') {
+      return res.status(204).send();
+    }
+
+    next();
+  });
+
+  // app.enableCors(getCorsConfig());
   app.use(helmet(getHelmetConfig()));
   app.use(cookieParser());
-  app.enableCors(getCorsConfig());
 
   app.useGlobalPipes(
     new ValidationPipe({
