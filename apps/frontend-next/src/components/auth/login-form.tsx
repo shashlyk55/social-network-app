@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { loginSchema } from "@/validation-schemas/login-schema";
-import { useLogin } from "@/app/hooks/auth/use-login";
+import { useLogin } from "@/hooks/auth/use-login";
 import { Loader2 } from "lucide-react";
 import { AccountProviderType } from "@/types/auth";
 

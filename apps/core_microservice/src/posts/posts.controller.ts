@@ -22,7 +22,7 @@ import {
   ApiUnauthorizedResponse,
   ApiForbiddenResponse,
 } from '@nestjs/swagger';
-import { PaginationResponseDto } from 'src/common/dto/pagination-response.dto';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { CreatePostDto } from './dto/create-post.dto';
 import { PostResponseDto } from './dto/post-response.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
@@ -63,7 +63,7 @@ export class PostsController {
   @ApiResponse({
     status: 200,
     description: 'Posts list retrieved successfully',
-    type: PaginationResponseDto<PostResponseDto>,
+    type: PaginationDto<PostResponseDto>,
   })
   @ApiQuery({
     name: 'page',
@@ -101,7 +101,7 @@ export class PostsController {
     @Query('isArchived') isArchived?: boolean,
     @Query('search') search?: string,
     @CurrentUser('userId') userId?: number,
-  ): Promise<PaginationResponseDto<PostResponseDto>> {
+  ): Promise<PaginationDto<PostResponseDto>> {
     const params = { page, limit, isArchived, search };
     const result = await this.postService.findAll(params, undefined, userId);
     return PostMappers.toPaginationResponse(result);
@@ -112,7 +112,7 @@ export class PostsController {
   @ApiResponse({
     status: 200,
     description: 'Posts list retrieved successfully',
-    type: PaginationResponseDto<PostResponseDto>,
+    type: PaginationDto<PostResponseDto>,
   })
   @ApiQuery({
     name: 'page',
@@ -144,7 +144,7 @@ export class PostsController {
     @Query('limit') limit?: number,
     @Query('isArchived') isArchived?: boolean,
     @Query('search') search?: string,
-  ): Promise<PaginationResponseDto<PostResponseDto>> {
+  ): Promise<PaginationDto<PostResponseDto>> {
     const params = { page, limit, isArchived, search };
     const result = await this.postService.findAll(params, userId, userId);
     return PostMappers.toPaginationResponse(result);
@@ -158,7 +158,7 @@ export class PostsController {
   })
   @ApiResponse({
     status: 200,
-    type: PaginationResponseDto<PostResponseDto>,
+    type: PaginationDto<PostResponseDto>,
     description: 'Список постов с информацией об авторах',
   })
   @ApiQuery({
@@ -177,7 +177,7 @@ export class PostsController {
     @CurrentUser('userId') userId: number,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
-  ): Promise<PaginationResponseDto<PostResponseDto>> {
+  ): Promise<PaginationDto<PostResponseDto>> {
     return PostMappers.toPaginationResponse(
       await this.postService.getFollowedFeed(
         {

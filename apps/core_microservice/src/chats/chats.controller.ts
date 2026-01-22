@@ -24,7 +24,7 @@ import { ChatResponseDto } from './dto/chat-response.dto';
 import { CreateChatDto } from './dto/create-chat.dto';
 import { UpdateChatDto } from './dto/update-chat.dto';
 import { ChatMappers } from './utils/params-mapper.util';
-import { PaginationResponseDto } from 'src/common/dto/pagination-response.dto';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { ChatType } from 'src/entities/chat.entity';
 
 @ApiTags('chats')
@@ -54,7 +54,7 @@ export class ChatsController {
   @ApiResponse({
     status: 200,
     description: 'Chats list retrieved successfully',
-    type: PaginationResponseDto<ChatResponseDto>,
+    type: PaginationDto<ChatResponseDto>,
   })
   @ApiQuery({
     name: 'page',
@@ -78,7 +78,7 @@ export class ChatsController {
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('type') type?: ChatType,
-  ): Promise<PaginationResponseDto<ChatResponseDto>> {
+  ): Promise<PaginationDto<ChatResponseDto>> {
     const params = { page, limit, type };
     const result = await this.chatService.findAll(params);
     return ChatMappers.toPaginationResponse(result);
@@ -90,7 +90,7 @@ export class ChatsController {
   @ApiResponse({
     status: 200,
     description: 'User chats retrieved successfully',
-    type: PaginationResponseDto<ChatResponseDto>,
+    type: PaginationDto<ChatResponseDto>,
   })
   @ApiQuery({
     name: 'page',
@@ -115,7 +115,7 @@ export class ChatsController {
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('type') type?: ChatType,
-  ): Promise<PaginationResponseDto<ChatResponseDto>> {
+  ): Promise<PaginationDto<ChatResponseDto>> {
     const params = { page, limit, type };
     const result = await this.chatService.findUserChats(profileId, params);
     return ChatMappers.toPaginationResponse(result);

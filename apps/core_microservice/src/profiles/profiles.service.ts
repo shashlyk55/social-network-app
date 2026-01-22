@@ -43,6 +43,38 @@ export class ProfilesService {
     }
   }
 
+  async searchProfiles(
+    query: string,
+    currentUserId?: number,
+  ): Promise<Profile[]> {
+    let currentUserProfile: Profile | undefined = currentUserId
+      ? await this.findByUserId(currentUserId)
+      : undefined;
+
+    const queryBuilder = this.profileRepository
+      .createQueryBuilder('profile')
+      .where('profile.username ILIKE :search', { search: `%${query}%` })
+      .take(10);
+
+    if (currentUserProfile) {
+      queryBuilder.andWhere('profile.id != :currentUserProfileId', {
+        currentUserProfileId: currentUserProfile.id,
+      });
+
+      queryBuilder.addSelect((subQuery) => {
+        return subQuery
+          .select('COUNT(f.id) > 0', 'isFollowed')
+          .from('main.profiles_follows', 'f')
+          .where('f.follower_profile_id = :currentUserProfileId', {
+            currentUserProfileId: currentUserProfile.id,
+          })
+          .andWhere('f.followed_profile_id = profile.id');
+      }, 'profile_isFollowed');
+    }
+
+    return await queryBuilder.getMany(); // Возвращаем просто массив
+  }
+
   async findFollow(
     followerProfileId: number,
     targetProfileId: number,
@@ -123,6 +155,11 @@ export class ProfilesService {
       Object.keys(updatePayload).forEach(
         (key) => updatePayload[key] === undefined && delete updatePayload[key],
       );
+
+      if (params.birthday) {
+        const date = new Date(params.birthday);
+        updatePayload.birthday = isNaN(date.getTime()) ? null : date;
+      }
 
       await this.profileRepository.update(profile.id, {
         ...updatePayload,

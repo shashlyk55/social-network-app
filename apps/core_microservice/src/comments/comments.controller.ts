@@ -22,7 +22,7 @@ import {
   ApiUnauthorizedResponse,
   ApiForbiddenResponse,
 } from '@nestjs/swagger';
-import { PaginationResponseDto } from 'src/common/dto/pagination-response.dto';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { CommentsService } from './comments.service';
 import { CommentResponseDto } from './dto/comment-response.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
@@ -64,7 +64,7 @@ export class CommentsController {
   @ApiResponse({
     status: 200,
     description: 'Comments list retrieved successfully',
-    type: PaginationResponseDto<CommentResponseDto>,
+    type: PaginationDto<CommentResponseDto>,
   })
   @ApiQuery({
     name: 'page',
@@ -103,7 +103,7 @@ export class CommentsController {
     @Query('postId') postId?: number,
     @Query('parentCommentId') parentCommentId?: number,
     @Query('order') order?: 'ASC' | 'DESC',
-  ): Promise<PaginationResponseDto<CommentResponseDto>> {
+  ): Promise<PaginationDto<CommentResponseDto>> {
     const params = { page, limit, postId, parentCommentId, order };
     const result = await this.commentService.findAll(params, userId);
     return CommentMappers.toPaginationResponse(result);
@@ -115,7 +115,7 @@ export class CommentsController {
   @ApiResponse({
     status: 200,
     description: 'Post comments retrieved successfully',
-    type: PaginationResponseDto<CommentResponseDto>,
+    type: PaginationDto<CommentResponseDto>,
   })
   @ApiQuery({
     name: 'page',
@@ -140,7 +140,7 @@ export class CommentsController {
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('order') order?: 'ASC' | 'DESC',
-  ): Promise<PaginationResponseDto<CommentResponseDto>> {
+  ): Promise<PaginationDto<CommentResponseDto>> {
     const params = { postId, page, limit, order };
     const result = await this.commentService.findAll(params);
     return CommentMappers.toPaginationResponse(result);
@@ -152,7 +152,7 @@ export class CommentsController {
   @ApiResponse({
     status: 200,
     description: 'Comment replies retrieved successfully',
-    type: PaginationResponseDto<CommentResponseDto>,
+    type: PaginationDto<CommentResponseDto>,
   })
   @ApiQuery({
     name: 'page',
@@ -177,7 +177,7 @@ export class CommentsController {
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('order') order?: 'ASC' | 'DESC',
-  ): Promise<PaginationResponseDto<CommentResponseDto>> {
+  ): Promise<PaginationDto<CommentResponseDto>> {
     const params = { commentId, page, limit, order };
     const result = await this.commentService.findAll(params);
     return CommentMappers.toPaginationResponse(result);

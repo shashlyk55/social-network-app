@@ -19,16 +19,15 @@ async function bootstrap() {
     .setTitle('Innogram')
     .setDescription('Innogram Social Network API')
     .setVersion('1.0')
-    .addBearerAuth(
+    .addCookieAuth(
+      'accessToken', // название cookie
       {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
-        name: 'JWT',
-        description: 'Enter JWT token',
-        in: 'header',
+        type: 'apiKey',
+        in: 'cookie',
+        name: 'accessToken',
+        description: 'Enter JWT token in cookie',
       },
-      'access-token',
+      'access-token', // security name
     )
     .build();
 

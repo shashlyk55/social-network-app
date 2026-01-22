@@ -1,7 +1,7 @@
 import { CreatePostDto } from '../dto/create-post.dto';
 import { UpdatePostDto } from '../dto/update-post.dto';
 import { PostResponseDto } from '../dto/post-response.dto';
-import { PaginationResponseDto } from '../../common/dto/pagination-response.dto';
+import { PaginationDto } from '../../common/dto/pagination.dto';
 import {
   CreatePostParams,
   UpdatePostParams,
@@ -62,7 +62,7 @@ export class PostMappers {
 
   static toPaginationResponse(
     result: PostPaginationResult,
-  ): PaginationResponseDto<PostResponseDto> {
+  ): PaginationDto<PostResponseDto> {
     return {
       data: result.data.map((post) => this.toPostResponse(post)),
       meta: {

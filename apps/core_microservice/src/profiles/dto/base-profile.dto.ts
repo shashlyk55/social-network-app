@@ -11,6 +11,12 @@ export class BaseProfileDto {
   displayName: string;
 
   @Expose()
+  bio?: string | null;
+
+  @Expose()
+  isPublic: boolean;
+
+  @Expose()
   avatarUrl?: string | null;
 
   @Expose() // Скрыто для приватного профиля

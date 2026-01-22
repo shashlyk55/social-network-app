@@ -1,9 +1,9 @@
-import { PaginationResponseDto } from 'src/common/dto/pagination-response.dto';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { FollowResponseDto } from '../dto/follow-response.dto';
 import { FollowPaginationResult } from '../types/follow-params.types';
 import { ProfileFollow } from 'src/entities/many-to-many/profile-follow.entity';
-import { ProfilePreviewResponseDto } from 'src/profiles/dto/profile-preview-response.dto';
 import { FollowDirection } from '../follow.service';
+import { ProfilePreviewDto } from 'src/profiles/dto/profile-preview.dto';
 
 export class FollowMapper {
   static toFollowResponse(
@@ -15,12 +15,12 @@ export class FollowMapper {
         ? follow.followedProfile
         : follow.followerProfile;
 
-    const profileDto: ProfilePreviewResponseDto = {
+    const profileDto: ProfilePreviewDto = {
       id: profileEntity.id,
       username: profileEntity.username,
       displayName: profileEntity.displayName,
       avatarUrl: profileEntity.avatarUrl,
-      isPublic: profileEntity.isPublic,
+      isFollowed: profileEntity.isFollowed,
     };
 
     const response: FollowResponseDto = {
@@ -36,7 +36,7 @@ export class FollowMapper {
   static toPaginationResponse(
     result: FollowPaginationResult,
     direction: FollowDirection,
-  ): PaginationResponseDto<FollowResponseDto> {
+  ): PaginationDto<FollowResponseDto> {
     return {
       data: result.data.map((follow) =>
         this.toFollowResponse(follow, direction),

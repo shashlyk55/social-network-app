@@ -90,4 +90,9 @@ export class Profile {
       `SELECT COUNT("id") FROM "main"."posts" WHERE "profile_id" = ${alias}.id AND "is_archived" = false`,
   })
   publicPostsCount: number;
+
+  @VirtualColumn({
+    query: (alias) => `SELECT false`,
+  })
+  isFollowed: boolean;
 }

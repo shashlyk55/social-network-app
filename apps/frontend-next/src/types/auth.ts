@@ -42,28 +42,6 @@ export type SignupCredentials = Pick<
   provider: AccountProviderType;
 };
 
-export interface ProfileResponseDto {
-  id: number;
-  username: string;
-  displayName: string;
-  birthday?: string | null;
-  bio?: string | null;
-  avatarUrl?: string | null;
-  isPublic: boolean;
-  createdAt: Date;
-}
-
-export interface TokensDto {
-  accessToken: string;
-  refreshToken: string;
-}
-
-export interface AuthResponseDto {
-  profile: ProfileResponseDto;
-
-  tokens: TokensDto;
-}
-
 export type LoginCredentials = {
   password: string;
   email: string;

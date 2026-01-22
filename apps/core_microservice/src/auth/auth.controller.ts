@@ -215,7 +215,7 @@ export class AuthController {
   @ApiResponse({ status: 201, description: 'Успешный выход' })
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const refreshToken = req.cookies['refreshToken'];
-    let accessToken = req.headers.authorization;
+    let accessToken = req.cookies['accessToken'];
 
     if (refreshToken && accessToken) {
       accessToken = accessToken.replace('Bearer ', '');
@@ -230,6 +230,12 @@ export class AuthController {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
       path: '/auth/refresh',
+    });
+
+    res.status(201).clearCookie('accessToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
     });
 
     return { message: 'Logged out successfully' };

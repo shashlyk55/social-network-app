@@ -7,7 +7,7 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 
-import { PaginationResponseDto } from 'src/common/dto/pagination-response.dto';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { NotificationResponseDto } from './dto/notification-response.dto';
 import { NotificationMappers } from './utils/params-mapper.util';
 import { NotificationsService } from './notifications.service';

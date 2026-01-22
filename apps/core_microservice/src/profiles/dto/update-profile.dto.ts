@@ -1,9 +1,4 @@
-import {
-  PickType,
-  PartialType,
-  ApiProperty,
-  ApiPropertyOptional,
-} from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsString,
   IsNotEmpty,
@@ -13,16 +8,6 @@ import {
 } from 'class-validator';
 
 export class UpdateProfileDto {
-  // extends PartialType(
-  //   PickType(FullRegisterDto, [
-  //     'username',
-  //     'displayName',
-  //     'birthday',
-  //     'bio',
-  //     'avatarUrl',
-  //     'isPublic',
-  //   ] as const),
-  // )
   @ApiProperty({ example: 'johndoe' })
   @IsOptional()
   @IsString()

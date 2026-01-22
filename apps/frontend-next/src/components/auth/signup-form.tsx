@@ -1,6 +1,6 @@
 "use client";
 
-import { useSignup } from "@/app/hooks/auth/use-signup";
+import { useSignup } from "@/hooks/auth/use-signup";
 import { SignupCredentials, AccountProviderType } from "@/types/auth";
 import { signupSchema } from "@/validation-schemas/signup-schema";
 import { zodResolver } from "@hookform/resolvers/zod";

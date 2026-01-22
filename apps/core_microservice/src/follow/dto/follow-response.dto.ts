@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ProfilePreviewResponseDto } from 'src/profiles/dto/profile-preview-response.dto';
+import { ProfilePreviewDto } from 'src/profiles/dto/profile-preview.dto';
 
 export class FollowResponseDto {
   @ApiProperty({ example: 123, description: 'ID записи в таблице подписок' })
@@ -15,8 +15,8 @@ export class FollowResponseDto {
   createdAt: Date;
 
   @ApiProperty({
-    type: () => ProfilePreviewResponseDto,
+    type: () => ProfilePreviewDto,
     description: 'Данные профиля',
   })
-  profile: ProfilePreviewResponseDto;
+  profile: ProfilePreviewDto;
 }
