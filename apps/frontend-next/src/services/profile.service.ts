@@ -26,7 +26,6 @@ export const ProfileService = {
     const { data } = await apiClient.get<ProfilePreview[]>(`/profiles/search`, {
       params: { query },
     });
-    console.log(data);
 
     return data;
   },

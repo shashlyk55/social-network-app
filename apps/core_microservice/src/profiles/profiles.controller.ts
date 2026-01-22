@@ -75,7 +75,7 @@ export class ProfilesController {
     );
 
     const isFollowed = existingFollow !== null;
-    const isFollowAccepted = !!existingFollow;
+    const isFollowAccepted = existingFollow?.accepted ?? false;
     const canViewFullProfile = targetProfile.isPublic || isFollowAccepted;
 
     return plainToInstance(

@@ -32,9 +32,20 @@ export interface UpdateProfileInput {
 }
 
 export interface ProfilePreview {
-  id: string;
+  id: number;
   username: string;
   displayName: string;
   avatarUrl?: string | null;
-  isFollowed: boolean;
+  isFollowed?: boolean;
+}
+
+export enum FollowStatusFilter {
+  ACCEPTED = "accepted",
+  PENDING = "pending",
+  ALL = "all",
+}
+
+export enum FollowDirection {
+  FOLLOWING = "following",
+  FOLLOWERS = "followers",
 }

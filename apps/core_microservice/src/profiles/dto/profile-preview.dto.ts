@@ -20,5 +20,5 @@ export class ProfilePreviewDto {
 
   @ApiProperty({ example: true })
   @Expose()
-  isFollowed: boolean;
+  isFollowed?: boolean;
 }

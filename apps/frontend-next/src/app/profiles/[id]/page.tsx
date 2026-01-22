@@ -3,20 +3,65 @@
 import { useParams } from "next/navigation";
 import { useProfileById } from "@/hooks/profile/use-profile-by-id";
 import { UserAvatar } from "@/components/ui/user-avatar";
-import { Lock, FileText } from "lucide-react";
+import {
+  Lock,
+  FileText,
+  Loader2,
+  UserCheck,
+  Clock,
+  UserPlus,
+  UserMinus,
+} from "lucide-react";
+import { useToggleFollow } from "@/hooks/follow/use-toggle-follow";
+import { cn } from "@/lib/utils/cn";
 
 export default function OtherProfilePage() {
   const { id } = useParams();
-  const { data: profile, isLoading } = useProfileById(Number(id));
+  const profileId = Number(id);
+
+  const { data: profile, isLoading } = useProfileById(profileId);
+  const { mutate: toggleFollow, isPending: isFollowPending } = useToggleFollow(
+    profileId, // Приводим к строке для API, если нужно
+    profile?.isFollowed || false
+  );
 
   if (isLoading)
     return (
-      <div className="p-8 text-center text-slate-500">Загрузка профиля...</div>
+      <div className="p-8 text-center text-slate-500">
+        <Loader2 className="w-6 h-6 animate-spin" />
+      </div>
     );
   if (!profile)
     return (
       <div className="p-8 text-center text-red-500">Профиль не найден</div>
     );
+
+  const getButtonConfig = () => {
+    if (!profile.isFollowed) {
+      return {
+        text: "Подписаться",
+        variant: "primary",
+        icon: <UserPlus className="w-4 h-4" />,
+      };
+    }
+    if (profile.isFollowed && !profile.isFollowAccepted) {
+      return {
+        text: "Запрос отправлен",
+        variant: "secondary",
+        icon: <Clock className="w-4 h-4" />,
+      };
+    }
+    return {
+      text: "Подписан",
+      variant: "success",
+      icon: <UserCheck className="w-4 h-4" />,
+    };
+  };
+
+  const config = getButtonConfig();
+
+  const isPendingFollow = profile.isFollowed && !profile.isFollowAccepted;
+  const isFullyFollowed = profile.isFollowed && profile.isFollowAccepted;
 
   return (
     <div className="max-w-2xl mx-auto p-6">
@@ -37,8 +82,26 @@ export default function OtherProfilePage() {
           <p className="text-slate-500 text-lg">@{profile.username}</p>
 
           {/* Кнопка подписки (заглушка) */}
-          <button className="mt-4 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-medium transition-colors">
-            {profile.isFollowed ? "Отписаться" : "Подписаться"}
+          <button
+            disabled={isFollowPending}
+            onClick={() => toggleFollow()}
+            className={cn(
+              "mt-4 px-6 py-2 rounded-full font-medium transition-all active:scale-95 disabled:opacity-70",
+              // Синяя если не подписан, серая если запрос отправлен или уже подписан
+              !profile.isFollowed
+                ? "bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-200"
+                : "bg-slate-200 text-slate-700"
+            )}
+          >
+            {isFollowPending ? (
+              <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+            ) : (
+              <>
+                {!profile.isFollowed && "Подписаться"}
+                {isPendingFollow && "Запрос отправлен"}
+                {isFullyFollowed && "Отписаться"}
+              </>
+            )}
           </button>
         </div>
       </div>

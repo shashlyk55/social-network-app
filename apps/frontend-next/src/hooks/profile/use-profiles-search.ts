@@ -24,6 +24,6 @@ export const useProfilesSearch = () => {
   return {
     searchTerm,
     setSearchTerm,
-    ...query, // Теперь query.data снова будет массивом
+    ...query,
   };
 };

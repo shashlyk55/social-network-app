@@ -5,21 +5,15 @@ import {
   UserNotFollowed,
 } from './exceptions/follow.exceptions';
 import { Repository } from 'typeorm';
-import { ProfileFollow } from 'src/entities/many-to-many/profile-follow.entity';
+import {
+  FollowDirection,
+  FollowStatusFilter,
+  ProfileFollow,
+} from 'src/entities/many-to-many/profile-follow.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ProfilesService } from 'src/profiles/profiles.service';
 import { FollowPaginationResult } from './types/follow-params.types';
-
-export enum FollowStatusFilter {
-  ACCEPTED = 'accepted',
-  PENDING = 'pending',
-  ALL = 'all',
-}
-
-export enum FollowDirection {
-  FOLLOWING = 'following',
-  FOLLOWERS = 'followers',
-}
+import { PrivateProfileException } from 'src/profiles/exceptions/profile.exceptions';
 
 @Injectable()
 export class FollowService {
@@ -31,50 +25,99 @@ export class FollowService {
 
   async getFollows(
     userId: number,
+    targetProfileId: number,
     direction: FollowDirection,
     status: FollowStatusFilter = FollowStatusFilter.ALL,
     page: number = 1,
     limit: number = 50,
-  ): Promise<FollowPaginationResult> {
-    const profile = await this.profilesService.findByUserId(userId);
+  ): Promise<{
+    data: any[];
+    meta: { total: number; page: number; limit: number; totalPages: number };
+  }> {
+    const currentUserProfile = await this.profilesService.findByUserId(userId);
+    const targetProfile = await this.profilesService.findOne(targetProfileId);
+
+    // Проверка приватности (как в предыдущем шаге)
+    if (targetProfile.id !== currentUserProfile.id && !targetProfile.isPublic) {
+      const followRelation = await this.findFollow(
+        currentUserProfile.id,
+        targetProfile.id,
+      );
+      if (!followRelation || !followRelation.accepted) {
+        throw new PrivateProfileException();
+      }
+    }
 
     const query = this.followRepository.createQueryBuilder('follow');
 
     if (direction === FollowDirection.FOLLOWING) {
-      // current user - follower
       query
-        .leftJoinAndSelect('follow.followedProfile', 'profileData')
+        .leftJoin('follow.followedProfile', 'profile') // Джойним профиль, на которого подписаны
+        .addSelect([
+          'profile.id',
+          'profile.username',
+          'profile.displayName',
+          'profile.avatarUrl',
+        ])
         .where('follow.follower_profile_id = :profileId', {
-          profileId: profile.id,
+          profileId: targetProfile.id,
         });
     } else {
-      // followers of current user
       query
-        .leftJoinAndSelect('follow.followerProfile', 'profileData')
+        .leftJoin('follow.followerProfile', 'profile') // Джойним профиль подписчика
+        .addSelect([
+          'profile.id',
+          'profile.username',
+          'profile.displayName',
+          'profile.avatarUrl',
+        ])
         .where('follow.followed_profile_id = :profileId', {
-          profileId: profile.id,
+          profileId: targetProfile.id,
         });
     }
 
-    if (status === FollowStatusFilter.ACCEPTED) {
-      query.andWhere('follow.accepted = :status', { status: true });
-    } else if (status === FollowStatusFilter.PENDING) {
-      query.andWhere('follow.accepted = :status', { status: false });
+    // Фильтр по статусу (обычно для чужих только ACCEPTED)
+    const finalStatus =
+      targetProfile.id !== currentUserProfile.id
+        ? FollowStatusFilter.ACCEPTED
+        : status;
+    if (finalStatus === FollowStatusFilter.ACCEPTED) {
+      query.andWhere('follow.accepted = :acc', { acc: true });
+    } else if (finalStatus === FollowStatusFilter.PENDING) {
+      query.andWhere('follow.accepted = :acc', { acc: false });
     }
 
-    const skip = (page - 1) * limit;
-    const [data, total] = await query
-      .skip(skip)
+    const [relations, total] = await query
+      .skip((page - 1) * limit)
       .take(limit)
       .orderBy('follow.createdAt', 'DESC')
       .getManyAndCount();
 
+    // ПРЕОБРАЗОВАНИЕ: Вытаскиваем профили и добавляем флаг подписки текущего юзера
+    const profileItems = await Promise.all(
+      relations.map(async (rel) => {
+        const profile =
+          direction === FollowDirection.FOLLOWING
+            ? rel.followedProfile
+            : rel.followerProfile;
+
+        // Проверяем, подписан ли ТЕКУЩИЙ пользователь на этого человека в списке
+        const myFollow = await this.findFollow(
+          currentUserProfile.id,
+          profile.id,
+        );
+
+        // Возвращаем объект профиля с подмешанным флагом
+        return {
+          ...profile,
+          isFollowed: !!myFollow,
+        };
+      }),
+    );
+
     return {
-      data,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
+      data: profileItems,
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
     };
   }
 
@@ -95,7 +138,7 @@ export class FollowService {
     const follow = this.followRepository.create({
       followerProfileId: profile.id,
       followedProfileId: targetProfileId,
-      accepted: targetProfile.isPublic ? true : false,
+      accepted: targetProfile.isPublic,
       createdById: userId,
       createdAt: new Date(),
     });
@@ -157,3 +200,4 @@ export class FollowService {
     });
   }
 }
+export { FollowDirection, FollowStatusFilter };

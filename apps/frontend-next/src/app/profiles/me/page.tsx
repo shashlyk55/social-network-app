@@ -5,6 +5,7 @@ import { UserAvatar } from "@/components/ui/user-avatar";
 import { useMe } from "@/hooks/profile/use-me";
 import { useModalStore } from "@/store/use-modal-store";
 import { Calendar, Shield, Users, FileText, Settings2 } from "lucide-react";
+import Link from "next/link";
 
 export default function MyProfilePage() {
   const { data: profile, isLoading } = useMe();
@@ -94,22 +95,31 @@ export default function MyProfilePage() {
           </h2>
 
           <div className="grid grid-cols-3 gap-2 text-center">
-            <div className="flex flex-col p-2 bg-slate-50 rounded-lg">
-              <span className="text-xl font-bold text-slate-900">
+            {/* Подписчики - ведут на /profiles/me/followers */}
+            <Link
+              href="/profiles/me/followers"
+              className="flex flex-col p-2 bg-slate-50 rounded-lg hover:bg-slate-100 transition-all group border border-transparent hover:border-slate-200"
+            >
+              <span className="text-xl font-bold text-slate-900 group-hover:text-blue-600">
                 {profile.followersCount}
               </span>
               <span className="text-[10px] uppercase tracking-wider text-slate-500">
                 Подписчики
               </span>
-            </div>
-            <div className="flex flex-col p-2 bg-slate-50 rounded-lg">
-              <span className="text-xl font-bold text-slate-900">
+            </Link>
+
+            {/* Подписки - ведут на /profiles/me/following */}
+            <Link
+              href="/profiles/me/following"
+              className="flex flex-col p-2 bg-slate-50 rounded-lg hover:bg-slate-100 transition-all group border border-transparent hover:border-slate-200"
+            >
+              <span className="text-xl font-bold text-slate-900 group-hover:text-blue-600">
                 {profile.followedCount}
               </span>
               <span className="text-[10px] uppercase tracking-wider text-slate-500">
                 Подписки
               </span>
-            </div>
+            </Link>
             <div className="flex flex-col p-2 bg-slate-50 rounded-lg">
               <span className="text-xl font-bold text-slate-900">
                 {profile.postsCount}

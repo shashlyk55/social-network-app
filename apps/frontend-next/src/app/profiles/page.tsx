@@ -1,11 +1,9 @@
 "use client";
 
-import { UserAvatar } from "@/components/ui/user-avatar";
 import { Search as SearchIcon, Loader2 } from "lucide-react";
-import Link from "next/link";
-import { cn } from "@/lib/utils/cn";
 import { useProfilesSearch } from "@/hooks/profile/use-profiles-search";
 import { ProfilePreview } from "@/types/profile";
+import { ProfileListItem } from "@/components/profile/profile-list-item";
 
 export default function ProfilesSearchPage() {
   const {
@@ -38,25 +36,7 @@ export default function ProfilesSearchPage() {
           </div>
         ) : (
           profiles?.map((profile: ProfilePreview) => (
-            <Link
-              key={profile.id}
-              href={`/profiles/${profile.id}`}
-              className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-200"
-            >
-              <UserAvatar
-                src={profile.avatarUrl}
-                displayName={profile.displayName}
-                className="h-12 w-12"
-              />
-              <div className="flex flex-col">
-                <span className="font-semibold text-slate-900">
-                  {profile.displayName}
-                </span>
-                <span className="text-sm text-slate-500">
-                  @{profile.username}
-                </span>
-              </div>
-            </Link>
+            <ProfileListItem key={profile.id} profile={profile} />
           ))
         )}
       </div>

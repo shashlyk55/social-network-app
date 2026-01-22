@@ -14,6 +14,17 @@ export class UsernameAlreadyExistsException extends DomainException {
   }
 }
 
+export class PrivateProfileException extends DomainException {
+  code = 'PRIVATE_PROFILE';
+  constructor(profileId?: number) {
+    super(
+      profileId
+        ? `Profile with id ${profileId} is private`
+        : 'Profile is private',
+    );
+  }
+}
+
 export class ProfileOperationException extends DomainException {
   code = 'PROFILE_OPERATION_FAILED';
   constructor(operation: string, reason?: string) {

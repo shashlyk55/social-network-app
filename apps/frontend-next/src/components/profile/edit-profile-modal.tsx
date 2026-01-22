@@ -173,16 +173,18 @@ export function EditProfileModal({ profile }: { profile: MyProfile }) {
               />
 
               {/* Кнопка удаления (появляется если есть фото и нет загрузки) */}
-              {currentAvatar && !isUploading && (
-                <button
-                  type="button"
-                  onClick={removeAvatar}
-                  className="absolute -top-1 -right-1 bg-red-500 text-white p-1.5 rounded-full shadow-md hover:bg-red-600 transition-colors z-10"
-                  title="Удалить фото"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
+              {currentAvatar &&
+                !isUploading &&
+                currentAvatar.trim().length != 0 && (
+                  <button
+                    type="button"
+                    onClick={removeAvatar}
+                    className="absolute -top-1 -right-1 bg-red-500 text-white p-1.5 rounded-full shadow-md hover:bg-red-600 transition-colors z-10"
+                    title="Удалить фото"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
 
               {/* Overlay с лоадером */}
               {isUploading && (
