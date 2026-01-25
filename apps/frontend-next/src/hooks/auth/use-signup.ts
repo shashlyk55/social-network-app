@@ -19,7 +19,7 @@ export const useSignup = () => {
         const userProfile = await ProfileService.getMe();
         queryClient.setQueryData(["me"], userProfile);
 
-        router.push("/profile/me");
+        router.push("/profiles/me");
         router.refresh();
       } catch (error) {
         console.error("Ошибка при получении профиля после входа:", error);

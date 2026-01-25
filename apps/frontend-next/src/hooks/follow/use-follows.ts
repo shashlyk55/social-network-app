@@ -10,6 +10,7 @@ export const useFollows = (
   return useQuery({
     queryKey: ["follows", profileId, direction, page],
     queryFn: () => FollowService.getFollows(profileId!, direction, page),
+
     enabled: !!profileId,
     placeholderData: (previousData) => previousData,
     staleTime: 1000 * 60 * 5,

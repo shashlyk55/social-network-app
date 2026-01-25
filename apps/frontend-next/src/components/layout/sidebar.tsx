@@ -22,15 +22,10 @@ export const Sidebar = () => {
 
   return (
     <aside className="flex h-screen w-64 flex-col border-r bg-slate-950 p-4 text-white">
-      {/* Логотип */}
       <div className="mb-8 flex items-center gap-3 px-2 text-2xl font-bold">
-        <div className="flex h-8 w-8 items-center justify-center rounded bg-blue-600">
-          B
-        </div>
-        <span>BlogHub</span>
+        <span>Innogram</span>
       </div>
 
-      {/* Навигация */}
       <nav className="flex-1 space-y-2">
         {NAV_ITEMS.map((item) => {
           const isActive = pathname === item.href;
@@ -50,11 +45,10 @@ export const Sidebar = () => {
         })}
       </nav>
 
-      {/* Блок пользователя в углу (снизу) */}
       {me && (
         <div className="mt-auto border-t border-slate-800 pt-4">
           <Link
-            href="/profile/me"
+            href="/profiles/me"
             className="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-slate-800"
           >
             <UserAvatar

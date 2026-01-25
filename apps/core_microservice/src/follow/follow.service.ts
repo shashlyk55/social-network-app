@@ -12,7 +12,6 @@ import {
 } from 'src/entities/many-to-many/profile-follow.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ProfilesService } from 'src/profiles/profiles.service';
-import { FollowPaginationResult } from './types/follow-params.types';
 import { PrivateProfileException } from 'src/profiles/exceptions/profile.exceptions';
 
 @Injectable()
@@ -27,7 +26,6 @@ export class FollowService {
     userId: number,
     targetProfileId: number,
     direction: FollowDirection,
-    status: FollowStatusFilter = FollowStatusFilter.ALL,
     page: number = 1,
     limit: number = 50,
   ): Promise<{
@@ -37,7 +35,6 @@ export class FollowService {
     const currentUserProfile = await this.profilesService.findByUserId(userId);
     const targetProfile = await this.profilesService.findOne(targetProfileId);
 
-    // Проверка приватности (как в предыдущем шаге)
     if (targetProfile.id !== currentUserProfile.id && !targetProfile.isPublic) {
       const followRelation = await this.findFollow(
         currentUserProfile.id,
@@ -76,42 +73,20 @@ export class FollowService {
         });
     }
 
-    // Фильтр по статусу (обычно для чужих только ACCEPTED)
-    const finalStatus =
-      targetProfile.id !== currentUserProfile.id
-        ? FollowStatusFilter.ACCEPTED
-        : status;
-    if (finalStatus === FollowStatusFilter.ACCEPTED) {
-      query.andWhere('follow.accepted = :acc', { acc: true });
-    } else if (finalStatus === FollowStatusFilter.PENDING) {
-      query.andWhere('follow.accepted = :acc', { acc: false });
-    }
-
-    const [relations, total] = await query
+    const [items, total] = await query
       .skip((page - 1) * limit)
       .take(limit)
       .orderBy('follow.createdAt', 'DESC')
       .getManyAndCount();
 
-    // ПРЕОБРАЗОВАНИЕ: Вытаскиваем профили и добавляем флаг подписки текущего юзера
     const profileItems = await Promise.all(
-      relations.map(async (rel) => {
+      items.map(async (rel) => {
         const profile =
           direction === FollowDirection.FOLLOWING
             ? rel.followedProfile
             : rel.followerProfile;
 
-        // Проверяем, подписан ли ТЕКУЩИЙ пользователь на этого человека в списке
-        const myFollow = await this.findFollow(
-          currentUserProfile.id,
-          profile.id,
-        );
-
-        // Возвращаем объект профиля с подмешанным флагом
-        return {
-          ...profile,
-          isFollowed: !!myFollow,
-        };
+        return { ...profile };
       }),
     );
 

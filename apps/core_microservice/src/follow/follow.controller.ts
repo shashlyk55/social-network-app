@@ -42,50 +42,6 @@ import { PaginationDto } from 'src/common/dto/pagination.dto';
 export class FollowController {
   constructor(private readonly followService: FollowService) {}
 
-  @Get(':profileId/followers')
-  @ApiOperation({ summary: 'Подписчики пользователя' })
-  async getFollowers(
-    @Param('profileId', ParseIntPipe) profileId: number,
-    @CurrentUser('userId') userId: number,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-  ) {
-    const result = await this.followService.getFollows(
-      userId,
-      profileId,
-      FollowDirection.FOLLOWERS,
-      FollowStatusFilter.ACCEPTED,
-      page,
-      limit,
-    );
-
-    return plainToInstance(PaginationDto<ProfilePreviewDto>, result, {
-      excludeExtraneousValues: true,
-    });
-  }
-
-  @Get(':profileId/following')
-  @ApiOperation({ summary: 'Подписки пользователя' })
-  async getFollowing(
-    @Param('profileId', ParseIntPipe) profileId: number,
-    @CurrentUser('userId') userId: number,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-  ) {
-    const result = await this.followService.getFollows(
-      userId,
-      profileId,
-      FollowDirection.FOLLOWING,
-      FollowStatusFilter.ACCEPTED,
-      page,
-      limit,
-    );
-
-    return plainToInstance(PaginationDto<ProfilePreviewDto>, result, {
-      excludeExtraneousValues: true,
-    });
-  }
-
   @Post(':targetProfileId')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Подписаться на профиль' })
@@ -137,5 +93,27 @@ export class FollowController {
     @Param('followerProfileId') followerProfileId: number,
   ) {
     await this.followService.rejectRequest(userId, followerProfileId);
+  }
+
+  @Get(':profileId/:direction')
+  @ApiOperation({ summary: 'Подписки или подписчики пользователя' })
+  async getFollows(
+    @Param('profileId', ParseIntPipe) profileId: number,
+    @Param('direction') direction: FollowDirection,
+    @CurrentUser('userId') userId: number,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    const result = await this.followService.getFollows(
+      userId,
+      profileId,
+      direction,
+      page,
+      limit,
+    );
+
+    return plainToInstance(PaginationDto<ProfilePreviewDto>, result, {
+      excludeExtraneousValues: true,
+    });
   }
 }

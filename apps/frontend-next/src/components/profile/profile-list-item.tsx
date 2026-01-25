@@ -6,25 +6,33 @@ import { ProfilePreview } from "@/types/profile";
 import { cn } from "@/lib/utils/cn";
 import { useToggleFollow } from "@/hooks/follow/use-toggle-follow";
 import { Loader2 } from "lucide-react";
+import { useMe } from "@/hooks/profile/use-me";
 
 interface ProfileCardProps {
   profile: ProfilePreview;
+  showFollowBtn?: boolean;
 }
 
-export const ProfileListItem = ({ profile }: ProfileCardProps) => {
+export const ProfileListItem = ({
+  profile,
+  showFollowBtn = true,
+}: ProfileCardProps) => {
+  const { data: me } = useMe();
+  const isItMe = me?.id === profile.id;
+
   const { mutate: toggleFollow, isPending } = useToggleFollow(
     profile.id,
     profile.isFollowed ?? false
   );
 
-  const showFollowButton = profile.isFollowed !== undefined;
+  const profileHref = isItMe ? "/profiles/me" : `/profiles/${profile.id}`;
+
+  const canShowFollowButton =
+    profile.isFollowed !== undefined && showFollowBtn && !isItMe;
 
   return (
     <div className="flex items-center gap-4 p-4 bg-white border border-slate-100 rounded-2xl hover:border-blue-100 hover:shadow-sm transition-all group">
-      <Link
-        href={`/profiles/${profile.id}`}
-        className="flex items-center gap-4 flex-1"
-      >
+      <Link href={profileHref} className="flex items-center gap-4 flex-1">
         <UserAvatar
           src={profile.avatarUrl}
           displayName={profile.displayName}
@@ -40,11 +48,10 @@ export const ProfileListItem = ({ profile }: ProfileCardProps) => {
         </div>
       </Link>
 
-      {/* Рендерим кнопку только если есть данные о подписке */}
-      {showFollowButton && (
+      {canShowFollowButton && (
         <button
           onClick={(e) => {
-            e.preventDefault(); // На всякий случай, если кнопка внутри ссылки
+            e.preventDefault();
             toggleFollow();
           }}
           disabled={isPending}
