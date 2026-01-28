@@ -1,20 +1,19 @@
 import { apiClient } from "@/lib/api-client";
+import { Asset } from "@/types/asset";
 
-export enum FileType {
-  IMAGE = "image",
-  VIDEO = "video",
-  AUDIO = "audio",
-  DOCUMENT = "document",
+export interface UploadAssetParams {
+  file: File;
+  orderIndex?: number;
 }
 
 export const AssetService = {
-  upload: async (file: File) => {
+  upload: async ({ file, orderIndex = 0 }: UploadAssetParams) => {
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("orderIndex", "0");
-    formData.append("fileType", FileType.IMAGE);
+    formData.append("orderIndex", orderIndex.toString());
+    //formData.append("fileType", FileType.IMAGE);
 
-    const response = await apiClient.post("/assets/upload", formData, {
+    const response = await apiClient.post<Asset>("/assets/upload", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     return response.data;

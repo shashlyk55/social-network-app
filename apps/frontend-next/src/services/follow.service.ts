@@ -1,4 +1,5 @@
 import { apiClient } from "@/lib/api-client";
+import { PaginatedData } from "@/types/pagination";
 import { FollowDirection, ProfilePreview } from "@/types/profile";
 
 export const FollowService = {

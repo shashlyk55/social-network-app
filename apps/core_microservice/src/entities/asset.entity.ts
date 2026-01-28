@@ -4,9 +4,7 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  ManyToOne,
   OneToMany,
-  JoinColumn,
 } from 'typeorm';
 import { MessageAsset } from './many-to-many/message-asset.entity';
 import { PostAsset } from './many-to-many/post-asset.entity';
@@ -27,7 +25,10 @@ export class Asset {
   fileName: string;
 
   @Column({ name: 'file_path' })
-  filePath: string;
+  filePath: string; // TODO: delete this field when move to S3
+
+  @Column({ type: 'varchar', name: 'download_url', nullable: true })
+  downloadUrl: string | null; // TODO: delete nullable when move to S3
 
   @Column({
     type: 'enum',

@@ -72,14 +72,8 @@ export class ProfilesService {
       }, 'profile_isFollowed');
     }
 
-    return await queryBuilder.getMany(); // Возвращаем просто массив
+    return await queryBuilder.getMany();
   }
-
-  async getFollowedProfiles(userId: number) {
-    const currentUserProfile = await this.findByUserId(userId);
-  }
-
-  async getFollows(userId: number) {}
 
   async findFollow(
     followerProfileId: number,

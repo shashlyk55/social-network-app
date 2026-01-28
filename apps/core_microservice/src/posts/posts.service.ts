@@ -3,15 +3,16 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { PostLike } from 'src/entities/many-to-many/post-like.entity';
 import { Post, Post as PostEntity } from 'src/entities/post.entity';
 import { DataSource, In, Repository } from 'typeorm';
-import { IPostsService } from './interfaces/IPostsService';
 import {
   CreatePostParams,
   FindPostsParams,
   GetFeedParams,
+  PostLikeResult,
   PostPaginationResult,
   UpdatePostParams,
 } from './types/post-service.types';
 import {
+  NoAccessToThesePosts,
   PostAccessDeniedException,
   PostNotFoundException,
   PostOperationException,
@@ -19,10 +20,10 @@ import {
 import { DomainException } from 'src/app/exceptions/domain.exception';
 import { ProfilesService } from 'src/profiles/profiles.service';
 import { PostAsset } from 'src/entities/many-to-many/post-asset.entity';
-import { FollowService } from 'src/follow/follow.service';
+import { PaginatedData } from 'src/common/types/paginated-data';
 
 @Injectable()
-export class PostsService implements IPostsService {
+export class PostsService {
   constructor(
     @InjectRepository(PostEntity)
     private readonly postRepository: Repository<PostEntity>,
@@ -83,12 +84,15 @@ export class PostsService implements IPostsService {
     }
   }
 
-  async findAll(
-    params: FindPostsParams,
-    authorId?: number,
-    userId?: number,
-  ): Promise<PostPaginationResult> {
-    const { page = 1, limit = 10, isArchived = false, search } = params;
+  async findAll(params: FindPostsParams): Promise<PaginatedData<Post>> {
+    const {
+      page = 1,
+      limit = 10,
+      isArchived = false,
+      search,
+      authorProfileId,
+      userId,
+    } = params;
     const skip = (page - 1) * limit;
 
     const queryBuilder = this.postRepository
@@ -97,18 +101,33 @@ export class PostsService implements IPostsService {
       .leftJoinAndSelect('post.postAssets', 'postAssets')
       .leftJoinAndSelect('postAssets.asset', 'asset');
 
-    if (authorId != undefined) {
-      queryBuilder.andWhere('post.createdById = :authorId', { authorId });
-    }
-    if (isArchived !== undefined) {
-      queryBuilder.andWhere('post.isArchived = :isArchived', { isArchived });
+    if (isArchived) {
+      const profile = await this.profilesService.findByUserId(userId!);
+
+      if (authorProfileId !== profile.id) {
+        throw PostAccessDeniedException.forManyPosts();
+      }
+
+      queryBuilder.andWhere('post.isArchived = :isArchived', {
+        isArchived: true,
+      });
+    } else {
+      queryBuilder.andWhere('post.isArchived = :isArchived', {
+        isArchived: false,
+      });
     }
 
-    if (userId != undefined) {
+    if (authorProfileId !== undefined) {
+      queryBuilder.andWhere('post.profileId = :authorId', {
+        authorId: authorProfileId,
+      });
+    }
+
+    if (userId !== undefined) {
       queryBuilder.addSelect((subQuery) => {
         return subQuery
           .select('COUNT(l.id) > 0', 'isLiked')
-          .from('posts_likes', 'l')
+          .from('main.posts_likes', 'l')
           .where('l.post_id = post.id')
           .andWhere('l.created_by = :currentUserId', {
             currentUserId: userId,
@@ -117,7 +136,7 @@ export class PostsService implements IPostsService {
     }
 
     if (search) {
-      queryBuilder.andWhere('LOWER(post.content) LIKE LOWER(:search)', {
+      queryBuilder.andWhere('post.content ILIKE :search', {
         search: `%${search}%`,
       });
     }
@@ -126,14 +145,17 @@ export class PostsService implements IPostsService {
       .skip(skip)
       .take(limit)
       .orderBy('post.createdAt', 'DESC')
+      .addOrderBy('postAssets.orderIndex', 'ASC')
       .getManyAndCount();
 
     return {
       data,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
     };
   }
 
@@ -143,9 +165,10 @@ export class PostsService implements IPostsService {
       .leftJoinAndSelect('post.profile', 'profile')
       .leftJoinAndSelect('post.postAssets', 'postAssets')
       .leftJoinAndSelect('postAssets.asset', 'asset')
-      .where('post.id = :postId', { postId });
+      .where('post.id = :postId', { postId })
+      .addOrderBy('postAssets.orderIndex', 'ASC');
 
-    if (userId != undefined) {
+    if (userId !== undefined) {
       queryBuilder.addSelect((subQuery) => {
         return subQuery
           .select('COUNT(l.id) > 0', 'isLiked')
@@ -200,6 +223,7 @@ export class PostsService implements IPostsService {
       .andWhere('follow.accepted = :isAccepted', { isAccepted: true })
       .andWhere('post.isArchived = :isArchived', { isArchived: false })
       .orderBy('post.createdAt', 'DESC')
+      .addOrderBy('postAssets.orderIndex', 'ASC')
       .take(limit)
       .skip(skip)
       .getManyAndCount();
@@ -218,7 +242,7 @@ export class PostsService implements IPostsService {
 
     const post = await this.findOne(id);
     if (post.createdById != userId) {
-      throw new PostAccessDeniedException();
+      throw PostAccessDeniedException.forSinglePost();
     }
 
     const queryRunner = this.dataSource.createQueryRunner();
@@ -269,7 +293,7 @@ export class PostsService implements IPostsService {
   async remove(postId: number, userId: number): Promise<void> {
     const post = await this.findOne(postId);
     if (post.createdById != userId) {
-      throw new PostAccessDeniedException();
+      throw PostAccessDeniedException.forSinglePost();
     }
 
     const queryRunner = this.dataSource.createQueryRunner();
@@ -291,46 +315,10 @@ export class PostsService implements IPostsService {
     }
   }
 
-  async archive(postId: number, userId: number): Promise<PostEntity> {
-    const post = await this.findOne(postId);
-    if (post.createdById != userId) {
-      throw new PostAccessDeniedException();
-    }
-    try {
-      await this.postRepository.update(postId, {
-        isArchived: true,
-        updatedById: userId,
-      });
-      return await this.findOne(postId);
-    } catch (error) {
-      if (error instanceof DomainException) {
-        throw error;
-      }
-      throw new PostOperationException('archive post', error.message);
-    }
-  }
-
-  async unarchive(postId: number, userId: number): Promise<PostEntity> {
-    const post = await this.findOne(postId);
-    if (post.createdById != userId) {
-      throw new PostAccessDeniedException();
-    }
-    try {
-      await this.postRepository.update(postId, {
-        isArchived: false,
-        updatedById: userId,
-      });
-      return await this.findOne(postId);
-    } catch (error) {
-      if (error instanceof DomainException) {
-        throw error;
-      }
-      throw new PostOperationException('unarchive post', error.message);
-    }
-  }
-
-  async likePost(postId: number, createdById: number): Promise<PostLike> {
-    await this.findOne(postId);
+  async toggleLikePost(
+    postId: number,
+    createdById: number,
+  ): Promise<PostLikeResult> {
     const profile = await this.profilesService.findByUserId(createdById);
 
     const existingLike = await this.postLikeRepository.findOne({
@@ -339,24 +327,48 @@ export class PostsService implements IPostsService {
 
     try {
       if (existingLike) {
-        return await this.postLikeRepository.remove(existingLike);
+        await this.postLikeRepository.remove(existingLike);
+      } else {
+        const like = this.postLikeRepository.create({
+          postId,
+          profileId: profile.id,
+          createdById,
+        });
+
+        await this.postLikeRepository.save(like);
       }
 
-      const like = this.postLikeRepository.create({
-        postId,
-        profileId: profile.id,
-        createdById,
+      const likesCount = await this.postLikeRepository.count({
+        where: { postId },
       });
 
-      const savedPostLike = await this.postLikeRepository.save(like);
-
-      return savedPostLike;
+      return {
+        postId: postId,
+        isLiked: !existingLike,
+        likesCount,
+      };
     } catch (error) {
-      if (error instanceof DomainException) {
-        throw error;
+      if (error.code === '23505') {
+        // process Race Condition error in DB
+        // If 2 requests coming in one time, just ignore this
       }
-
       throw new PostOperationException('like post', error.message);
     }
+  }
+
+  async toggleArchive(postId: number, userId: number): Promise<void> {
+    const post = await this.findOne(postId, userId);
+
+    if (!post) {
+      throw new PostNotFoundException();
+    }
+
+    if (post.createdById !== userId) {
+      throw PostAccessDeniedException.forSinglePost();
+    }
+
+    post.isArchived = !post.isArchived;
+
+    await this.postRepository.save(post);
   }
 }

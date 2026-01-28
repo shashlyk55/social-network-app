@@ -11,27 +11,20 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import {
-  FollowDirection,
-  FollowService,
-  FollowStatusFilter,
-} from './follow.service';
+import { FollowDirection, FollowService } from './follow.service';
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 import {
   ApiBearerAuth,
   ApiForbiddenResponse,
   ApiOperation,
   ApiParam,
-  ApiQuery,
   ApiResponse,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { FollowMapper } from './utils/follow.mapper';
 import { AccessGuard } from 'src/auth/guards/access.guard';
 import { ProfilePreviewDto } from 'src/profiles/dto/profile-preview.dto';
 import { plainToInstance } from 'class-transformer';
-import { PaginationDto } from 'src/common/dto/pagination.dto';
 
 @ApiTags('follow')
 @ApiBearerAuth('access-token')
@@ -112,8 +105,13 @@ export class FollowController {
       limit,
     );
 
-    return plainToInstance(PaginationDto<ProfilePreviewDto>, result, {
+    const transformedData = plainToInstance(ProfilePreviewDto, result.data, {
       excludeExtraneousValues: true,
     });
+
+    return {
+      data: transformedData,
+      meta: result.meta,
+    };
   }
 }

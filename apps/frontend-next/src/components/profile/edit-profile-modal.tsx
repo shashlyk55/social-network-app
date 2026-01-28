@@ -25,7 +25,11 @@ import { UserAvatar } from "../ui/user-avatar";
 import { useUploadAsset } from "@/hooks/asset/use-upload-asset";
 
 export function EditProfileModal({ profile }: { profile: MyProfile }) {
-  const { isEditProfileOpen, onClose } = useModalStore();
+  // const { isEditProfileOpen, onClose } = useModalStore();
+
+  const { isOpen, type, onClose } = useModalStore();
+  const isModalOpen = isOpen && type === "editProfile";
+
   const { mutate: update, isPending } = useUpdateProfile();
   const assetInputRef = useRef<HTMLInputElement>(null);
 
@@ -56,11 +60,18 @@ export function EditProfileModal({ profile }: { profile: MyProfile }) {
     const file = e.target.files?.[0];
     if (file) {
       toast.loading("Загрузка файла...", { id: "upload-file" });
-      upload(file, {
-        onSuccess: (data) => {
-          setValue("avatarUrl", data.url, { shouldDirty: true });
-        },
-      });
+      upload(
+        { file },
+        {
+          onSuccess: (data) => {
+            setValue("avatarUrl", data.downloadUrl, { shouldDirty: true });
+            toast.success("Файл загружен!", { id: "upload-file" });
+          },
+          onError: () => {
+            toast.error("Ошибка при загрузке", { id: "upload-file" });
+          },
+        }
+      );
     }
   };
 
@@ -74,7 +85,7 @@ export function EditProfileModal({ profile }: { profile: MyProfile }) {
   const bioCounterValue = watch("bio") || "";
   const isPublicValue = watch("isPublic");
 
-  if (!isEditProfileOpen) return null;
+  if (!isModalOpen) return null;
 
   const onSubmit = (data: EditProfileFormValues) => {
     const payload: UpdateProfileInput = {

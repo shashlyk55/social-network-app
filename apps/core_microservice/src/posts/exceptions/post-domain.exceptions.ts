@@ -26,18 +26,33 @@ export class PostOperationException extends DomainException {
   }
 }
 
+export class NoAccessToThesePosts extends DomainException {
+  code = 'NOT_ACCESS_TO_THESE_POSTS';
+
+  constructor() {
+    super('No access to these posts');
+  }
+}
+
 export class PostAccessDeniedException extends DomainException {
   code = 'POST_ACCESS_DENIED';
 
-  constructor(profileId?: number, postId?: number) {
-    let message = 'User does not have access to post';
-    if (profileId && postId) {
-      message = `Profile ${profileId} does not have access to post ${postId}`;
-    } else if (profileId) {
-      message = `Profile ${profileId} does not have access to post`;
-    } else if (profileId) {
-      message = `Profile does not have access to post ${postId}`;
-    }
+  private constructor(message: string) {
     super(message);
+  }
+
+  static forSinglePost(profileId?: number, postId?: number) {
+    if (profileId && postId) {
+      return new PostAccessDeniedException(
+        `Profile ${profileId} does not have access to post ${postId}`,
+      );
+    }
+    return new PostAccessDeniedException('User does not have access to post');
+  }
+
+  static forManyPosts() {
+    return new PostAccessDeniedException(
+      'User does not have access to these posts',
+    );
   }
 }

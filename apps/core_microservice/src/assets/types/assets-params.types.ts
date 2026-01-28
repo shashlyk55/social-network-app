@@ -2,7 +2,7 @@ import { FileType } from 'src/entities/asset.entity';
 
 export type UploadAssetParams = {
   orderIndex: number;
-  fileType: FileType;
+  fileType?: FileType;
 };
 
 export type AssetResult = {

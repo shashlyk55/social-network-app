@@ -1,13 +1,17 @@
 import { create } from "zustand";
 
+export type ModalType = "editProfile" | "createPost";
+
 interface ModalStore {
-  isEditProfileOpen: boolean;
-  onOpen: () => void;
+  type: ModalType | null;
+  isOpen: boolean;
+  onOpen: (type: ModalType) => void;
   onClose: () => void;
 }
 
 export const useModalStore = create<ModalStore>((set) => ({
-  isEditProfileOpen: false,
-  onOpen: () => set({ isEditProfileOpen: true }),
-  onClose: () => set({ isEditProfileOpen: false }),
+  type: null,
+  isOpen: false,
+  onOpen: (type) => set({ isOpen: true, type }),
+  onClose: () => set({ isOpen: false, type: null }),
 }));

@@ -6,11 +6,13 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { Post } from '../post.entity';
 import { Profile } from '../profile.entity';
 
 @Entity('posts_likes', { schema: 'main' })
+@Index(['postId', 'profileId'], { unique: true })
 export class PostLike {
   @PrimaryGeneratedColumn('increment')
   id: number;
@@ -35,17 +37,9 @@ export class PostLike {
   @Column({ name: 'created_by' })
   createdById: number;
 
-  // @ManyToOne(() => User)
-  // @JoinColumn({ name: 'created_by' })
-  // createdBy: User;
-
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
   @Column({ type: 'int', name: 'updated_by', nullable: true })
   updatedById: number | null;
-
-  // @ManyToOne(() => User, { nullable: true })
-  // @JoinColumn({ name: 'updated_by' })
-  // updatedBy: User;
 }

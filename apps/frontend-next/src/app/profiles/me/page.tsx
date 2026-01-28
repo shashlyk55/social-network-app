@@ -1,20 +1,33 @@
 "use client";
 
+import { PostItem } from "@/components/post/post-item";
 import { EditProfileModal } from "@/components/profile/edit-profile-modal";
 import { UserAvatar } from "@/components/ui/user-avatar";
+import { useProfilePosts } from "@/hooks/post/use-profile-posts";
 import { useMe } from "@/hooks/profile/use-me";
 import { useModalStore } from "@/store/use-modal-store";
-import { Settings, Edit2, Rocket } from "lucide-react";
+import { Settings, Edit2, Rocket, Loader2, Plus } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function MyProfilePage() {
-  const { data: profile, isLoading } = useMe();
+  const { data: profile, isLoading: isProfileLoading } = useMe();
   const { onOpen } = useModalStore();
   const [activeTab, setActiveTab] = useState("posts");
 
-  if (isLoading)
-    return <div className="p-8 text-center text-slate-400">Загрузка...</div>;
+  const { data: postsData, isLoading: isPostsLoading } = useProfilePosts({
+    authorProfileId: profile?.id as number,
+    isArchived: activeTab === "archive",
+  });
+
+  if (isProfileLoading)
+    return (
+      <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+      </div>
+    );
+
   if (!profile)
     return (
       <div className="p-8 text-center text-slate-400">Вы не авторизованы</div>
@@ -33,16 +46,23 @@ export default function MyProfilePage() {
             />
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            {/* Кнопка редактирования профиля */}
             <button
-              onClick={onOpen}
+              onClick={() => onOpen("editProfile")}
               className="flex items-center gap-2 px-5 py-2 bg-[#1a1a1a] hover:bg-[#252525] border border-[#333] rounded-xl text-sm font-semibold transition-all"
             >
               <Edit2 className="w-4 h-4" />
               Edit Profile
             </button>
-            <button className="p-2 bg-[#1a1a1a] hover:bg-[#252525] border border-[#333] rounded-xl transition-all">
-              <Settings className="w-5 h-5 text-slate-400" />
+
+            {/* Кнопка создания поста */}
+            <button
+              onClick={() => onOpen("createPost")}
+              className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-2xl font-bold transition-all active:scale-95 shadow-lg shadow-blue-900/20"
+            >
+              <Plus className="w-5 h-5" />
+              <span>Создать пост</span>
             </button>
           </div>
         </div>
@@ -63,7 +83,7 @@ export default function MyProfilePage() {
             </p>
           )}
 
-          {/* Статистика в стиле дизайна */}
+          {/* Статистика */}
           <div className="flex gap-8 pt-4">
             <Link
               href="/profiles/me/followers"
@@ -121,9 +141,54 @@ export default function MyProfilePage() {
             </button>
           </div>
         </div>
-      </div>
 
-      <EditProfileModal profile={profile} />
+        {/* Секция контента (Посты) */}
+        <div className="space-y-6">
+          {isPostsLoading ? (
+            <div className="flex justify-center py-10">
+              <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+            </div>
+          ) : (
+            <AnimatePresence mode="popLayout">
+              {" "}
+              {/* popLayout предотвращает "прыжки" списка */}
+              {postsData?.data?.length ? (
+                postsData.data.map((post) => (
+                  <motion.div
+                    key={post.id}
+                    layout // Автоматически сдвигает соседние элементы вверх
+                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{
+                      opacity: 0,
+                      scale: 0.9,
+                      transition: { duration: 0.2 },
+                    }}
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  >
+                    <PostItem
+                      post={post}
+                      isArchivePage={activeTab === "archive"}
+                    />
+                  </motion.div>
+                ))
+              ) : (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-center py-20 border border-dashed border-[#222] rounded-3xl"
+                >
+                  <p className="text-slate-500">
+                    {activeTab === "posts"
+                      ? "You haven't posted anything yet"
+                      : "Your archive is empty"}
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
