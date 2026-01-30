@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getErrorMessage } from "./error-handler";
 
 export const apiClient = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
@@ -8,11 +9,13 @@ export const apiClient = axios.create({
   },
 });
 
-// Добавляем токен в каждый запрос автоматически
-// apiClient.interceptors.request.use((config) => {
-//   const token = Cookies.get("accessToken");
-//   if (token && config.headers) {
-//     config.headers.Authorization = `Bearer ${token}`;
-//   }
-//   return config;
-// });
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Здесь мы подменяем стандартное поле message у объекта ошибки
+    // чтобы TanStack Query и другие инструменты видели уже чистую строку
+    error.displayMessage = getErrorMessage(error);
+
+    return Promise.reject(error);
+  }
+);

@@ -9,6 +9,7 @@ import {
   Clock,
   MessageCircle,
   MoreVertical,
+  Rocket,
 } from "lucide-react";
 import { useToggleFollow } from "@/hooks/follow/use-toggle-follow";
 import { cn } from "@/lib/utils/cn";
@@ -110,9 +111,12 @@ export default function OtherProfilePage() {
             <p className="text-xl text-slate-500">@{profile.username}</p>
           </div>
 
-          <p className="max-w-2xl text-slate-300 leading-relaxed text-lg">
-            {profile.bio}
-          </p>
+          {profile.bio && (
+            <p className="max-w-2xl text-slate-300 leading-relaxed text-lg">
+              {profile.bio}
+              <Rocket className="inline-block w-5 h-5 ml-2 text-pink-500" />
+            </p>
+          )}
 
           {/* Статистика */}
           <div className="flex gap-8 pt-4">

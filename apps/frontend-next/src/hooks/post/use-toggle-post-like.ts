@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { PostService } from "@/services/post.service";
-import { PostView } from "@/types/post";
+import { PostLike, PostView } from "@/types/post";
 import { PaginatedData } from "@/types/pagination";
 
 export const useTogglePostLike = (postId: number) => {
@@ -11,41 +11,73 @@ export const useTogglePostLike = (postId: number) => {
 
     onMutate: async () => {
       await queryClient.cancelQueries({ queryKey: ["profile-posts"] });
+      await queryClient.cancelQueries({ queryKey: ["post", postId] });
+
       const previousPosts = queryClient.getQueryData(["profile-posts"]);
+      const previousSinglePost = queryClient.getQueryData(["post", postId]);
+
+      const updatePost = (post: PostView) => ({
+        ...post,
+        isLiked: !post.isLiked,
+        likesCount: post.isLiked ? post.likesCount - 1 : post.likesCount + 1,
+      });
 
       queryClient.setQueriesData(
         { queryKey: ["profile-posts"] },
-        (old: PaginatedData<PostView>) => {
+        (old: PaginatedData<PostView> | undefined) => {
           if (!old) return old;
           return {
             ...old,
-            data: old.data.map((post: PostView) => {
-              if (post.id === postId) {
-                return {
-                  ...post,
-                  isLiked: !post.isLiked,
-                  likesCount: post.isLiked
-                    ? post.likesCount - 1
-                    : post.likesCount + 1,
-                };
-              }
-              return post;
-            }),
+            data: old.data.map((p) => (p.id === postId ? updatePost(p) : p)),
           };
         }
       );
 
-      return { previousPosts };
+      queryClient.setQueryData(["post", postId], (old: PostView | undefined) =>
+        old ? updatePost(old) : old
+      );
+
+      return { previousPosts, previousSinglePost };
+    },
+
+    onSuccess: (serverData: PostLike) => {
+      queryClient.setQueryData(
+        ["post", postId],
+        (old: PostView | undefined) => {
+          if (!old) return old;
+          return {
+            ...old,
+            isLiked: serverData.isLiked,
+            likesCount: serverData.likesCount,
+          };
+        }
+      );
+
+      queryClient.setQueriesData(
+        { queryKey: ["profile-posts"] },
+        (old: PaginatedData<PostView> | undefined) => {
+          if (!old) return old;
+          return {
+            ...old,
+            data: old.data.map((p) =>
+              p.id === postId
+                ? {
+                    ...p,
+                    isLiked: serverData.isLiked,
+                    likesCount: serverData.likesCount,
+                  }
+                : p
+            ),
+          };
+        }
+      );
     },
 
     onError: (err, variables, context) => {
-      if (context?.previousPosts) {
+      if (context?.previousPosts)
         queryClient.setQueryData(["profile-posts"], context.previousPosts);
-      }
-    },
-
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["profile-posts"] });
+      if (context?.previousSinglePost)
+        queryClient.setQueryData(["post", postId], context.previousSinglePost);
     },
   });
 };

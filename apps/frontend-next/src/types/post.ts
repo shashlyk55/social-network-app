@@ -31,3 +31,8 @@ export interface CreatePost {
   isArchived?: boolean;
   assetIds?: number[];
 }
+
+export interface UpdatePost {
+  content?: string;
+  assetIds?: number[];
+}

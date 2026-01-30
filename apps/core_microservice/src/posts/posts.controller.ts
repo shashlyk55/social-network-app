@@ -34,6 +34,7 @@ import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 import { plainToInstance } from 'class-transformer';
 import { PostViewDto } from './dto/post-view.dto';
 import { PostLikeDto } from './dto/post-like.dto';
+import { PostDetailViewDto } from './dto/post-detail-view';
 
 @ApiTags('posts')
 @ApiBearerAuth('access-token')
@@ -112,6 +113,7 @@ export class PostsController {
   ) {
     const params = { page, limit, isArchived, search, userId, authorProfileId };
     const result = await this.postService.findAll(params);
+    console.log(result);
 
     const transformedData = plainToInstance(PostViewDto, result.data, {
       excludeExtraneousValues: true,
@@ -132,12 +134,19 @@ export class PostsController {
     type: PostResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Post not found' })
-  async findOne(@Param('id') id: number): Promise<PostResponseDto> {
-    const post = await this.postService.findOne(id);
-    return PostMappers.toPostResponse(post);
+  async findOne(
+    @Param('id') id: number,
+    @CurrentUser('userId') userId: number,
+  ) {
+    const result = await this.postService.findOne(id, userId);
+    console.log(result);
+
+    return plainToInstance(PostDetailViewDto, result, {
+      excludeExtraneousValues: true,
+    });
   }
 
-  @Put(':id')
+  @Patch(':id')
   @ApiOperation({ summary: 'Update post' })
   @ApiParam({ name: 'id', type: Number, description: 'Post ID' })
   @ApiResponse({

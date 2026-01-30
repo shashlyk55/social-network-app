@@ -1,12 +1,23 @@
 import { apiClient } from "@/lib/api-client";
 import { PaginatedData } from "@/types/pagination";
-import { CreatePost, FindPostsParams, PostLike, PostView } from "@/types/post";
+import {
+  CreatePost,
+  FindPostsParams,
+  PostLike,
+  PostView,
+  UpdatePost,
+} from "@/types/post";
 
 export const PostService = {
   async findAll(params: FindPostsParams): Promise<PaginatedData<PostView>> {
     const { data } = await apiClient.get<PaginatedData<PostView>>("/posts", {
       params,
     });
+    return data;
+  },
+
+  async findOne(postId: number): Promise<PostView> {
+    const { data } = await apiClient.get<PostView>(`/posts/${postId}`);
     return data;
   },
 
@@ -26,5 +37,13 @@ export const PostService = {
 
   async delete(postId: number): Promise<void> {
     await apiClient.delete(`/posts/${postId}`);
+  },
+
+  async update(postId: number, updateData: UpdatePost): Promise<PostView> {
+    const { data } = await apiClient.patch<PostView>(
+      `/posts/${postId}`,
+      updateData
+    );
+    return data;
   },
 };

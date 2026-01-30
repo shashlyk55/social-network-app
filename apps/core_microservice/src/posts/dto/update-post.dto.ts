@@ -31,7 +31,6 @@ export class UpdatePostDto {
     description: 'Array of asset IDs to attach to the post',
   })
   @ArrayMaxSize(10)
-  @ArrayMinSize(1)
   @IsArray()
   @IsOptional()
   assetIds?: number[];

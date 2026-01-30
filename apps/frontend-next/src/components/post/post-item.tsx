@@ -6,6 +6,9 @@ import {
   Share2,
   Trash2,
   Archive,
+  Edit2,
+  Link,
+  Send,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils/cn";
@@ -17,27 +20,42 @@ import { useState } from "react";
 import { useTogglePostLike } from "@/hooks/post/use-toggle-post-like";
 import { motion } from "framer-motion";
 import { useDeletePost } from "@/hooks/post/use-delete-post";
+import { useModalStore } from "@/store/use-modal-store";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { ActionMenu } from "../ui/action-menu";
 
 interface PostItemProps {
   post: PostView;
   isArchivePage?: boolean;
+  isDetailPage?: boolean;
 }
 
-export function PostItem({ post, isArchivePage = false }: PostItemProps) {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+export function PostItem({
+  post,
+  isArchivePage = false,
+  isDetailPage = false,
+}: PostItemProps) {
+  const router = useRouter();
+
   const [isExpanded, setIsExpanded] = useState(false);
 
   const { data: me } = useMe();
+  const { onOpen } = useModalStore();
   const { mutate: toggleArchive, isPending: isArchiving } = useToggleArchive();
   const { mutate: toggleLike } = useTogglePostLike(post.id);
   const { mutate: deletePost, isPending: isDeleting } = useDeletePost();
 
   const isOwner = me?.id === post.profile.id;
 
+  const handleNavigate = () => {
+    if (isDetailPage) return;
+    router.push(`/posts/${post.id}`);
+  };
+
   const handleDelete = () => {
     if (window.confirm("Are you sure you want to delete this post?")) {
       deletePost(post.id);
-      setIsMenuOpen(false);
     }
   };
 
@@ -53,8 +71,54 @@ export function PostItem({ post, isArchivePage = false }: PostItemProps) {
     (a, b) => a.orderIndex - b.orderIndex
   );
 
+  const shareMenuItems = [
+    {
+      label: "Copy Link",
+      icon: Link,
+      onClick: async () => {
+        const url = `${window.location.origin}/posts/${post.id}`;
+        await navigator.clipboard.writeText(url);
+        toast.success("Link copied!");
+      },
+    },
+    {
+      label: "Send to...",
+      icon: Send,
+      disabled: true,
+    },
+  ];
+
+  const actionsMenuItems = [
+    {
+      label: "Edit",
+      icon: Edit2,
+      onClick: () => onOpen("editPost", { post }),
+    },
+    {
+      label: isArchivePage ? "Unarchive" : "Archive",
+      icon: Archive,
+      onClick: () => toggleArchive(post.id),
+      disabled: isArchiving,
+    },
+    {
+      label: isDeleting ? "Deleting..." : "Delete",
+      icon: Trash2,
+      variant: "danger" as const,
+      onClick: handleDelete,
+      disabled: isDeleting,
+    },
+  ];
+
+  console.log(post);
+
   return (
-    <div className="bg-[#111] border border-[#222] rounded-3xl overflow-hidden transition-all hover:border-[#333]">
+    <div
+      onClick={handleNavigate}
+      className={cn(
+        "bg-[#111] border border-[#222] rounded-3xl overflow-hidden transition-all",
+        !isDetailPage && "cursor-pointer hover:border-[#333]"
+      )}
+    >
       <div className="p-5 md:p-6">
         {/* Header: Автор и меню */}
         <div className="flex justify-between items-start mb-4">
@@ -78,51 +142,15 @@ export function PostItem({ post, isArchivePage = false }: PostItemProps) {
             </div>
           </div>
 
-          {/* Меню управления */}
           {isOwner && (
-            <div className="relative">
-              <button
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="p-2 hover:bg-[#1a1a1a] rounded-full text-slate-500 transition-colors"
-              >
-                <MoreVertical className="w-5 h-5 text-slate-500" />
-              </button>
-
-              {isMenuOpen && (
-                <>
-                  {/* Оверлей для закрытия меню по клику вне */}
-                  <div
-                    className="fixed inset-0 z-10"
-                    onClick={() => setIsMenuOpen(false)}
-                  />
-
-                  <div className="absolute right-0 mt-2 w-48 bg-[#1a1a1a] border border-[#333] rounded-2xl shadow-2xl z-20 py-2 overflow-hidden">
-                    {/* Кнопка архивации */}
-                    <button
-                      disabled={isArchiving}
-                      onClick={() => {
-                        toggleArchive(post.id);
-                        setIsMenuOpen(false);
-                      }}
-                      className="w-full px-4 py-3 text-left text-sm font-medium hover:bg-[#252525] transition-colors flex items-center gap-3 text-slate-300"
-                    >
-                      <Archive className="w-4 h-4" />
-                      {isArchivePage ? "Unarchive Post" : "Archive Post"}
-                    </button>
-
-                    {/* Кнопка удаления */}
-                    <button
-                      onClick={handleDelete}
-                      disabled={isDeleting}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-500 hover:bg-red-500/10 transition-colors disabled:opacity-50"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      {isDeleting ? "Deleting..." : "Delete"}
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
+            <ActionMenu
+              trigger={
+                <button className="p-2 hover:bg-[#1a1a1a] rounded-full text-slate-500 transition-colors outline-none">
+                  <MoreVertical className="w-5 h-5" />
+                </button>
+              }
+              items={actionsMenuItems}
+            />
           )}
         </div>
 
@@ -147,7 +175,10 @@ export function PostItem({ post, isArchivePage = false }: PostItemProps) {
 
               {shouldShowExpand && (
                 <button
-                  onClick={() => setIsExpanded(!isExpanded)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsExpanded(!isExpanded);
+                  }}
                   className="mt-2 text-sm font-bold text-blue-500 hover:text-blue-400 transition-colors"
                 >
                   {isExpanded ? "Show less" : "Show more..."}
@@ -185,7 +216,10 @@ export function PostItem({ post, isArchivePage = false }: PostItemProps) {
         {/* Footer: Взаимодействия */}
         <div className="flex items-center gap-6 mt-6 pt-4 border-t border-[#1a1a1a]">
           <button
-            onClick={() => toggleLike()}
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleLike();
+            }}
             className={cn(
               "flex items-center gap-2 group transition-colors outline-none",
               post.isLiked
@@ -194,6 +228,7 @@ export function PostItem({ post, isArchivePage = false }: PostItemProps) {
             )}
           >
             <motion.div
+              key={post.isLiked ? "liked" : "unliked"}
               whileTap={{ scale: 1.5 }}
               transition={{ type: "spring", stiffness: 400, damping: 10 }}
             >
@@ -210,14 +245,29 @@ export function PostItem({ post, isArchivePage = false }: PostItemProps) {
             </span>
           </button>
 
-          <button className="flex items-center gap-2 text-slate-500 hover:text-blue-500 transition-colors group">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
+            className="flex items-center gap-2 text-slate-500 hover:text-blue-500 transition-colors group"
+          >
             <MessageCircle className="w-5 h-5" />
             <span className="text-sm font-medium">{post.commentsCount}</span>
           </button>
 
-          <button className="flex items-center gap-2 text-slate-500 hover:text-green-500 transition-colors ml-auto">
-            <Share2 className="w-5 h-5" />
-          </button>
+          {!isArchivePage && (
+            <ActionMenu
+              trigger={
+                <button
+                  //onClick={(e) => e.stopPropagation()}
+                  className="flex items-center gap-2 text-slate-500 hover:text-green-500 transition-colors mr-auto"
+                >
+                  <Share2 className="w-5 h-5" />
+                </button>
+              }
+              items={shareMenuItems}
+            />
+          )}
         </div>
       </div>
     </div>

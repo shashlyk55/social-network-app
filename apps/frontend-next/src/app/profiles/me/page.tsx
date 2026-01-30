@@ -1,12 +1,11 @@
 "use client";
 
 import { PostItem } from "@/components/post/post-item";
-import { EditProfileModal } from "@/components/profile/edit-profile-modal";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { useProfilePosts } from "@/hooks/post/use-profile-posts";
 import { useMe } from "@/hooks/profile/use-me";
 import { useModalStore } from "@/store/use-modal-store";
-import { Settings, Edit2, Rocket, Loader2, Plus } from "lucide-react";
+import { Edit2, Rocket, Loader2, Plus } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -62,7 +61,7 @@ export default function MyProfilePage() {
               className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-2xl font-bold transition-all active:scale-95 shadow-lg shadow-blue-900/20"
             >
               <Plus className="w-5 h-5" />
-              <span>Создать пост</span>
+              <span>Create post</span>
             </button>
           </div>
         </div>
@@ -76,7 +75,7 @@ export default function MyProfilePage() {
             <p className="text-xl text-slate-500">@{profile.username}</p>
           </div>
 
-          {profile.bio === undefined && (
+          {profile.bio && (
             <p className="max-w-2xl text-slate-300 leading-relaxed text-lg">
               {profile.bio}
               <Rocket className="inline-block w-5 h-5 ml-2 text-pink-500" />

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PostLike } from 'src/entities/many-to-many/post-like.entity';
-import { Post, Post as PostEntity } from 'src/entities/post.entity';
+import { Post } from 'src/entities/post.entity';
 import { DataSource, In, Repository } from 'typeorm';
 import {
   CreatePostParams,
@@ -25,8 +25,8 @@ import { PaginatedData } from 'src/common/types/paginated-data';
 @Injectable()
 export class PostsService {
   constructor(
-    @InjectRepository(PostEntity)
-    private readonly postRepository: Repository<PostEntity>,
+    @InjectRepository(Post)
+    private readonly postRepository: Repository<Post>,
     @InjectRepository(PostLike)
     private readonly postLikeRepository: Repository<PostLike>,
     @InjectRepository(PostAsset)
@@ -35,10 +35,7 @@ export class PostsService {
     private readonly profilesService: ProfilesService,
   ) {}
 
-  async create(
-    params: CreatePostParams,
-    createdById: number,
-  ): Promise<PostEntity> {
+  async create(params: CreatePostParams, createdById: number): Promise<Post> {
     const profile = await this.profilesService.findByUserId(createdById);
 
     const queryRunner = this.dataSource.createQueryRunner();
@@ -159,7 +156,7 @@ export class PostsService {
     };
   }
 
-  async findOne(postId: number, userId?: number): Promise<PostEntity> {
+  async findOne(postId: number, userId?: number): Promise<Post> {
     const queryBuilder = this.postRepository
       .createQueryBuilder('post')
       .leftJoinAndSelect('post.profile', 'profile')
@@ -237,7 +234,7 @@ export class PostsService {
     };
   }
 
-  async update(params: UpdatePostParams, userId: number): Promise<PostEntity> {
+  async update(params: UpdatePostParams, userId: number): Promise<Post> {
     const { id, assetIds, ...updateData } = params;
 
     const post = await this.findOne(id);
@@ -250,7 +247,7 @@ export class PostsService {
     await queryRunner.startTransaction();
 
     try {
-      const updatePayload: Partial<PostEntity> = {};
+      const updatePayload: Partial<Post> = {};
 
       updatePayload.updatedById = userId;
       if (updateData.content !== undefined)
