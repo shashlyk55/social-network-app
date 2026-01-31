@@ -113,7 +113,6 @@ export class PostsController {
   ) {
     const params = { page, limit, isArchived, search, userId, authorProfileId };
     const result = await this.postService.findAll(params);
-    console.log(result);
 
     const transformedData = plainToInstance(PostViewDto, result.data, {
       excludeExtraneousValues: true,
@@ -139,7 +138,6 @@ export class PostsController {
     @CurrentUser('userId') userId: number,
   ) {
     const result = await this.postService.findOne(id, userId);
-    console.log(result);
 
     return plainToInstance(PostDetailViewDto, result, {
       excludeExtraneousValues: true,
@@ -162,8 +160,10 @@ export class PostsController {
     @Body() updatePostDto: UpdatePostDto,
   ) {
     const params = PostMappers.toUpdateParams(id, updatePostDto);
-    const post = await this.postService.update(params, userId);
-    return PostMappers.toPostResponse(post);
+    const result = await this.postService.update(params, userId);
+    return plainToInstance(PostDetailViewDto, result, {
+      excludeExtraneousValues: true,
+    });
   }
 
   @Patch(':id/archive')

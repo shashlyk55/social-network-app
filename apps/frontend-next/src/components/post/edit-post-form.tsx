@@ -1,4 +1,3 @@
-// components/post/edit-post-form.tsx
 "use client";
 
 import { useForm } from "react-hook-form";
@@ -32,7 +31,7 @@ interface Preview {
 
 export function EditPostForm({ post, onSuccess }: EditPostFormProps) {
   const { data: me } = useMe();
-  const { mutate: updatePost, isPending } = useUpdatePost(post.id);
+  const { mutate: updatePost, isPending } = useUpdatePost();
   const { mutateAsync: uploadAsset } = useUploadAsset();
 
   // Инициализируем аттачменты уже существующими картинками из поста
@@ -102,9 +101,12 @@ export function EditPostForm({ post, onSuccess }: EditPostFormProps) {
   };
 
   const onSubmit = (data: CreatePostInput) => {
-    updatePost(data, {
-      onSuccess: () => onSuccess?.(),
-    });
+    updatePost(
+      { data: data, postId: post.id },
+      {
+        onSuccess: () => onSuccess?.(),
+      }
+    );
   };
 
   const initialAssetIds = post.postAssets
@@ -116,7 +118,10 @@ export function EditPostForm({ post, onSuccess }: EditPostFormProps) {
 
   const hasChanges = isDirty || isAssetsChanged;
 
+  const hasText = contentValue.trim().length > 0;
   const isUploadingAny = attachments.some((a) => a.isUploading);
+  const canSubmit =
+    hasText && !isUploadingAny && !isPending && hasChanges && isValid;
 
   return (
     <div className="bg-[#111] rounded-3xl p-2 border border-[#222]">
@@ -214,7 +219,7 @@ export function EditPostForm({ post, onSuccess }: EditPostFormProps) {
             </span>
             <button
               type="submit"
-              disabled={!isValid || isPending}
+              disabled={!canSubmit}
               className="bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white px-6 py-2.5 rounded-2xl font-bold transition-all flex items-center gap-2 shadow-lg shadow-blue-600/20"
             >
               {isPending ? (

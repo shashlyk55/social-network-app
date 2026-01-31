@@ -8,7 +8,6 @@ export const useToggleArchive = () => {
     mutationFn: (postId: number) => PostService.toggleArchive(postId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["profile-posts"] });
-      queryClient.invalidateQueries({ queryKey: ["me"] });
     },
   });
 };

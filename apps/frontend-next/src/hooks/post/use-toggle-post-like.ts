@@ -3,13 +3,13 @@ import { PostService } from "@/services/post.service";
 import { PostLike, PostView } from "@/types/post";
 import { PaginatedData } from "@/types/pagination";
 
-export const useTogglePostLike = (postId: number) => {
+export const useTogglePostLike = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => PostService.togglePostLike(postId),
+    mutationFn: (postId: number) => PostService.togglePostLike(postId),
 
-    onMutate: async () => {
+    onMutate: async (postId) => {
       await queryClient.cancelQueries({ queryKey: ["profile-posts"] });
       await queryClient.cancelQueries({ queryKey: ["post", postId] });
 
@@ -40,7 +40,7 @@ export const useTogglePostLike = (postId: number) => {
       return { previousPosts, previousSinglePost };
     },
 
-    onSuccess: (serverData: PostLike) => {
+    onSuccess: (serverData: PostLike, postId) => {
       queryClient.setQueryData(
         ["post", postId],
         (old: PostView | undefined) => {
@@ -73,7 +73,7 @@ export const useTogglePostLike = (postId: number) => {
       );
     },
 
-    onError: (err, variables, context) => {
+    onError: (err, postId, context) => {
       if (context?.previousPosts)
         queryClient.setQueryData(["profile-posts"], context.previousPosts);
       if (context?.previousSinglePost)

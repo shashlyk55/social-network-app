@@ -3,11 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { Comment } from '../entities/comment.entity';
 import { CommentLike } from 'src/entities/many-to-many/comment-like.entity';
-import { ICommentsService } from './interfaces/ICommentsService';
 import {
   CreateCommentParams,
   FindCommentsParams,
-  CommentPaginationResult,
   UpdateCommentParams,
 } from './types/comment-service.types';
 import {
@@ -22,9 +20,10 @@ import { PostsService } from 'src/posts/posts.service';
 import { ProfilesService } from 'src/profiles/profiles.service';
 import { NotificationsProducerService } from 'src/notifications/producer/notifications-producer.service';
 import { NotificationType } from 'src/common/types/notification-type';
+import { PaginatedData } from 'src/common/types/paginated-data';
 
 @Injectable()
-export class CommentsService implements ICommentsService {
+export class CommentsService {
   constructor(
     @InjectRepository(Comment)
     private readonly commentRepository: Repository<Comment>,
@@ -87,7 +86,7 @@ export class CommentsService implements ICommentsService {
   async findAll(
     params: FindCommentsParams,
     userId?: number,
-  ): Promise<CommentPaginationResult> {
+  ): Promise<PaginatedData<Comment>> {
     const {
       page = 1,
       limit = 10,
@@ -107,7 +106,7 @@ export class CommentsService implements ICommentsService {
         queryBuilder.addSelect((subQuery) => {
           return subQuery
             .select('COUNT(l.id) > 0', 'isLiked')
-            .from('main.comment_likes', 'l')
+            .from('main.comments_likes', 'l')
             .where('l.comment_id = comment.id')
             .andWhere('l.created_by = :currentUserId', {
               currentUserId: userId,
@@ -119,14 +118,12 @@ export class CommentsService implements ICommentsService {
         queryBuilder.andWhere('comment.postId = :postId', { postId });
       }
 
-      if (parentCommentId !== undefined) {
-        if (parentCommentId === null) {
-          queryBuilder.andWhere('comment.parentCommentId IS NULL');
-        } else {
-          queryBuilder.andWhere('comment.parentCommentId = :parentCommentId', {
-            parentCommentId,
-          });
-        }
+      if (parentCommentId === undefined) {
+        queryBuilder.andWhere('comment.parentCommentId IS NULL');
+      } else {
+        queryBuilder.andWhere('comment.parentCommentId = :parentCommentId', {
+          parentCommentId,
+        });
       }
 
       const [data, total] = await queryBuilder
@@ -137,10 +134,7 @@ export class CommentsService implements ICommentsService {
 
       return {
         data,
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
+        meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
       };
     } catch (error) {
       throw new CommentOperationException('find comments', error.message);
@@ -203,8 +197,12 @@ export class CommentsService implements ICommentsService {
     }
   }
 
-  async likeComment(userId: number, commentId: number): Promise<CommentLike> {
+  async toggleLikeComment(
+    userId: number,
+    commentId: number,
+  ): Promise<{ commentId: number; isLiked: boolean; likesCount: number }> {
     const profile = await this.profilesService.findByUserId(userId);
+
     await this.findOne(commentId);
 
     const existingLike = await this.commentLikeRepository.findOne({
@@ -213,21 +211,40 @@ export class CommentsService implements ICommentsService {
 
     try {
       if (existingLike) {
-        const removedLike =
-          await this.commentLikeRepository.remove(existingLike);
-        return removedLike;
+        await this.commentLikeRepository.remove(existingLike);
+      } else {
+        const like = this.commentLikeRepository.create({
+          commentId,
+          profileId: profile.id,
+          createdById: userId,
+        });
+
+        await this.commentLikeRepository.save(like);
       }
 
-      const like = this.commentLikeRepository.create({
-        commentId,
-        profileId: profile.id,
-        createdById: userId,
+      const likesCount = await this.commentLikeRepository.count({
+        where: { commentId },
       });
 
-      const savedLike = await this.commentLikeRepository.save(like);
-
-      return savedLike;
+      return {
+        commentId,
+        isLiked: !existingLike,
+        likesCount,
+      };
     } catch (error) {
+      // process Race Condition error in DB
+      // If 2 requests coming in one time, just ignore this
+      if (error.code === '23505') {
+        const likesCount = await this.commentLikeRepository.count({
+          where: { commentId },
+        });
+        return {
+          commentId,
+          isLiked: true,
+          likesCount,
+        };
+      }
+
       throw new CommentOperationException('like comment', error.message);
     }
   }

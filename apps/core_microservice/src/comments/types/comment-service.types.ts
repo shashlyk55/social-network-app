@@ -8,14 +8,13 @@ export type CreateCommentParams = {
 
 export type UpdateCommentParams = {
   content?: string;
-  updatedById?: number;
 };
 
 export type FindCommentsParams = {
   page?: number;
   limit?: number;
   postId?: number;
-  parentCommentId?: number | null;
+  parentCommentId?: number;
   order?: 'ASC' | 'DESC';
 };
 

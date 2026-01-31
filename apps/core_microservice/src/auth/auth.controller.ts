@@ -75,8 +75,6 @@ export class AuthController {
       maxAge: 7 * 24 * 60 * 60 * 1000,
       path: '/auth/refresh',
     });
-
-    //return result;
   }
 
   @Post('login/local')
@@ -111,8 +109,6 @@ export class AuthController {
       maxAge: 7 * 24 * 60 * 60 * 1000,
       path: '/auth/refresh',
     });
-
-    //return result;
   }
 
   @Post('refresh')
@@ -143,8 +139,6 @@ export class AuthController {
       maxAge: 7 * 24 * 60 * 60 * 1000,
       path: '/auth/refresh',
     });
-
-    //return OrchestratorAuthMapper.toResponseDto(result);
   }
 
   @Get('login/:provider')
@@ -195,8 +189,7 @@ export class AuthController {
         path: '/auth/refresh',
       });
 
-      // const frontendUrl = `${process.env.FRONTEND_URL}/profile?token=${result.accessToken}`;
-      const frontendUrl = `${process.env.FRONTEND_URL}/profile`;
+      const frontendUrl = `${process.env.FRONTEND_URL}/profiles/me`;
 
       return res.redirect(frontendUrl);
     } catch (error) {

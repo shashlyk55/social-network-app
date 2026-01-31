@@ -274,7 +274,7 @@ export class PostsService {
 
       await queryRunner.commitTransaction();
 
-      return await this.findOne(id);
+      return await this.findOne(id, userId);
     } catch (error) {
       await queryRunner.rollbackTransaction();
 
@@ -345,10 +345,19 @@ export class PostsService {
         likesCount,
       };
     } catch (error) {
+      // process Race Condition error in DB
+      // If 2 requests coming in one time, just ignore this
       if (error.code === '23505') {
-        // process Race Condition error in DB
-        // If 2 requests coming in one time, just ignore this
+        const likesCount = await this.postLikeRepository.count({
+          where: { postId },
+        });
+        return {
+          postId,
+          isLiked: true,
+          likesCount,
+        };
       }
+
       throw new PostOperationException('like post', error.message);
     }
   }

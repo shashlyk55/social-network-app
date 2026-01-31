@@ -27,7 +27,7 @@ export class UpdateProfileDto {
     nullable: true,
   })
   @IsOptional()
-  // Позволяем значению быть null для class-validator
+  // validate if value not null
   @ValidateIf((object, value) => value !== null)
   @IsDateString()
   birthday?: string | null;

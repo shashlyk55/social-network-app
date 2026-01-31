@@ -19,9 +19,6 @@ export class NotificationsProducerService {
   ) {}
 
   async emitNotification(data: NotificationMessage) {
-    console.log('NOTIFICATION');
-    console.log(data);
-
     return this.client.emit('notification_created', {
       ...data,
       createdById: data.senderId,

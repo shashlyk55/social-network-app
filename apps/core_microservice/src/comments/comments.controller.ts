@@ -24,12 +24,14 @@ import {
 } from '@nestjs/swagger';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { CommentsService } from './comments.service';
-import { CommentResponseDto } from './dto/comment-response.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
 import { CommentMappers } from './utils/params-mapper.util';
 import { AccessGuard } from 'src/auth/guards/access.guard';
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
+import { plainToInstance } from 'class-transformer';
+import { CommentViewDto } from './dto/comment-view.dto';
+import { CommentLikeDto } from './dto/comment-like.dto';
 
 @ApiTags('comments')
 @ApiBearerAuth('access-token')
@@ -45,7 +47,7 @@ export class CommentsController {
   @ApiResponse({
     status: 201,
     description: 'Comment created successfully',
-    type: CommentResponseDto,
+    type: CommentViewDto,
   })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
   @ApiResponse({ status: 404, description: 'Parent comment not found' })
@@ -53,10 +55,13 @@ export class CommentsController {
   async create(
     @CurrentUser('userId') userId: number,
     @Body() createCommentDto: CreateCommentDto,
-  ): Promise<CommentResponseDto> {
+  ) {
     const params = CommentMappers.toCreateParams(createCommentDto);
-    const comment = await this.commentService.create(userId, params);
-    return CommentMappers.toCommentResponse(comment);
+    const result = await this.commentService.create(userId, params);
+
+    return plainToInstance(CommentViewDto, result, {
+      excludeExtraneousValues: true,
+    });
   }
 
   @Get()
@@ -64,7 +69,7 @@ export class CommentsController {
   @ApiResponse({
     status: 200,
     description: 'Comments list retrieved successfully',
-    type: PaginationDto<CommentResponseDto>,
+    type: PaginationDto<CommentViewDto>,
   })
   @ApiQuery({
     name: 'page',
@@ -100,87 +105,21 @@ export class CommentsController {
     @CurrentUser('userId') userId?: number,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
+    @Query('order') order?: 'ASC' | 'DESC',
     @Query('postId') postId?: number,
     @Query('parentCommentId') parentCommentId?: number,
-    @Query('order') order?: 'ASC' | 'DESC',
-  ): Promise<PaginationDto<CommentResponseDto>> {
+  ) {
     const params = { page, limit, postId, parentCommentId, order };
     const result = await this.commentService.findAll(params, userId);
-    return CommentMappers.toPaginationResponse(result);
-  }
 
-  @Get('post/:postId')
-  @ApiOperation({ summary: 'Get post comments' })
-  @ApiParam({ name: 'postId', type: Number, description: 'Post ID' })
-  @ApiResponse({
-    status: 200,
-    description: 'Post comments retrieved successfully',
-    type: PaginationDto<CommentResponseDto>,
-  })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    type: Number,
-    description: 'Page number',
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    description: 'Items per page',
-  })
-  @ApiQuery({
-    name: 'order',
-    required: false,
-    type: String,
-    description: 'Sort order',
-  })
-  async findPostComments(
-    @Param('postId') postId: number,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-    @Query('order') order?: 'ASC' | 'DESC',
-  ): Promise<PaginationDto<CommentResponseDto>> {
-    const params = { postId, page, limit, order };
-    const result = await this.commentService.findAll(params);
-    return CommentMappers.toPaginationResponse(result);
-  }
+    const transformedData = plainToInstance(CommentViewDto, result.data, {
+      excludeExtraneousValues: true,
+    });
 
-  @Get(':id/replies')
-  @ApiOperation({ summary: 'Get comment replies' })
-  @ApiParam({ name: 'id', type: Number, description: 'Comment ID' })
-  @ApiResponse({
-    status: 200,
-    description: 'Comment replies retrieved successfully',
-    type: PaginationDto<CommentResponseDto>,
-  })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    type: Number,
-    description: 'Page number',
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    description: 'Items per page',
-  })
-  @ApiQuery({
-    name: 'order',
-    required: false,
-    type: String,
-    description: 'Sort order',
-  })
-  async findCommentReplies(
-    @Param('id') commentId: number,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-    @Query('order') order?: 'ASC' | 'DESC',
-  ): Promise<PaginationDto<CommentResponseDto>> {
-    const params = { commentId, page, limit, order };
-    const result = await this.commentService.findAll(params);
-    return CommentMappers.toPaginationResponse(result);
+    return {
+      data: transformedData,
+      meta: result.meta,
+    };
   }
 
   @Get(':id')
@@ -189,12 +128,15 @@ export class CommentsController {
   @ApiResponse({
     status: 200,
     description: 'Comment found',
-    type: CommentResponseDto,
+    type: CommentViewDto,
   })
   @ApiResponse({ status: 404, description: 'Comment not found' })
-  async findOne(@Param('id') id: number): Promise<CommentResponseDto> {
-    const comment = await this.commentService.findOne(id);
-    return CommentMappers.toCommentResponse(comment);
+  async findOne(@Param('id') id: number) {
+    const result = await this.commentService.findOne(id);
+
+    return plainToInstance(CommentViewDto, result, {
+      excludeExtraneousValues: true,
+    });
   }
 
   @Put(':id')
@@ -203,7 +145,7 @@ export class CommentsController {
   @ApiResponse({
     status: 200,
     description: 'Comment updated successfully',
-    type: CommentResponseDto,
+    type: CommentViewDto,
   })
   @ApiResponse({ status: 404, description: 'Comment not found' })
   @ApiBody({ type: UpdateCommentDto })
@@ -211,10 +153,13 @@ export class CommentsController {
     @CurrentUser('userId') userId: number,
     @Param('id') commentId: number,
     @Body() updateCommentDto: UpdateCommentDto,
-  ): Promise<CommentResponseDto> {
+  ) {
     const params = CommentMappers.toUpdateParams(updateCommentDto);
-    const comment = await this.commentService.update(userId, commentId, params);
-    return CommentMappers.toCommentResponse(comment);
+    const result = await this.commentService.update(userId, commentId, params);
+
+    return plainToInstance(CommentViewDto, result, {
+      excludeExtraneousValues: true,
+    });
   }
 
   @Delete(':id')
@@ -235,7 +180,7 @@ export class CommentsController {
   }
 
   @Post(':id/like')
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Like/Unlike comment' })
   @ApiParam({ name: 'id', type: Number, description: 'Comment ID' })
   @ApiResponse({ status: 204, description: 'Comment liked successfully' })
@@ -244,7 +189,15 @@ export class CommentsController {
   async likeComment(
     @CurrentUser('userId') userId: number,
     @Param('id') commentId: number,
-  ): Promise<void> {
-    await this.commentService.likeComment(userId, commentId);
+  ) {
+    const result = await this.commentService.toggleLikeComment(
+      userId,
+      commentId,
+    );
+    console.log(result);
+
+    return plainToInstance(CommentLikeDto, result, {
+      excludeExtraneousValues: true,
+    });
   }
 }

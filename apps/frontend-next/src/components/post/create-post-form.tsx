@@ -111,9 +111,9 @@ export function CreatePostForm({ onSuccess }: { onSuccess?: () => void }) {
 
   const contentValue = watch("content") || "";
 
-  // Блокируем отправку, пока идут загрузки
+  const hasText = contentValue.trim().length > 0;
   const isUploadingAny = attachments.some((a) => a.isUploading);
-  const canSubmit = contentValue.trim().length > 0 && !isUploadingAny;
+  const canSubmit = hasText && !isUploadingAny && !isPending && isValid;
 
   return (
     <div className="bg-[#111] rounded-3xl p-2 border border-[#222]">
@@ -214,7 +214,7 @@ export function CreatePostForm({ onSuccess }: { onSuccess?: () => void }) {
 
             <button
               type="submit"
-              disabled={!isValid || isPending || !canSubmit}
+              disabled={!canSubmit}
               className="bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white px-6 py-2.5 rounded-2xl font-bold transition-all flex items-center gap-2 shadow-lg shadow-blue-600/20"
             >
               {isPending ? (

@@ -15,6 +15,4 @@ export class PostDetailViewDto extends BasePostDto {
   @Expose()
   @Type(() => PostAssetDto)
   postAssets: PostAssetDto[];
-
-  // TODO: add comments list
 }

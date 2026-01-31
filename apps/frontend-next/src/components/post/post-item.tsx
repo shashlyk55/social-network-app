@@ -43,7 +43,7 @@ export function PostItem({
   const { data: me } = useMe();
   const { onOpen } = useModalStore();
   const { mutate: toggleArchive, isPending: isArchiving } = useToggleArchive();
-  const { mutate: toggleLike } = useTogglePostLike(post.id);
+  const { mutate: toggleLike } = useTogglePostLike();
   const { mutate: deletePost, isPending: isDeleting } = useDeletePost();
 
   const isOwner = me?.id === post.profile.id;
@@ -90,15 +90,15 @@ export function PostItem({
 
   const actionsMenuItems = [
     {
-      label: "Edit",
-      icon: Edit2,
-      onClick: () => onOpen("editPost", { post }),
-    },
-    {
       label: isArchivePage ? "Unarchive" : "Archive",
       icon: Archive,
       onClick: () => toggleArchive(post.id),
       disabled: isArchiving,
+    },
+    {
+      label: "Edit",
+      icon: Edit2,
+      onClick: () => onOpen("editPost", { post }),
     },
     {
       label: isDeleting ? "Deleting..." : "Delete",
@@ -109,7 +109,9 @@ export function PostItem({
     },
   ];
 
-  console.log(post);
+  if (isDetailPage) {
+    actionsMenuItems.shift();
+  }
 
   return (
     <div
@@ -218,7 +220,7 @@ export function PostItem({
           <button
             onClick={(e) => {
               e.stopPropagation();
-              toggleLike();
+              toggleLike(post.id);
             }}
             className={cn(
               "flex items-center gap-2 group transition-colors outline-none",
@@ -258,10 +260,7 @@ export function PostItem({
           {!isArchivePage && (
             <ActionMenu
               trigger={
-                <button
-                  //onClick={(e) => e.stopPropagation()}
-                  className="flex items-center gap-2 text-slate-500 hover:text-green-500 transition-colors mr-auto"
-                >
+                <button className="flex items-center gap-2 text-slate-500 hover:text-green-500 transition-colors mr-auto">
                   <Share2 className="w-5 h-5" />
                 </button>
               }

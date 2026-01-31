@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils/cn";
 import { useRef } from "react";
 import { UserAvatar } from "../ui/user-avatar";
 import { useUploadAsset } from "@/hooks/asset/use-upload-asset";
+import TextareaAutosize from "react-textarea-autosize";
 
 interface EditProfileFormProps {
   profile: MyProfile;
@@ -221,14 +222,16 @@ export function EditProfileForm({
           </span>
         </div>
 
-        <textarea
+        <TextareaAutosize
           {...register("bio")}
-          maxLength={200}
+          placeholder="Tell about yourself..."
+          minRows={3}
+          maxRows={8}
           className={cn(
             "w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none h-24 resize-none transition-all",
-            errors.bio ? "border-red-500" : "border-slate-200"
+            errors.bio &&
+              "border-red-100 focus:border-red-500 focus:ring-red-500/10"
           )}
-          placeholder="Расскажите немного о себе..."
         />
         {errors.bio && (
           <p className="text-xs text-red-500">{errors.bio.message}</p>
