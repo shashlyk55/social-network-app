@@ -116,7 +116,7 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const refreshToken = req.cookies['refreshToken'] || null;
+    const refreshToken = (req.cookies['refreshToken'] as string) || null;
 
     if (!refreshToken) {
       throw new UnauthorizedException('Refresh token not found');
@@ -192,7 +192,7 @@ export class AuthController {
       const frontendUrl = `${process.env.FRONTEND_URL}/profiles/me`;
 
       return res.redirect(frontendUrl);
-    } catch (error) {
+    } catch {
       return res.redirect(
         `${process.env.FRONTEND_URL}/login?error=oauth_failed`,
       );

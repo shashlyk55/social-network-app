@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsOptional, IsString, IsNumber } from 'class-validator';
+import { IsEnum, IsOptional, IsNumber } from 'class-validator';
 import { FileType } from 'src/entities/asset.entity';
 
 export class UploadAssetDto {

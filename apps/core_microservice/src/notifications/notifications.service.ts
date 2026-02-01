@@ -1,7 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
-import { FindNotificationsParams } from './types/notification-service.types';
+import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class NotificationsService {

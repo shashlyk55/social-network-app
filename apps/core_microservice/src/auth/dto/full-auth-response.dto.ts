@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import { UserRole } from '../types/auth-params.types';
 import { ProfileResponseDto } from 'src/profiles/dto/profile-response.dto';
 

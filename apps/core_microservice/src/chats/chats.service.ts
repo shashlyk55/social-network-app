@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  ConflictException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Chat } from 'src/entities/chat.entity';
 import {
@@ -81,7 +77,7 @@ export class ChatsService implements IChatService {
       await queryRunner.commitTransaction();
 
       return await this.findOne(savedChat.id);
-    } catch (error) {
+    } catch (error: any) {
       await queryRunner.rollbackTransaction();
       if (error instanceof DomainException) {
         throw error;
@@ -122,7 +118,7 @@ export class ChatsService implements IChatService {
         limit,
         totalPages: Math.ceil(total / limit),
       };
-    } catch (error) {
+    } catch (error: any) {
       throw new ChatOperationException('find chats', error.message);
     }
   }
@@ -145,7 +141,7 @@ export class ChatsService implements IChatService {
       }
 
       return chat;
-    } catch (error) {
+    } catch (error: any) {
       if (error instanceof ChatNotFoundException) {
         throw error;
       }
@@ -179,7 +175,7 @@ export class ChatsService implements IChatService {
       await queryRunner.commitTransaction();
 
       return await this.findOne(id);
-    } catch (error) {
+    } catch (error: any) {
       await queryRunner.rollbackTransaction();
       if (error instanceof DomainException) {
         throw error;
@@ -205,7 +201,7 @@ export class ChatsService implements IChatService {
     try {
       await queryRunner.manager.delete(Chat, id);
       await queryRunner.commitTransaction();
-    } catch (error) {
+    } catch (error: any) {
       await queryRunner.rollbackTransaction();
       throw new ChatOperationException('delete chat', error.message);
     } finally {
@@ -248,7 +244,7 @@ export class ChatsService implements IChatService {
         limit,
         totalPages: Math.ceil(total / limit),
       };
-    } catch (error) {
+    } catch (error: any) {
       throw new ChatOperationException('find user chats', error.message);
     }
   }

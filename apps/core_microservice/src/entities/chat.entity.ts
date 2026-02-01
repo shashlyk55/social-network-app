@@ -4,9 +4,7 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  ManyToOne,
   OneToMany,
-  JoinColumn,
 } from 'typeorm';
 import { ChatParticipant } from './many-to-many/chat-participants.entity';
 import { Message } from './message.entity';

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Comment } from '../entities/comment.entity';
 import { CommentLike } from 'src/entities/many-to-many/comment-like.entity';
 import {
@@ -74,7 +74,7 @@ export class CommentsService {
       });
 
       return await this.findOne(savedComment.id);
-    } catch (error) {
+    } catch (error: any) {
       if (error instanceof DomainException) {
         throw error;
       }
@@ -136,7 +136,7 @@ export class CommentsService {
         data,
         meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
       };
-    } catch (error) {
+    } catch (error: any) {
       throw new CommentOperationException('find comments', error.message);
     }
   }
@@ -154,7 +154,7 @@ export class CommentsService {
       }
 
       return comment;
-    } catch (error) {
+    } catch (error: any) {
       if (error instanceof CommentNotFoundException) {
         throw error;
       }
@@ -180,7 +180,7 @@ export class CommentsService {
       await this.commentRepository.update(commentId, updatePayload);
 
       return await this.findOne(commentId);
-    } catch (error) {
+    } catch (error: any) {
       throw new CommentOperationException('update comment', error.message);
     }
   }
@@ -192,7 +192,7 @@ export class CommentsService {
     }
     try {
       await this.commentRepository.remove(comment);
-    } catch (error) {
+    } catch (error: any) {
       throw new CommentOperationException('delete comment', error.message);
     }
   }
@@ -231,7 +231,7 @@ export class CommentsService {
         isLiked: !existingLike,
         likesCount,
       };
-    } catch (error) {
+    } catch (error: any) {
       // process Race Condition error in DB
       // If 2 requests coming in one time, just ignore this
       if (error.code === '23505') {

@@ -1,8 +1,8 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Asset, FileType } from 'src/entities/asset.entity';
 import { Repository } from 'typeorm';
-import { AssetResult, UploadAssetParams } from './types/assets-params.types';
+import { UploadAssetParams } from './types/assets-params.types';
 import { FilesService } from 'src/files/files.service';
 import {
   AssetNotFound,
@@ -61,7 +61,7 @@ export class AssetsService {
     let asset;
     try {
       asset = this.assetRepository.findOne({ where: { id } });
-    } catch (error) {
+    } catch (error: any) {
       throw new AssetOperationException('find asset', error.message);
     }
     if (!asset) {

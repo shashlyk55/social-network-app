@@ -1,11 +1,8 @@
 import {
   Entity,
-  PrimaryColumn,
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  ManyToOne,
-  JoinColumn,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
@@ -16,10 +13,6 @@ export class AuditLog {
 
   @Column({ name: 'user_id' })
   userId: number;
-
-  // @ManyToOne(() => User, { onDelete: 'CASCADE' })
-  // @JoinColumn({ name: 'user_id' })
-  // user: User;
 
   @Column({ type: 'varchar', length: 100 })
   action: string;
@@ -48,17 +41,9 @@ export class AuditLog {
   @Column({ name: 'created_by' })
   createdById: number;
 
-  // @ManyToOne(() => User)
-  // @JoinColumn({ name: 'created_by' })
-  // createdByUser: User;
-
   @UpdateDateColumn({ type: 'timestamp', name: 'updated_at' })
   updatedAt: Date;
 
   @Column({ type: 'int', nullable: true, name: 'updated_by' })
   updatedBy: number | null;
-
-  // @ManyToOne(() => User)
-  // @JoinColumn({ name: 'updated_by' })
-  // updatedByUser: User;
 }

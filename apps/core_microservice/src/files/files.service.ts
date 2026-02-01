@@ -24,7 +24,7 @@ export class FilesService implements IFilesService {
   async uploadFile(file: Express.Multer.File): Promise<string> {
     try {
       await fs.mkdir(this.uploadPath, { recursive: true });
-    } catch (error) {
+    } catch {
       throw new CreateDirFailed();
     }
 
@@ -34,7 +34,7 @@ export class FilesService implements IFilesService {
 
     try {
       await fs.writeFile(fullFilePath, file.buffer);
-    } catch (error) {
+    } catch {
       throw new CreateFileFailed();
     }
 
@@ -46,7 +46,7 @@ export class FilesService implements IFilesService {
 
     try {
       await fs.unlink(fullFilePath);
-    } catch (err) {
+    } catch {
       console.error(`File ${fileName} not found on disk`);
     }
   }

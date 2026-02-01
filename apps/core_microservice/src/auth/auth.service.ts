@@ -67,8 +67,6 @@ export class AuthService {
       {},
     );
 
-    //console.log(response);
-
     const responseData = response.data;
 
     return responseData;
@@ -80,8 +78,6 @@ export class AuthService {
     }>(`${this.authUrl}/auth/callback/${params.provider}`, {
       params: { code: params.authorizationCode, error: params.error },
     });
-
-    //console.log(response);
 
     const responseData = response.data;
 
@@ -100,10 +96,9 @@ export class AuthService {
   }
 
   async handleLogout(params: LogoutParams) {
-    const response = await this.httpService.post<void>(
-      `${this.authUrl}/auth/logout`,
-      { ...params },
-    );
+    await this.httpService.post<void>(`${this.authUrl}/auth/logout`, {
+      ...params,
+    });
   }
 
   async validateToken(accessToken: string): Promise<ValidateTokenResult> {

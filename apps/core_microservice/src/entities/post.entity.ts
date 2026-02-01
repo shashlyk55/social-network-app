@@ -6,8 +6,6 @@ import {
   UpdateDateColumn,
   ManyToOne,
   OneToMany,
-  ManyToMany,
-  JoinTable,
   JoinColumn,
   VirtualColumn,
 } from 'typeorm';
@@ -68,7 +66,7 @@ export class Post {
   commentsCount: number;
 
   @VirtualColumn({
-    query: (alias) => `SELECT false`,
+    query: () => `SELECT false`,
   })
   isLiked: boolean;
 }

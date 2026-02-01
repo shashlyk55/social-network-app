@@ -8,7 +8,6 @@ import {
   OneToMany,
   JoinColumn,
   Index,
-  RelationCount,
   VirtualColumn,
 } from 'typeorm';
 import { CommentLike } from './many-to-many/comment-like.entity';
@@ -80,7 +79,7 @@ export class Comment {
   likesCount: number;
 
   @VirtualColumn({
-    query: (alias) => `SELECT false`,
+    query: () => `SELECT false`,
   })
   isLiked: boolean;
 }

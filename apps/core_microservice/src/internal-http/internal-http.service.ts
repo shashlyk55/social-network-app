@@ -14,7 +14,7 @@ export class InternalHttpService {
       );
 
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       if (error.response) {
         throw new MicroserviceException(
           error.response.data,
@@ -33,7 +33,7 @@ export class InternalHttpService {
       const response = await firstValueFrom(this.httpService.get<T>(url, data));
 
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       if (error.response) {
         throw new MicroserviceException(
           error.response.data,
@@ -50,8 +50,7 @@ export class InternalHttpService {
   async delete(url: string): Promise<void> {
     try {
       await firstValueFrom(this.httpService.delete(url));
-    } catch (error) {
-      //console.error(`Rollback request failed at ${url}`);
+    } catch (error: any) {
       if (error.response) {
         throw new MicroserviceException(
           error.response.data,

@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PostLike } from 'src/entities/many-to-many/post-like.entity';
 import { Post } from 'src/entities/post.entity';
-import { DataSource, In, Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import {
   CreatePostParams,
   FindPostsParams,
@@ -12,7 +12,6 @@ import {
   UpdatePostParams,
 } from './types/post-service.types';
 import {
-  NoAccessToThesePosts,
   PostAccessDeniedException,
   PostNotFoundException,
   PostOperationException,
@@ -68,7 +67,7 @@ export class PostsService {
       await queryRunner.commitTransaction();
 
       return await this.findOne(savedPost.id);
-    } catch (error) {
+    } catch (error: any) {
       await queryRunner.rollbackTransaction();
 
       if (error instanceof DomainException) {
@@ -275,7 +274,7 @@ export class PostsService {
       await queryRunner.commitTransaction();
 
       return await this.findOne(id, userId);
-    } catch (error) {
+    } catch (error: any) {
       await queryRunner.rollbackTransaction();
 
       if (error instanceof DomainException) {
@@ -300,7 +299,7 @@ export class PostsService {
     try {
       await queryRunner.manager.delete(Post, postId);
       await queryRunner.commitTransaction();
-    } catch (error) {
+    } catch (error: any) {
       await queryRunner.rollbackTransaction();
 
       if (error instanceof DomainException) {
@@ -344,7 +343,7 @@ export class PostsService {
         isLiked: !existingLike,
         likesCount,
       };
-    } catch (error) {
+    } catch (error: any) {
       // process Race Condition error in DB
       // If 2 requests coming in one time, just ignore this
       if (error.code === '23505') {

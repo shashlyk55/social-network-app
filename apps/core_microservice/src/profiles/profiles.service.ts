@@ -37,7 +37,7 @@ export class ProfilesService {
       const savedProfile = await this.profileRepository.save(profile);
 
       return savedProfile;
-    } catch (error) {
+    } catch (error: any) {
       if (error instanceof DomainException) throw error;
       throw new ProfileOperationException('create profile', error.message);
     }
@@ -47,7 +47,7 @@ export class ProfilesService {
     query: string,
     currentUserId?: number,
   ): Promise<Profile[]> {
-    let currentUserProfile: Profile | undefined = currentUserId
+    const currentUserProfile: Profile | undefined = currentUserId
       ? await this.findByUserId(currentUserId)
       : undefined;
 
@@ -167,18 +167,18 @@ export class ProfilesService {
       });
 
       return await this.findOne(profile.id);
-    } catch (error) {
+    } catch (error: any) {
       if (error instanceof DomainException) throw error;
       throw new ProfileOperationException('update profile', error.message);
     }
   }
 
   async remove(id: number): Promise<void> {
-    const profile = await this.findOne(id);
+    await this.findOne(id);
 
     try {
       await this.profileRepository.update(id, { deleted: true });
-    } catch (error) {
+    } catch (error: any) {
       throw new ProfileOperationException('delete profile', error.message);
     }
   }

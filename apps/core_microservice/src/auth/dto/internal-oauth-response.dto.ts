@@ -1,4 +1,3 @@
-import { UserResponseDto } from './full-auth-response.dto';
 import { InternalUserDto } from './internal-user.dto';
 import { OAuthProfileResponseDto } from './oauth-profile.dto';
 

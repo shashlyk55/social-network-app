@@ -9,7 +9,7 @@ import {
   IsNumber,
   IsBoolean,
 } from 'class-validator';
-import { AccountProviderType, UserRole } from '../types/auth-params.types';
+import { AccountProviderType } from '../types/auth-params.types';
 
 export class FullRegisterDto {
   @ApiProperty({ example: 'user@example.com' })

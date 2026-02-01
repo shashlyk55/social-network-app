@@ -63,7 +63,7 @@ export class AssetsController {
   @HttpCode(HttpStatus.CREATED)
   async upload(
     @UploadedFile() file: Express.Multer.File,
-    @CurrentUser('userId') userId,
+    @CurrentUser('userId') userId: number,
     @Body() dto: UploadAssetDto,
   ) {
     const params = AssetMapper.toUploadParams(dto);

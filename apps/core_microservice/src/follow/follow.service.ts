@@ -129,7 +129,7 @@ export class FollowService {
       throw new UserNotFollowed();
     }
 
-    const result = await this.followRepository.delete({
+    await this.followRepository.delete({
       followerProfileId: profile.id,
       followedProfileId: targetProfileId,
     });

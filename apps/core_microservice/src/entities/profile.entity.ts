@@ -4,9 +4,6 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  OneToOne,
-  JoinColumn,
-  ManyToOne,
   OneToMany,
   VirtualColumn,
 } from 'typeorm';
@@ -92,7 +89,7 @@ export class Profile {
   publicPostsCount: number;
 
   @VirtualColumn({
-    query: (alias) => `SELECT false`,
+    query: () => `SELECT false`,
   })
   isFollowed: boolean;
 }

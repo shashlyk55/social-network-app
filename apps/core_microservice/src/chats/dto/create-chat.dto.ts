@@ -1,4 +1,3 @@
-// src/chats/dto/create-chat.dto.ts
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsString,
@@ -7,8 +6,6 @@ import {
   IsArray,
   MaxLength,
   IsEnum,
-  ArrayMinSize,
-  ArrayNotEmpty,
 } from 'class-validator';
 import { ChatType } from 'src/entities/chat.entity';
 

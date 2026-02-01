@@ -1,15 +1,5 @@
-import { Controller, Get, Query } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiQuery,
-  ApiBearerAuth,
-} from '@nestjs/swagger';
-
-import { PaginationDto } from 'src/common/dto/pagination.dto';
-import { NotificationResponseDto } from './dto/notification-response.dto';
-import { NotificationMappers } from './utils/params-mapper.util';
+import { Controller } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { NotificationsService } from './notifications.service';
 
 @ApiTags('notifications')
