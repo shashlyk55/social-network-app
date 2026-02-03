@@ -19,8 +19,8 @@ export class Chat {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @Column()
-  name: string;
+  @Column({ type: 'varchar', nullable: true })
+  name: string | null;
 
   @Column({ type: 'text', nullable: true })
   description: string | null;
@@ -31,22 +31,14 @@ export class Chat {
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @Column({ name: 'created_by' })
+  @Column({ type: 'int', name: 'created_by' })
   createdById: number;
-
-  // @ManyToOne(() => User)
-  // @JoinColumn({ name: 'created_by' })
-  // createdBy: User;
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
   @Column({ type: 'int', name: 'updated_by', nullable: true })
   updatedById: number;
-
-  // @ManyToOne(() => User, { nullable: true })
-  // @JoinColumn({ name: 'updated_by' })
-  // updatedBy: User;
 
   @OneToMany(() => ChatParticipant, (participant) => participant.chat)
   chatParticipants: ChatParticipant[];

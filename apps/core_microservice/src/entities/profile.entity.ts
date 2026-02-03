@@ -16,13 +16,13 @@ export class Profile {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @Column({ name: 'user_id' })
+  @Column({ type: 'int', name: 'user_id' })
   userId: number;
 
-  @Column({ unique: true })
+  @Column({ type: 'varchar', unique: true })
   username: string;
 
-  @Column({ name: 'display_name' })
+  @Column({ type: 'varchar', name: 'display_name' })
   displayName: string;
 
   @Column({ type: 'date', nullable: true })
@@ -34,13 +34,13 @@ export class Profile {
   @Column({ type: 'varchar', name: 'avatar_url', nullable: true })
   avatarUrl: string | null;
 
-  @Column({ name: 'is_public', default: true })
+  @Column({ type: 'bool', name: 'is_public', default: true })
   isPublic: boolean;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @Column({ name: 'created_by' })
+  @Column({ type: 'int', name: 'created_by' })
   createdById: number;
 
   @UpdateDateColumn({ name: 'updated_at' })
@@ -49,7 +49,7 @@ export class Profile {
   @Column({ type: 'int', name: 'updated_by', nullable: true })
   updatedById: number | null;
 
-  @Column({ default: false })
+  @Column({ type: 'bool', default: false })
   deleted: boolean;
 
   @OneToMany(() => Post, (post) => post.profile)
@@ -65,30 +65,35 @@ export class Profile {
   profileConfigurations: ProfileToProfileConfiguration[];
 
   @VirtualColumn({
+    type: 'int',
     query: (alias) =>
       `SELECT COUNT("id") FROM "main"."profiles_follows" WHERE "followed_profile_id" = ${alias}.id`,
   })
   followersCount: number;
 
   @VirtualColumn({
+    type: 'int',
     query: (alias) =>
       `SELECT COUNT("id") FROM "main"."profiles_follows" WHERE "follower_profile_id" = ${alias}.id`,
   })
   followedCount: number;
 
   @VirtualColumn({
+    type: 'int',
     query: (alias) =>
       `SELECT COUNT("id") FROM "main"."posts" WHERE "profile_id" = ${alias}.id`,
   })
   postsCount: number;
 
   @VirtualColumn({
+    type: 'int',
     query: (alias) =>
       `SELECT COUNT("id") FROM "main"."posts" WHERE "profile_id" = ${alias}.id AND "is_archived" = false`,
   })
   publicPostsCount: number;
 
   @VirtualColumn({
+    type: 'bool',
     query: () => `SELECT false`,
   })
   isFollowed: boolean;
