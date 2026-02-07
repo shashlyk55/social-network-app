@@ -123,6 +123,38 @@ export class PostsController {
     };
   }
 
+  @Get('feed')
+  @ApiOperation({ summary: 'Get followed users feed' })
+  @ApiResponse({
+    status: 200,
+    description: 'Feed retrieved successfully',
+    type: PaginationDto<PostResponseDto>,
+  })
+  async getFeed(
+    @Query('page') page: number,
+    @Query('limit') limit: number,
+    @CurrentUser('userId') userId: number,
+  ) {
+    const result = await this.postService.getFollowedFeed(
+      { page, limit },
+      userId,
+    );
+
+    const transformedData = plainToInstance(PostViewDto, result.data, {
+      excludeExtraneousValues: true,
+    });
+
+    return {
+      data: transformedData,
+      meta: {
+        total: result.total,
+        page: result.page,
+        limit: result.limit,
+        totalPages: result.totalPages,
+      },
+    };
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get post by ID' })
   @ApiParam({ name: 'id', type: Number, description: 'Post ID' })

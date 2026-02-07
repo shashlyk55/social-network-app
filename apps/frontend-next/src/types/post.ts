@@ -15,10 +15,10 @@ export interface PostView extends BasePost {
   postAssets: PostAsset[];
 }
 
-export interface FindPostsParams {
+export type FindPostsParams = {
   authorProfileId: number;
   isArchived?: boolean;
-}
+};
 
 export interface PostLike {
   postId: number;

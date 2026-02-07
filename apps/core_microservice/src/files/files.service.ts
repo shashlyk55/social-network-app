@@ -17,7 +17,6 @@ export class FilesService implements IFilesService {
     __dirname,
     '..',
     '..',
-    '..',
     this.UPLOAD_DIR_NAME,
   );
 

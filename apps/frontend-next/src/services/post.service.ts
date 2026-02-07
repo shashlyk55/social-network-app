@@ -1,5 +1,5 @@
 import { apiClient } from "@/lib/api-client";
-import { PaginatedData } from "@/types/pagination";
+import { FindPaginationParams, PaginatedData } from "@/types/pagination";
 import {
   CreatePost,
   FindPostsParams,
@@ -43,6 +43,18 @@ export const PostService = {
     const { data } = await apiClient.patch<PostView>(
       `/posts/${postId}`,
       updateData
+    );
+    return data;
+  },
+
+  async getFeed(
+    params: FindPaginationParams
+  ): Promise<PaginatedData<PostView>> {
+    const { data } = await apiClient.get<PaginatedData<PostView>>(
+      "/posts/feed",
+      {
+        params,
+      }
     );
     return data;
   },

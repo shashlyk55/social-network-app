@@ -57,7 +57,7 @@ async function bootstrap() {
     next();
   });
 
-  // app.enableCors(getCorsConfig());
+  //app.enableCors(corsConfig);
   app.use(helmet(getHelmetConfig()));
   app.use(cookieParser());
 
