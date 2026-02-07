@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 
 const authRoutes = ["/login", "/signup"];
 
-const protectedRoutes = ["/feed", "/profile", "/feed", "/posts"];
+const protectedRoutes = ["/feed", "/profile", "/feed", "/posts", "/chats"];
 
 export function middleware(request: NextRequest) {
   const token = request.cookies.get("accessToken")?.value;
@@ -13,11 +13,8 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/feed", request.url));
   }
 
-  // If the user is NOT authorized and try to enter the protected route
   if (!token && protectedRoutes.some((route) => pathname.startsWith(route))) {
-    // save the path where the user wanted to go so that he can return there after logging in
     const loginUrl = new URL("/login", request.url);
-    // loginUrl.searchParams.set('callbackUrl', pathname);
     return NextResponse.redirect(loginUrl);
   }
 

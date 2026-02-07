@@ -1,26 +1,25 @@
 import { Chat, ChatType } from 'src/entities/chat.entity';
+import { CreateMessageParams } from 'src/messages/types/message-service.types';
 
 export type CreateChatParams = {
-  name: string;
-  description?: string;
+  name?: string;
+  description?: string | null;
   type: ChatType;
-  createdById: number;
   participantProfileIds?: number[];
+  firstMessage?: CreateMessageParams;
 };
 
 export type UpdateChatParams = {
   id: number;
   name?: string;
-  description?: string;
-  type?: ChatType;
-  updatedById?: number;
+  description?: string | null;
+  type: ChatType;
 };
 
 export type FindChatsParams = {
   page?: number;
   limit?: number;
   type?: ChatType;
-  profileId?: number;
 };
 
 export type ChatPaginationResult = {

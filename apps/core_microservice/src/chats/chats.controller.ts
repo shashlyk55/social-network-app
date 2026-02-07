@@ -9,6 +9,7 @@ import {
   Query,
   HttpStatus,
   HttpCode,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -20,15 +21,21 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { ChatsService } from './chats.service';
-import { ChatResponseDto } from './dto/chat-response.dto';
 import { CreateChatDto } from './dto/create-chat.dto';
 import { UpdateChatDto } from './dto/update-chat.dto';
 import { ChatMappers } from './utils/params-mapper.util';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { ChatType } from 'src/entities/chat.entity';
+import { AccessGuard } from 'src/auth/guards/access.guard';
+import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
+import { plainToInstance } from 'class-transformer';
+import { ChatDetailDto } from './dto/chat-detail.dto';
+import { UpdatedChatDto } from './dto/updated-chat.dto';
+import { ChatPreviewDto } from './dto/chat-preview.dto';
 
 @ApiTags('chats')
 @ApiBearerAuth()
+@UseGuards(AccessGuard)
 @Controller('chats')
 export class ChatsController {
   constructor(private readonly chatService: ChatsService) {}
@@ -38,15 +45,21 @@ export class ChatsController {
   @ApiResponse({
     status: 201,
     description: 'Chat created successfully',
-    type: ChatResponseDto,
+    type: ChatDetailDto,
   })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
   @ApiBody({ type: CreateChatDto })
-  async create(@Body() createChatDto: CreateChatDto): Promise<ChatResponseDto> {
+  async create(
+    @Body() createChatDto: CreateChatDto,
+    @CurrentUser('userId') userId: number,
+  ) {
     const params = ChatMappers.toCreateParams(createChatDto);
+    const result = await this.chatService.create(params, userId);
 
-    const chat = await this.chatService.create(params);
-    return ChatMappers.toChatResponse(chat);
+    return plainToInstance(ChatDetailDto, result, {
+      excludeExtraneousValues: true,
+      groups: [`userId_${userId}`],
+    });
   }
 
   @Get()
@@ -54,7 +67,7 @@ export class ChatsController {
   @ApiResponse({
     status: 200,
     description: 'Chats list retrieved successfully',
-    type: PaginationDto<ChatResponseDto>,
+    type: PaginationDto<ChatPreviewDto>,
   })
   @ApiQuery({
     name: 'page',
@@ -75,50 +88,23 @@ export class ChatsController {
     description: 'Filter by chat type',
   })
   async findAll(
+    @CurrentUser('userId') userId: number,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('type') type?: ChatType,
-  ): Promise<PaginationDto<ChatResponseDto>> {
+  ) {
     const params = { page, limit, type };
-    const result = await this.chatService.findAll(params);
-    return ChatMappers.toPaginationResponse(result);
-  }
+    const result = await this.chatService.findAll(params, userId);
 
-  @Get('user/:profileId')
-  @ApiOperation({ summary: 'Get user chats' })
-  @ApiParam({ name: 'profileId', type: Number, description: 'Profile ID' })
-  @ApiResponse({
-    status: 200,
-    description: 'User chats retrieved successfully',
-    type: PaginationDto<ChatResponseDto>,
-  })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    type: Number,
-    description: 'Page number',
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    description: 'Items per page',
-  })
-  @ApiQuery({
-    name: 'type',
-    required: false,
-    type: String,
-    description: 'Filter by chat type',
-  })
-  async findUserChats(
-    @Param('profileId') profileId: number,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-    @Query('type') type?: ChatType,
-  ): Promise<PaginationDto<ChatResponseDto>> {
-    const params = { page, limit, type };
-    const result = await this.chatService.findUserChats(profileId, params);
-    return ChatMappers.toPaginationResponse(result);
+    const transformedData = plainToInstance(ChatPreviewDto, result.data, {
+      excludeExtraneousValues: true,
+      groups: [`userId_${userId}`],
+    });
+
+    return {
+      data: transformedData,
+      meta: result.meta,
+    };
   }
 
   @Get(':id')
@@ -127,12 +113,18 @@ export class ChatsController {
   @ApiResponse({
     status: 200,
     description: 'Chat found',
-    type: ChatResponseDto,
+    type: ChatDetailDto,
   })
   @ApiResponse({ status: 404, description: 'Chat not found' })
-  async findOne(@Param('id') id: number): Promise<ChatResponseDto> {
-    const chat = await this.chatService.findOne(id);
-    return ChatMappers.toChatResponse(chat);
+  async findOne(
+    @Param('id') id: number,
+    @CurrentUser('userId') userId: number,
+  ) {
+    const result = await this.chatService.findOne(id);
+    return plainToInstance(ChatDetailDto, result, {
+      excludeExtraneousValues: true,
+      groups: [`userId_${userId}`],
+    });
   }
 
   @Put(':id')
@@ -141,17 +133,20 @@ export class ChatsController {
   @ApiResponse({
     status: 200,
     description: 'Chat updated successfully',
-    type: ChatResponseDto,
+    type: UpdatedChatDto,
   })
   @ApiResponse({ status: 404, description: 'Chat not found' })
   @ApiBody({ type: UpdateChatDto })
   async update(
     @Param('id') id: number,
     @Body() updateChatDto: UpdateChatDto,
-  ): Promise<ChatResponseDto> {
+    @CurrentUser('userId') userId: number,
+  ) {
     const params = ChatMappers.toUpdateParams(id, updateChatDto);
-    const chat = await this.chatService.update(params);
-    return ChatMappers.toChatResponse(chat);
+    const result = await this.chatService.update(params, userId);
+    return plainToInstance(UpdatedChatDto, result, {
+      excludeExtraneousValues: true,
+    });
   }
 
   @Delete(':id')

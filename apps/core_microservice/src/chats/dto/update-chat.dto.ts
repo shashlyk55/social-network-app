@@ -1,36 +1,39 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, MaxLength, IsEnum } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  MaxLength,
+  IsEnum,
+  ValidateIf,
+} from 'class-validator';
 import { ChatType } from 'src/entities/chat.entity';
 
 export class UpdateChatDto {
-  @ApiPropertyOptional({
-    example: 'Updated Chat Name',
-    description: 'Chat name',
+  @ApiProperty({
+    example: ChatType.GROUP,
+    description: 'Current chat type (used for validation logic)',
+    enum: ChatType,
   })
-  @IsString()
+  @IsEnum(ChatType)
+  @IsNotEmpty()
+  type: ChatType;
+
+  @ApiPropertyOptional({ example: 'Updated Group Name' })
+  @ValidateIf((o) => o.type === ChatType.GROUP)
   @IsOptional()
+  @IsString()
+  @IsNotEmpty({ message: 'Name cannot be empty for group chats' })
   @MaxLength(255)
   name?: string;
 
   @ApiPropertyOptional({
-    example: 'Updated description',
-    description: 'Chat description',
+    example: 'New description',
+    nullable: true,
   })
+  @ValidateIf((o) => o.type === ChatType.GROUP)
+  @IsOptional()
   @IsString()
-  @IsOptional()
   @MaxLength(1000)
-  description?: string;
-
-  @ApiPropertyOptional({
-    example: ChatType.GROUP,
-    description: 'Chat type',
-    enum: ChatType,
-  })
-  @IsOptional()
-  @IsEnum(ChatType)
-  type: ChatType;
-
-  @ApiPropertyOptional({ description: 'ID of user updating the chat' })
-  @IsOptional()
-  updatedById?: number;
+  description?: string | null;
 }

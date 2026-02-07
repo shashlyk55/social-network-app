@@ -47,9 +47,9 @@ export class ChatParticipant {
   @Column({
     type: 'timestamp',
     name: 'joined_at',
-    default: () => 'CURRENT_TIMESTAMP',
+    nullable: true,
   })
-  joinedAt: Date;
+  joinedAt: Date | null;
 
   @Column({ type: 'date', name: 'left_at', nullable: true })
   leftAt: Date | null;

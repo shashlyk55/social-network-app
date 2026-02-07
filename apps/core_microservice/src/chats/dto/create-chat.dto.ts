@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import {
   IsString,
   IsNotEmpty,
@@ -6,20 +7,29 @@ import {
   IsArray,
   MaxLength,
   IsEnum,
+  ArrayMinSize,
+  ValidateIf,
+  ValidateNested,
 } from 'class-validator';
 import { ChatType } from 'src/entities/chat.entity';
+import { CreateMessageDto } from 'src/messages/dto/create-message.dto';
 
 export class CreateChatDto {
-  @ApiProperty({ example: 'General Chat', description: 'Chat name' })
+  @ApiPropertyOptional({
+    example: 'Design Team',
+    description: 'Required only for GROUP chats',
+  })
+  @ValidateIf((o) => o.type === ChatType.GROUP)
   @IsString()
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Group chat must have a name' })
   @MaxLength(255)
-  name: string;
+  name?: string;
 
   @ApiPropertyOptional({
     example: 'General discussion chat',
     description: 'Chat description',
   })
+  @ValidateIf((o) => o.type === ChatType.GROUP)
   @IsString()
   @IsOptional()
   @MaxLength(1000)
@@ -34,17 +44,21 @@ export class CreateChatDto {
   @IsNotEmpty()
   type: ChatType;
 
-  @ApiProperty({ description: 'ID of user creating the chat' })
-  @IsNotEmpty()
-  createdById: number;
-
   @ApiProperty({
-    //example: [1, 2, 3],
-    example: null,
-    description: 'Array of profile IDs to add as participants',
-    required: false,
+    example: [2],
+    description:
+      'For PRIVATE chat: exactly 1 profile ID. For GROUP: at least 1.',
   })
   @IsArray()
+  @ArrayMinSize(1)
+  participantProfileIds: number[];
+
+  @ApiPropertyOptional({
+    description: 'The very first message to be sent upon chat creation',
+    type: CreateMessageDto,
+  })
   @IsOptional()
-  participantProfileIds?: number[];
+  @ValidateNested()
+  @Type(() => CreateMessageDto)
+  firstMessage?: CreateMessageDto;
 }

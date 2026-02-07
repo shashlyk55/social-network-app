@@ -1,10 +1,16 @@
 import { PostView } from "@/types/post";
 import { create } from "zustand";
 
-export type ModalType = "editProfile" | "createPost" | "editPost";
+export type ModalType =
+  | "editProfile"
+  | "createPost"
+  | "editPost"
+  | "createChat"
+  | "addMembers";
 
 interface ModalData {
   post?: PostView;
+  chatId?: number;
 }
 
 interface ModalStore {

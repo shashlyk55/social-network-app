@@ -7,7 +7,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { useMe } from "@/hooks/profile/use-me";
 import { usePathname } from "next/navigation";
 import { Toaster } from "sonner";
-import { ModalProvider } from "@/components/provider/model-provider";
+import { ModalProvider } from "@/components/provider/modal-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

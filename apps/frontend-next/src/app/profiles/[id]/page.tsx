@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useProfileById } from "@/hooks/profile/use-profile-by-id";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import {
@@ -19,10 +19,12 @@ import { PostItem } from "@/components/post/post-item";
 
 export default function OtherProfilePage() {
   const { id } = useParams();
+  const router = useRouter();
   const profileId = Number(id);
 
   const { data: profile, isLoading: isProfileLoading } =
     useProfileById(profileId);
+
   const { mutate: toggleFollow, isPending: isFollowPending } = useToggleFollow(
     profileId,
     profile?.isFollowed || false
@@ -31,6 +33,11 @@ export default function OtherProfilePage() {
   const { data: postsData, isLoading: isPostsLoading } = useProfilePosts({
     authorProfileId: profileId,
   });
+
+  const handleMessageClick = () => {
+    // Переходим в чаты и передаем ID профиля как pending
+    router.push(`/chats?pendingProfileId=${profileId}`);
+  };
 
   if (isProfileLoading)
     return (
@@ -90,9 +97,11 @@ export default function OtherProfilePage() {
               )}
             </button>
 
-            {/* Кнопка сообщения (видна всем) */}
-            <button className="flex items-center gap-2 px-5 py-2.5 bg-[#1a1a1a] border border-[#333] rounded-xl hover:bg-[#252525] transition-all text-sm font-bold text-slate-200">
-              <MessageCircle className="w-4 h-4" />
+            <button
+              onClick={handleMessageClick} // Вешаем обработчик
+              className="flex-1 bg-[#1a1a1a] hover:bg-[#222] text-white font-bold py-3 px-6 rounded-2xl transition-all border border-[#333] flex items-center justify-center gap-2 active:scale-95"
+            >
+              <MessageCircle className="w-5 h-5" />
               Message
             </button>
 

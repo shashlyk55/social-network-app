@@ -22,6 +22,8 @@ export const ModalProvider = () => {
     <>
       {profile && <EditProfileModal profile={profile} />}
       <PostModal />
+      <CreateChatModal />
+      <AddMembersModal />
     </>
   );
 };

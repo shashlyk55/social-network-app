@@ -8,31 +8,11 @@ export class ChatNotFoundException extends DomainException {
   }
 }
 
-export class ChatParticipantNotFoundException extends DomainException {
-  code = 'CHAT_PARTICIPANT_NOT_FOUND';
-
-  constructor(participantId?: string | number) {
-    super(
-      participantId
-        ? `Chat participant with id ${participantId} not found`
-        : `Chat participant not found`,
-    );
-  }
-}
-
 export class ChatAlreadyExistsException extends DomainException {
   code = 'CHAT_ALREADY_EXISTS';
 
   constructor(chatName: string) {
     super(`Chat with name "${chatName}" already exists`);
-  }
-}
-
-export class ChatParticipantAlreadyExistsException extends DomainException {
-  code = 'CHAT_PARTICIPANT_ALREADY_EXISTS';
-
-  constructor(chatId: number, profileId: number) {
-    super(`Profile ${profileId} is already a participant in chat ${chatId}`);
   }
 }
 
@@ -78,13 +58,5 @@ export class InvalidChatTypeException extends DomainException {
 
   constructor(chatType: string) {
     super(`Invalid chat type: ${chatType}`);
-  }
-}
-
-export class ChatParticipantRoleException extends DomainException {
-  code = 'INSUFFICIENT_PERMISSIONS';
-
-  constructor(operation: string, requiredRole: string) {
-    super(`Operation "${operation}" requires role: ${requiredRole}`);
   }
 }

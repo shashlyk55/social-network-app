@@ -16,6 +16,7 @@ import { join } from 'path';
 import { AssetsModule } from 'src/assets/assets.module';
 import { FollowModule } from 'src/follow/follow.module';
 import { RabbitMqModule } from 'src/rabbit-mq/rabbit-mq.module';
+import { ChatParticipantsModule } from 'src/chat-participants/chat-participants.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { RabbitMqModule } from 'src/rabbit-mq/rabbit-mq.module';
     AssetsModule,
     CommentsModule,
     ChatsModule,
+    ChatParticipantsModule,
     NotificationsModule,
     WinstonLoggerModule,
     ServeStaticModule.forRoot({
