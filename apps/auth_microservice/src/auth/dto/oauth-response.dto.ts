@@ -1,10 +1,5 @@
 import { UserResponseDto } from 'src/users/dto/user-response.dto';
-import {
-  AuthResult,
-  OAuthResult,
-  TokenResult,
-} from '../types/auth-params.types';
-import { AccountResult } from 'src/accounts/types/account-service.types';
+import { OAuthResult, TokenResult } from '../types/auth-params.types';
 import { OAuthProfile } from '../types/external-auth.types';
 
 export class OAuthResponseDto {

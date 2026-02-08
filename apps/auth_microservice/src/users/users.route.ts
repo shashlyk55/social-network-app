@@ -1,10 +1,4 @@
 import { Request, Router } from 'express';
-import { AccountsService } from 'src/accounts/accounts.service';
-import { AuthController } from 'src/auth/auth.controller';
-import { AuthService } from 'src/auth/auth.service';
-import { ExternalAuthService } from 'src/auth/external-auth.service';
-import { RedisAuthRepository } from 'src/auth/redis-auth.repository';
-import { Account } from 'src/entities/account.entity';
 import { User } from '../entities/user.entity';
 import { DataSource } from 'typeorm';
 import { UsersService } from './users.service';

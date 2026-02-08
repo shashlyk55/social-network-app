@@ -1,17 +1,12 @@
 import { AccountProviderType } from 'src/entities/account.entity';
 import {
   LoginParams,
-  OAuthCallbackParams,
   LogoutParams,
-  ValidateTokenParams,
   RegisterParams,
-  RefreshTokenParams,
-  TokenResult,
   AuthResult,
   ValidateTokenResult,
   OAuthResult,
 } from '../types/auth-params.types';
-import { OAuthProfile } from '../types/external-auth.types';
 
 export interface IAuthService {
   authenticateUser(credentials: LoginParams): Promise<AuthResult>;

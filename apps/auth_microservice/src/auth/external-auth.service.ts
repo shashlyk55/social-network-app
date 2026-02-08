@@ -1,13 +1,7 @@
-import axios from 'axios';
 import { AccountProviderType } from '../entities/account.entity';
 import { IExternalAuthService } from './interfaces/IExternalAuthService';
-import {
-  OAuthProfile,
-  OAuthProvidersConfig,
-} from './types/external-auth.types';
+import { OAuthProfile } from './types/external-auth.types';
 import { google } from 'googleapis';
-import { v4 as uuidv4 } from 'uuid';
-import { Octokit } from 'octokit';
 import { ConfigService } from 'src/config/config.service';
 import { ProviderNotSupported } from './exceptions/external-auth.exceptions';
 

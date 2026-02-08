@@ -85,29 +85,25 @@ export class AuthService implements IAuthService {
     if (!user) {
       user = await this.dataSource.transaction(
         async (transactionalEntityManager) => {
-          try {
-            const newUser = await this.usersService.create(
-              {
-                role: UserRole.USER,
-              },
-              undefined,
-              transactionalEntityManager,
-            );
+          const newUser = await this.usersService.create(
+            {
+              role: UserRole.USER,
+            },
+            undefined,
+            transactionalEntityManager,
+          );
 
-            const account = await this.accountsService.createWithOAuth(
-              {
-                userId: newUser.id,
-                email: profile.email,
-                provider: provider,
-                providerId: profile.providerId,
-              },
-              transactionalEntityManager,
-            );
+          await this.accountsService.createWithOAuth(
+            {
+              userId: newUser.id,
+              email: profile.email,
+              provider: provider,
+              providerId: profile.providerId,
+            },
+            transactionalEntityManager,
+          );
 
-            return newUser;
-          } catch (error) {
-            throw error;
-          }
+          return newUser;
         },
       );
     }
@@ -254,7 +250,9 @@ export class AuthService implements IAuthService {
           );
         }
       }
-    } catch (error) {}
+    } catch {
+      return { success: false };
+    }
 
     return { success: true };
   }

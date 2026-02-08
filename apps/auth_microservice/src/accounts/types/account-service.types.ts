@@ -21,6 +21,4 @@ export type FindAccountsParams = {
   limit?: number;
 };
 
-export type UpdateAccountParams = {};
-
 export type AccountResult = Pick<Account, 'email' | 'lastLoginAt'>;

@@ -1,4 +1,4 @@
-import { User, UserRole } from '../entities/user.entity';
+import { User } from '../entities/user.entity';
 import {
   UserOperationException,
   UserNotFoundException,
@@ -38,7 +38,7 @@ export class UsersService implements IUsersService {
       const savedUser = await manager.save(User, user);
 
       return savedUser;
-    } catch (error) {
+    } catch (error: any) {
       throw new UserOperationException('create user', error);
     }
   }
@@ -79,14 +79,8 @@ export class UsersService implements IUsersService {
     try {
       user = await this.userRepository.findOne({
         where: { id },
-        relations: [
-          // 'createdBy',
-          // 'updatedBy',
-          // 'account',
-          //'profile'
-        ],
       });
-    } catch (error) {
+    } catch (error: any) {
       throw new UserOperationException('find user', error);
     }
     if (!user) {
@@ -112,7 +106,7 @@ export class UsersService implements IUsersService {
         ])
         .where('account.email = :email', { email })
         .getOne();
-    } catch (error) {
+    } catch (error: any) {
       throw new UserOperationException('find user by email', error);
     }
 
@@ -147,7 +141,7 @@ export class UsersService implements IUsersService {
           provider,
         })
         .getOne();
-    } catch (error) {
+    } catch (error: any) {
       throw new UserOperationException(
         'find user by email and provider',
         error,
@@ -183,7 +177,7 @@ export class UsersService implements IUsersService {
       await queryRunner.commitTransaction();
 
       return await this.findOne(id);
-    } catch (error) {
+    } catch (error: any) {
       await queryRunner.rollbackTransaction();
 
       if (error instanceof DomainException) {
@@ -201,7 +195,7 @@ export class UsersService implements IUsersService {
 
     try {
       await this.userRepository.delete(id);
-    } catch (error) {
+    } catch (error: any) {
       throw new UserOperationException('remove user', error);
     }
   }
@@ -214,7 +208,7 @@ export class UsersService implements IUsersService {
         disabled: true,
         updatedById: deletedById,
       });
-    } catch (error) {
+    } catch (error: any) {
       throw new UserOperationException('soft remove user', error);
     }
   }
@@ -227,7 +221,7 @@ export class UsersService implements IUsersService {
         disabled: false,
         updatedById: restoredById,
       });
-    } catch (error) {
+    } catch (error: any) {
       throw new UserOperationException('restore user', error);
     }
   }

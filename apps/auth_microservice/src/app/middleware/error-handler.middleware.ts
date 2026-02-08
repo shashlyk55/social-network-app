@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { HttpExceptionMapper } from '../utils/http-exception.mapper';
 import { InfrastructureException } from '../../common/exceptions/infrastructure.exception';
 import { DomainException } from '../../common/exceptions/domain.exception';
@@ -7,7 +7,6 @@ export const errorHandler = (
   error: Error,
   req: Request,
   res: Response,
-  next: NextFunction,
 ): void => {
   logError(error, req);
 

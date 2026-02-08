@@ -1,4 +1,4 @@
-import { NextFunction, Request, Response } from 'express';
+import { Request, Response } from 'express';
 import { RegisterDto } from './dto/register.dto';
 import {
   LoginParams,
@@ -16,11 +16,7 @@ export class AuthController {
   constructor(private readonly authService: IAuthService) {}
 
   @HandleExceptions
-  async register(
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ): Promise<void> {
+  async register(req: Request, res: Response): Promise<void> {
     const registerDto: RegisterDto = req.body;
     const params: RegisterParams = RegisterDto.toRegisterParams(registerDto);
     const result = await this.authService.registerUser(params);
@@ -35,7 +31,7 @@ export class AuthController {
   }
 
   @HandleExceptions
-  async login(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async login(req: Request, res: Response): Promise<void> {
     const loginDto: LoginDto = req.body;
     const params: LoginParams = LoginDto.toLoginParams(loginDto);
     const result = await this.authService.authenticateUser(params);
@@ -50,11 +46,7 @@ export class AuthController {
   }
 
   @HandleExceptions
-  async validate(
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ): Promise<void> {
+  async validate(req: Request, res: Response): Promise<void> {
     const accessToken = req.accessToken!;
 
     const result = await this.authService.validateAccessToken(accessToken);
@@ -67,11 +59,7 @@ export class AuthController {
   }
 
   @HandleExceptions
-  async refreshTokens(
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ): Promise<void> {
+  async refreshTokens(req: Request, res: Response): Promise<void> {
     const refreshToken = req.refreshToken!;
 
     const result = await this.authService.processRefreshToken(refreshToken);
@@ -86,7 +74,7 @@ export class AuthController {
   }
 
   @HandleExceptions
-  async logout(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async logout(req: Request, res: Response): Promise<void> {
     const accessToken = req.accessToken!;
     const refreshToken = req.refreshToken!;
 
@@ -101,11 +89,7 @@ export class AuthController {
   }
 
   @HandleExceptions
-  async loginWithOAuthProvider(
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ): Promise<unknown> {
+  async loginWithOAuthProvider(req: Request, res: Response): Promise<unknown> {
     const { provider } = req.params as { provider: AccountProviderType };
 
     if (
@@ -129,7 +113,7 @@ export class AuthController {
   }
 
   @HandleExceptions
-  async handleCallback(req: Request, res: Response, next: NextFunction) {
+  async handleCallback(req: Request, res: Response) {
     const { provider } = req.params as { provider: AccountProviderType };
     const { code, error } = req.query;
 

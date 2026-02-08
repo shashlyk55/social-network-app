@@ -6,7 +6,7 @@ import {
   CreateOAuthAccountParams,
   FindAccountsParams,
 } from './types/account-service.types';
-import { DataSource, EntityManager, Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import {
   AccountNotFoundException,
   AccountOperationException,
@@ -54,7 +54,7 @@ export class AccountsService implements IAccountsService {
       const savedAccount = await manager.save(Account, account);
 
       return savedAccount;
-    } catch (error) {
+    } catch (error: any) {
       if (error instanceof DomainException) {
         throw error;
       }
@@ -94,7 +94,7 @@ export class AccountsService implements IAccountsService {
       });
 
       return await manager.save(Account, account);
-    } catch (error) {
+    } catch (error: any) {
       throw new AccountOperationException('create account', error);
     }
   }
@@ -107,7 +107,7 @@ export class AccountsService implements IAccountsService {
         .select(['account.id', 'account.email', 'account.lastLoginAt'])
         .where('account.userId = :userId', { userId: id })
         .getOne();
-    } catch (error) {
+    } catch (error: any) {
       throw new AccountOperationException('find account by user id', error);
     }
 
@@ -126,7 +126,7 @@ export class AccountsService implements IAccountsService {
         .select(['account.id', 'account.email', 'account.lastLoginAt'])
         .where('account.id = :accountId', { accountId: id })
         .getOne();
-    } catch (error) {
+    } catch (error: any) {
       throw new AccountOperationException('find account by user id', error);
     }
     if (!account) {
@@ -161,7 +161,7 @@ export class AccountsService implements IAccountsService {
 
     try {
       await this.accountRepository.delete(id);
-    } catch (error) {
+    } catch (error: any) {
       throw new AccountOperationException('remove account', error);
     }
   }
@@ -178,7 +178,7 @@ export class AccountsService implements IAccountsService {
       await manager.update(Account, accountId, {
         lastLoginAt: new Date(),
       });
-    } catch (error) {
+    } catch (error: any) {
       throw new AccountOperationException('update last login at', error);
     }
   }
@@ -199,7 +199,7 @@ export class AccountsService implements IAccountsService {
       }
 
       return result.passwordHash;
-    } catch (error) {
+    } catch (error: any) {
       if (error instanceof DomainException) {
         throw error;
       }

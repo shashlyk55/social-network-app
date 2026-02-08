@@ -1,4 +1,3 @@
-import { User, UserRole } from 'src/entities/user.entity';
 import {
   CreateUserParams,
   UpdateUserParams,

@@ -85,12 +85,3 @@ export const extractRefreshToken = (
     });
   }
 };
-
-declare global {
-  namespace Express {
-    interface Request {
-      refreshToken?: string;
-      accessToken?: string;
-    }
-  }
-}

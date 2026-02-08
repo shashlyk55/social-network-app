@@ -1,13 +1,11 @@
 import { AccountProviderType } from 'src/entities/account.entity';
 import { CreateAccountParams } from '../types/account-service.types';
-import { AccountReferenceDto } from './account-reference.dto';
 
 export class CreateAccountDto {
   userId: number;
   email: string;
   password: string;
   provider: AccountProviderType;
-  //providerId: string | null;
 
   constructor(data: Partial<CreateAccountDto>) {
     Object.assign(this, data);
@@ -22,7 +20,6 @@ export class CreateAccountDto {
       email: dto.email,
       password: dto.password,
       provider: dto.provider,
-      //providerId: dto.providerId,
       createdById: createdById,
     };
     return params;

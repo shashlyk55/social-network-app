@@ -14,5 +14,5 @@ export class InitMetadataTable1762630433420 implements MigrationInterface {
         `);
   }
 
-  public async down(queryRunner: QueryRunner): Promise<void> {}
+  public async down(): Promise<void> {}
 }
