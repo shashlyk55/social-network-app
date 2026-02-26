@@ -3,7 +3,7 @@ import { LoginCredentials, SignupCredentials } from "@/types/auth";
 
 export const authService = {
   async signup(data: SignupCredentials): Promise<undefined> {
-    await apiClient.post("/auth/signup", data);
+    await apiClient.post("auth/signup", data);
   },
 
   async login(data: LoginCredentials): Promise<undefined> {

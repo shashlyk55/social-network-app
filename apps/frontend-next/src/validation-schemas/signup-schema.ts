@@ -9,7 +9,7 @@ export const signupSchema = z.object({
   displayName: z.string().min(2, "Введите отображаемое имя"),
   email: z.string().email("Некорректный email"),
   password: z.string().min(8, "Пароль должен быть не менее 8 символов"),
-  isPublic: z.boolean().default(true),
+  isPublic: z.boolean().catch(true),
   birthday: z
     .string()
     .nonempty("Поле не должно быть пустым")

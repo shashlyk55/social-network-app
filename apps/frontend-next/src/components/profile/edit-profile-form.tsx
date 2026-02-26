@@ -71,7 +71,7 @@ export function EditProfileForm({
   };
 
   const removeAvatar = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Чтобы не сработал клик по родителю (открытие выбора файла)
+    e.stopPropagation();
     setValue("avatarUrl", null, { shouldDirty: true });
 
     if (assetInputRef.current) assetInputRef.current.value = "";

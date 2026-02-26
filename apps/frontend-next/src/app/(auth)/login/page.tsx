@@ -3,17 +3,21 @@ import Link from "next/link";
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center">
-      <div className="w-full max-w-[350px] space-y-6">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold">С возвращением</h1>
-          <p className="text-sm text-gray-500">Введите данные для входа</p>
-        </div>
+    <div className="flex min-h-screen items-center justify-center bg-[#090909] p-4">
+      <div className="w-full max-w-[400px]">
+        <LoginForm
+          title="Welcome back"
+          subtitle="Sign in to continue to your creative space"
+        />
 
-        <LoginForm />
-
-        <p className="text-center text-sm text-gray-500">
-          Нет аккаунта? <Link href="/signup">Зарегистрироваться</Link>
+        <p className="mt-8 text-center text-sm text-zinc-500">
+          Dont have an account?{" "}
+          <Link
+            href="/signup"
+            className="font-semibold text-blue-600 hover:underline transition-colors"
+          >
+            Create one
+          </Link>
         </p>
       </div>
     </div>

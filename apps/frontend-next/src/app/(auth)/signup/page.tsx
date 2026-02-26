@@ -3,26 +3,20 @@ import Link from "next/link";
 
 export default function RegisterPage() {
   return (
-    <div className="container flex h-screen w-screen flex-col items-center justify-center">
-      <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
-        <div className="flex flex-col space-y-2 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Создать аккаунт
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Введите данные ниже, чтобы зарегистрироваться
-          </p>
-        </div>
+    <div className="flex min-h-screen items-center justify-center bg-[#090909] p-4 py-12">
+      <div className="w-full max-w-[450px]">
+        <SignupForm
+          title="Create account"
+          subtitle="Join our creative community today"
+        />
 
-        <SignupForm />
-
-        <p className="px-8 text-center text-sm text-muted-foreground">
-          Уже есть аккаунт?{" "}
+        <p className="mt-8 text-center text-sm text-zinc-500">
+          Already have an account?{" "}
           <Link
             href="/login"
-            className="underline underline-offset-4 hover:text-primary"
+            className="font-semibold text-blue-600 hover:underline transition-colors"
           >
-            Войти
+            Sign in
           </Link>
         </p>
       </div>

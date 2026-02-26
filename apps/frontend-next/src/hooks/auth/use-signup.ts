@@ -23,6 +23,7 @@ export const useSignup = () => {
         router.refresh();
       } catch (error) {
         console.error("Ошибка при получении профиля после входа:", error);
+        toast.error("Getting profile error");
         router.push("/feed");
       }
     },

@@ -9,7 +9,9 @@ import {
 } from "@/types/post";
 
 export const PostService = {
-  async findAll(params: FindPostsParams): Promise<PaginatedData<PostView>> {
+  async findAll(
+    params: FindPostsParams & FindPaginationParams
+  ): Promise<PaginatedData<PostView>> {
     const { data } = await apiClient.get<PaginatedData<PostView>>("/posts", {
       params,
     });
