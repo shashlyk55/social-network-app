@@ -1,8 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { PostService } from "@/services/post.service";
-import { PostView, UpdatePost } from "@/types/post";
+import { PostCache, UpdatePost } from "@/types/post";
 import { toast } from "sonner";
-import { PaginatedData } from "@/types/pagination";
 
 export const useUpdatePost = () => {
   const queryClient = useQueryClient();
@@ -11,23 +10,27 @@ export const useUpdatePost = () => {
     mutationFn: ({ postId, data }: { postId: number; data: UpdatePost }) =>
       PostService.update(postId, data),
     onSuccess: (updatedPost) => {
-      toast.success("Post updated");
+      queryClient.setQueriesData<PostCache>({ queryKey: ["posts"] }, (old) => {
+        if (!old) return old;
 
-      queryClient.setQueryData(["post", updatedPost.id], updatedPost);
-
-      queryClient.setQueriesData(
-        { queryKey: ["profile-posts"] },
-        (oldData: PaginatedData<PostView>) => {
-          if (!oldData) return oldData;
-
+        if ("pages" in old) {
           return {
-            ...oldData,
-            data: oldData.data.map((post: PostView) =>
-              post.id === updatedPost.id ? updatedPost : post
-            ),
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              data: page.data.map((p) =>
+                p.id === updatedPost.id ? updatedPost : p
+              ),
+            })),
           };
         }
-      );
+
+        if ("id" in old && old.id === updatedPost.id) {
+          return updatedPost;
+        }
+
+        return old;
+      });
     },
     onError: () => {
       toast.error("Failed to update post");

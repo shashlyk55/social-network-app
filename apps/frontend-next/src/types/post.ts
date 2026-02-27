@@ -1,5 +1,7 @@
+import { InfiniteData } from "@tanstack/react-query";
 import { PostAsset } from "./asset";
 import { ProfilePreview } from "./profile";
+import { PaginatedData } from "./pagination";
 
 export interface BasePost {
   id: number;
@@ -36,3 +38,5 @@ export interface UpdatePost {
   content?: string;
   assetIds?: number[];
 }
+
+export type PostCache = PostView | InfiniteData<PaginatedData<PostView>>;

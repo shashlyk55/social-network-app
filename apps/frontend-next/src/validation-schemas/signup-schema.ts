@@ -23,3 +23,5 @@ export const signupSchema = z.object({
       }
     ),
 });
+
+export type SignupFormValues = z.infer<typeof signupSchema>;

@@ -66,7 +66,7 @@ export const useToggleFollow = (
       queryClient.invalidateQueries({ queryKey: ["profiles-search"] });
       queryClient.invalidateQueries({ queryKey: ["profile", profileId] });
 
-      const message = isCurrentlyFollowed ? "Вы отписались" : "Вы подписались";
+      const message = isCurrentlyFollowed ? "Вы подписались" : "Вы отписались";
       toast.success(message);
     },
 

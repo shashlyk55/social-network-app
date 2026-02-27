@@ -56,6 +56,7 @@ export function PostItem({
   const handleDelete = () => {
     if (window.confirm("Are you sure you want to delete this post?")) {
       deletePost(post.id);
+      router.push("/profiles/me");
     }
   };
 

@@ -3,7 +3,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 
 export const usePostsFeed = (limit: number = 10) => {
   return useInfiniteQuery({
-    queryKey: ["posts-feed"],
+    queryKey: ["posts", "feed", limit],
     queryFn: ({ pageParam = 1 }) =>
       PostService.getFeed({ page: pageParam, limit }),
     getNextPageParam: (lastPage) => {
