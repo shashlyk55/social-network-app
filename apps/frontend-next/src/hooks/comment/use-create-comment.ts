@@ -36,7 +36,7 @@ export const useCreateComment = () => {
                 comment.id === parentCommentId
                   ? {
                       ...comment,
-                      repliesCount: (comment.repliesCount || 0) + 1,
+                      repliesCount: Number(comment.repliesCount || 0) + 1,
                     }
                   : comment
               ),
@@ -45,13 +45,15 @@ export const useCreateComment = () => {
         );
       }
 
-      queryClient.setQueryData(["post", postId], (oldPost: PostView) => {
-        if (!oldPost) return oldPost;
-        return {
-          ...oldPost,
-          commentsCount: (oldPost.commentsCount || 0) + 1,
-        };
-      });
+      queryClient.setQueryData(
+        ["posts", "detail", postId],
+        (oldPost: PostView): PostView => {
+          return {
+            ...oldPost,
+            commentsCount: Number(oldPost.commentsCount || 0) + 1,
+          };
+        }
+      );
 
       toast.success("Comment added!");
     },

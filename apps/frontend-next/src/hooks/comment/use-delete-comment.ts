@@ -48,7 +48,7 @@ export const useDeleteComment = () => {
                       ...comment,
                       repliesCount: Math.max(
                         0,
-                        (comment.repliesCount || 0) - 1
+                        Number(comment.repliesCount || 0) - 1
                       ),
                     }
                   : comment
@@ -59,13 +59,13 @@ export const useDeleteComment = () => {
       }
 
       queryClient.setQueryData(
-        ["post", postId],
-        (oldPost: PostView | undefined) => {
+        ["posts", "detail", postId],
+        (oldPost: PostView): PostView => {
           if (!oldPost) return oldPost;
 
           return {
             ...oldPost,
-            commentsCount: Math.max(0, (oldPost.commentsCount || 0) - 1),
+            commentsCount: Math.max(0, Number(oldPost.commentsCount || 0) - 1),
           };
         }
       );
