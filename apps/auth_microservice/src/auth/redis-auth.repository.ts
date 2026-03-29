@@ -11,11 +11,13 @@ export class RedisAuthRepository implements IRedisRepository {
   private readonly BL_REFRESH_PREFIX = 'bl_refresh:';
 
   constructor(private readonly configService: ConfigService) {
+    const REDIS_URL = this.configService.get(
+      'REDIS_URL',
+      'redis://:redis_password@localhost:6379',
+    );
+
     this.client = createClient({
-      url: this.configService.get(
-        'REDIS_URL',
-        'redis://localhost:6379?passowrd=redis_password',
-      ),
+      url: REDIS_URL,
     });
 
     this.client.on('error', (err) =>

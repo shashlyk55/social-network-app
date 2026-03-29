@@ -1,4 +1,5 @@
 {
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
     "module": "commonjs",
     "declaration": true,
@@ -8,8 +9,6 @@
     "allowSyntheticDefaultImports": true,
     "target": "ES2023",
     "sourceMap": true,
-    "outDir": "./dist",
-    "baseUrl": "./",
     "incremental": true,
     "skipLibCheck": true,
     "strict": true,
@@ -20,8 +19,11 @@
     "noFallthroughCasesInSwitch": false,
     "esModuleInterop": true,
     "moduleResolution": "node",
-    "strictPropertyInitialization": false
+    "strictPropertyInitialization": false,
+    "outDir": "./dist",
+    "baseUrl": "./"
   },
   "include": ["src/**/*", "test/**/*", "db"],
-  "exclude": ["node_modules", "dist", "coverage"]
+  "exclude": ["node_modules", "dist", "coverage"],
+  "files": ["src/types/index.d.ts"]
 }

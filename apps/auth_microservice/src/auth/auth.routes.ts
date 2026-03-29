@@ -37,35 +37,37 @@ export function createAuthRouter(dataSource: DataSource): Router {
 
   const authController = new AuthController(authService);
 
-  router.get('/login/:provider', (req, res, next) =>
-    authController.loginWithOAuthProvider(req, res, next),
+  router.get(
+    '/login/:provider',
+    authController.loginWithOAuthProvider.bind(authController),
   );
 
-  router.get('/callback/:provider', (req, res, next) =>
-    authController.handleCallback(req, res, next),
+  router.get(
+    '/callback/:provider',
+    authController.handleCallback.bind(authController),
   );
 
-  router.post('/register', (req, res, next) =>
-    authController.register(req, res, next),
+  router.post('/register', authController.register.bind(authController));
+
+  router.post('/login', authController.login.bind(authController));
+
+  router.post(
+    '/validate',
+    extractAccessToken,
+    authController.validate.bind(authController),
   );
 
-  router.post('/login', (req, res, next) =>
-    authController.login(req, res, next),
-  );
-
-  router.post('/validate', extractAccessToken, (req, res, next) =>
-    authController.validate(req, res, next),
-  );
-
-  router.post('/refresh', extractRefreshToken, (req, res, next) =>
-    authController.refreshTokens(req, res, next),
+  router.post(
+    '/refresh',
+    extractRefreshToken,
+    authController.refreshTokens.bind(authController),
   );
 
   router.post(
     '/logout',
     extractAccessToken,
     extractRefreshToken,
-    (req, res, next) => authController.logout(req, res, next),
+    authController.logout.bind(authController),
   );
 
   return router;

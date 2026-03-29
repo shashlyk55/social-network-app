@@ -391,7 +391,8 @@ export class AuthService implements IAuthService {
         throw error;
       }
 
-      throw new AuthOperationException('generate tokens', error);
+      //throw new AuthOperationException('generate tokens', error);
+      throw error;
     }
   }
 
