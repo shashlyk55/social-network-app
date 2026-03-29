@@ -1,0 +1,25 @@
+include:
+  - path: ./docker/docker-compose.infra.yaml
+  - path: ./docker/docker-compose.apps.yaml
+
+services:
+  nginx:
+    image: nginx:1.27.4-bookworm
+    ports:
+      - "80:80"
+    volumes:
+      - ./apps/frontend-next/dist:/usr/share/nginx/html:ro
+      - ./apps/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - core-microservice
+    networks:
+      - innogram-network
+
+volumes:
+  postgres_data:
+  pgadmin_data:
+  redis_data:
+
+networks:
+  innogram-network:
+    driver: bridge
