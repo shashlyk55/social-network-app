@@ -2,8 +2,15 @@ services:
   auth-microservice:
     build:
       context: ..
-      dockerfile: apps/auth_microservice/Dockerfile
+      dockerfile: ./apps/auth_microservice/Dockerfile
     restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     ports:
       - "3002:3002"
     env_file:
@@ -14,8 +21,15 @@ services:
   core-microservice:
     build:
       context: ..
-      dockerfile: apps/core_microservice/Dockerfile
+      dockerfile: ./apps/core_microservice/Dockerfile
     restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     env_file:
       - ../apps/core_microservice/core.env
     networks:
@@ -24,8 +38,15 @@ services:
   notifications-consumer:
     build:
       context: ..
-      dockerfile: apps/notifications_consumer_microservice/Dockerfile
+      dockerfile: ./apps/notifications_consumer_microservice/Dockerfile
     restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     env_file:
       - ../apps/notifications_consumer_microservice/notifications-consumer.env
     networks:
@@ -45,4 +66,4 @@ services:
 
 networks:
   innogram-network:
-    external: true
+    external: false
