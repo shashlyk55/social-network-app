@@ -15,6 +15,7 @@ import { ProfilesService } from 'src/profiles/profiles.service';
 import { PrivateProfileException } from 'src/profiles/exceptions/profile.exceptions';
 import { PaginatedData } from 'src/common/types/paginated-data';
 import { Profile } from 'src/entities/profile.entity';
+import { NotificationsProducerService } from 'src/notifications/producer/notifications-producer.service';
 
 @Injectable()
 export class FollowService {
@@ -22,6 +23,7 @@ export class FollowService {
     @InjectRepository(ProfileFollow)
     private readonly followRepository: Repository<ProfileFollow>,
     private readonly profilesService: ProfilesService,
+    private readonly notificationsProducer: NotificationsProducerService,
   ) {}
 
   async getFollows(
@@ -117,7 +119,19 @@ export class FollowService {
       createdAt: new Date(),
     });
 
-    return this.followRepository.save(follow);
+    const savedFollow = await this.followRepository.save(follow);
+
+    await this.notificationsProducer.emitFollowRequestNotification({
+      recipientIds: [targetProfile.userId],
+      senderId: userId,
+      message: 'User followed on you',
+      data: {
+        followerProfileId: profile.id,
+        followedProfileId: targetProfile.id,
+      },
+    });
+
+    return savedFollow;
   }
 
   async unfollow(userId: number, targetProfileId: number) {
@@ -162,6 +176,16 @@ export class FollowService {
       accepted: true,
     });
 
+    await this.notificationsProducer.emitAcceptFollowRequestNotification({
+      recipientIds: [existingFollow.createdById],
+      senderId: userId,
+      message: 'Your follow request has been accepted',
+      data: {
+        followerProfileId: followerProfileId,
+        followedProfileId: profile.id,
+      },
+    });
+
     return await this.findFollow(followerProfileId, profile.id);
   }
 
@@ -171,6 +195,16 @@ export class FollowService {
     await this.followRepository.delete({
       followedProfileId: profile.id,
       followerProfileId: followerProfileId,
+    });
+
+    await this.notificationsProducer.emitDeclineFollowRequestNotification({
+      recipientIds: [profile.userId],
+      senderId: userId,
+      message: 'Your follow request has been declined',
+      data: {
+        followerProfileId: followerProfileId,
+        followedProfileId: profile.id,
+      },
     });
   }
 }

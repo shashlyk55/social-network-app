@@ -7,11 +7,14 @@ import {
 } from 'typeorm';
 
 export enum NotificationType {
-  LIKE = 'like',
-  COMMENT = 'comment',
-  FOLLOW = 'follow',
-  MESSAGE = 'message',
-  SYSTEM = 'system',
+  POST_LIKE = 'POST_LIKE',
+  NEW_COMMENT = 'NEW_COMMENT',
+  COMMENT_REPLY = 'COMMENT_REPLY',
+  COMMENT_LIKE = 'COMMENT_LIKE',
+  FOLLOW_REQUEST = 'FOLLOW_REQUEST',
+  ACCEPT_FOLLOW_REQUEST = 'ACCEPT_FOLLOW_REQUEST',
+  DECLINE_FOLLOW_REQUEST = 'DECLINE_FOLLOW_REQUEST',
+  SYSTEM = 'SYSTEM',
 }
 
 @Entity('notifications', { schema: 'notification' })
@@ -34,12 +37,6 @@ export class Notification {
 
   @Column({ type: 'jsonb', nullable: true })
   data: Record<string, unknown> | null;
-
-  // @Column({ name: 'is_read', default: false })
-  // isRead: boolean;
-
-  // @Column({ type: 'date', name: 'read_at', nullable: true })
-  // readAt: Date | null;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

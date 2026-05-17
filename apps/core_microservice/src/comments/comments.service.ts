@@ -19,7 +19,6 @@ import { DomainException } from 'src/app/exceptions/domain.exception';
 import { PostsService } from 'src/posts/posts.service';
 import { ProfilesService } from 'src/profiles/profiles.service';
 import { NotificationsProducerService } from 'src/notifications/producer/notifications-producer.service';
-import { NotificationType } from 'src/common/types/notification-type';
 import { PaginatedData } from 'src/common/types/paginated-data';
 
 @Injectable()
@@ -39,6 +38,11 @@ export class CommentsService {
 
     const profile = await this.profilesService.findByUserId(userId);
 
+    const recipientIds = new Set<number>();
+    if (post.createdById !== userId) {
+      recipientIds.add(post.createdById);
+    }
+
     if (params.parentCommentId) {
       const parentComment = await this.commentRepository.findOne({
         where: { id: params.parentCommentId },
@@ -50,6 +54,10 @@ export class CommentsService {
 
       if (parentComment.parentCommentId !== null) {
         throw new CommentNestingLevelException();
+      }
+
+      if (parentComment.createdById !== userId) {
+        recipientIds.add(parentComment.createdById);
       }
     }
 
@@ -64,14 +72,23 @@ export class CommentsService {
 
       const savedComment = await this.commentRepository.save(comment);
 
-      await this.notificationsProducer.emitNotification({
-        recipientIds: [post.createdById],
-        senderId: userId,
-        type: NotificationType.COMMENT,
-        title: 'New comment',
-        message: `User write a comment`,
-        data: { postId: params.postId, commentText: params.content },
-      });
+      if (params.parentCommentId) {
+        await this.notificationsProducer.emitCommentReplyNotification({
+          recipientIds: Array.from(recipientIds),
+          senderId: userId,
+          message: 'User replied to your comment',
+          data: {
+            postId: params.postId,
+          },
+        });
+      } else {
+        await this.notificationsProducer.emitNewCommentNotification({
+          recipientIds: Array.from(recipientIds),
+          senderId: userId,
+          message: 'New comment',
+          data: { postId: params.postId, commentText: params.content },
+        });
+      }
 
       return await this.findOne(savedComment.id);
     } catch (error: any) {
@@ -220,6 +237,24 @@ export class CommentsService {
         });
 
         await this.commentLikeRepository.save(like);
+
+        const savedLike = await this.commentLikeRepository.findOne({
+          where: { id: like.id },
+          relations: ['comment'],
+        });
+
+        if (savedLike !== null && savedLike.comment.createdById !== userId) {
+          await this.notificationsProducer.emitCommentLikeNotification({
+            recipientIds: [savedLike.comment.createdById],
+            senderId: userId,
+            message: 'User liked your comment',
+            data: {
+              postId: savedLike.comment.postId,
+              commentId: savedLike.comment.id,
+              likerId: savedLike.createdById,
+            },
+          });
+        }
       }
 
       const likesCount = await this.commentLikeRepository.count({

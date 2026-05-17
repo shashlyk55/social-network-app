@@ -3,15 +3,17 @@ import { NotificationType } from 'src/common/types/notification-type';
 export type FindNotificationsParams = {
   page?: number;
   limit?: number;
-  type?: NotificationType;
   isRead?: boolean;
-  createdById?: number;
+  recipientId?: number;
 };
 
-// export type NotificationPaginationResult = {
-//   data: Notification[];
-//   total: number;
-//   page: number;
-//   limit: number;
-//   totalPages: number;
-// };
+export type NotificationResult = {
+  id: number;
+  type: NotificationType;
+  title: string;
+  message: string;
+  data: any;
+  isRead: boolean;
+  readAt: Date | null;
+  createdAt: Date;
+};

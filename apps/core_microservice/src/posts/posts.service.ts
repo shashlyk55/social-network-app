@@ -20,6 +20,7 @@ import { DomainException } from 'src/app/exceptions/domain.exception';
 import { ProfilesService } from 'src/profiles/profiles.service';
 import { PostAsset } from 'src/entities/many-to-many/post-asset.entity';
 import { PaginatedData } from 'src/common/types/paginated-data';
+import { NotificationsProducerService } from 'src/notifications/producer/notifications-producer.service';
 
 @Injectable()
 export class PostsService {
@@ -32,6 +33,7 @@ export class PostsService {
     private readonly postAssetRepository: Repository<PostAsset>,
     private readonly dataSource: DataSource,
     private readonly profilesService: ProfilesService,
+    private readonly notificationsProducer: NotificationsProducerService,
   ) {}
 
   async create(params: CreatePostParams, createdById: number): Promise<Post> {
@@ -138,10 +140,10 @@ export class PostsService {
     }
 
     const [data, total] = await queryBuilder
-      .skip(skip)
-      .take(limit)
       .orderBy('post.createdAt', 'DESC')
       .addOrderBy('postAssets.orderIndex', 'ASC')
+      .skip(skip)
+      .take(limit)
       .getManyAndCount();
 
     return {
@@ -332,6 +334,19 @@ export class PostsService {
         });
 
         await this.postLikeRepository.save(like);
+
+        const post = await this.postRepository.findOne({
+          where: { id: postId },
+        });
+
+        if (post !== null) {
+          await this.notificationsProducer.emitPostLikeNotification({
+            recipientIds: [post.createdById],
+            senderId: createdById,
+            message: 'User liked your post',
+            data: { postId },
+          });
+        }
       }
 
       const likesCount = await this.postLikeRepository.count({

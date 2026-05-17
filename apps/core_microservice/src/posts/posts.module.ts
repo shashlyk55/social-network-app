@@ -8,6 +8,7 @@ import { PostLike } from 'src/entities/many-to-many/post-like.entity';
 import { ProfilesModule } from 'src/profiles/profiles.module';
 import { AssetsModule } from 'src/assets/assets.module';
 import { FollowModule } from 'src/follow/follow.module';
+import { NotificationsModule } from 'src/notifications/notifications.module';
 
 @Module({
   controllers: [PostsController],
@@ -17,6 +18,7 @@ import { FollowModule } from 'src/follow/follow.module';
     ProfilesModule,
     AssetsModule,
     FollowModule,
+    NotificationsModule,
   ],
   exports: [PostsService],
 })

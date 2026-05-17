@@ -6,7 +6,7 @@ import { NotificationsConsumerModule } from '@/notifications-consumer/notificati
 @Module({
   imports: [
     ConfigModule.forRoot({
-      envFilePath: ['notifications.env'],
+      envFilePath: ['notifications-consumer.env'],
       isGlobal: true,
     }),
     TypeOrmModule.forRootAsync({

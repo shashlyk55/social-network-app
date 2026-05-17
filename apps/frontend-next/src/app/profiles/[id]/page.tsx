@@ -14,8 +14,7 @@ import {
 import { useToggleFollow } from "@/hooks/follow/use-toggle-follow";
 import { cn } from "@/lib/utils/cn";
 import Link from "next/link";
-import { useProfilePosts } from "@/hooks/post/use-profile-posts";
-import { PostItem } from "@/components/post/post-item";
+import { ProfilePostList } from "@/components/profile/profile-posts-list";
 
 export default function OtherProfilePage() {
   const { id } = useParams();
@@ -29,10 +28,6 @@ export default function OtherProfilePage() {
     profileId,
     profile?.isFollowed || false
   );
-
-  const { data: postsData, isLoading: isPostsLoading } = useProfilePosts({
-    authorProfileId: profileId,
-  });
 
   const handleMessageClick = () => {
     // Переходим в чаты и передаем ID профиля как pending
@@ -172,19 +167,7 @@ export default function OtherProfilePage() {
         <div className="space-y-6">
           {profile.canViewFullProfile ? (
             <div className="space-y-6">
-              {isPostsLoading ? (
-                <div className="flex justify-center py-10">
-                  <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-                </div>
-              ) : postsData?.data?.length ? (
-                postsData.data.map((post) => (
-                  <PostItem key={post.id} post={post} />
-                ))
-              ) : (
-                <div className="text-center py-20 border border-dashed border-[#222] rounded-3xl">
-                  <p className="text-slate-500">No posts yet</p>
-                </div>
-              )}
+              <ProfilePostList profileId={profileId} activeTab="posts" />
             </div>
           ) : (
             /* Дизайн приватного профиля (Замок) */
