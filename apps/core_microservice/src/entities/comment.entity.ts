@@ -75,7 +75,7 @@ export class Comment {
 
   @VirtualColumn({
     query: (alias) =>
-      `SELECT COUNT("id") FROM "main"."comment_likes" WHERE "comment_id" = ${alias}.id`,
+      `SELECT COUNT("id") FROM "main"."comments_likes" WHERE "comment_id" = ${alias}.id`,
   })
   likesCount: number;
 

@@ -1,11 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { CreateProfileDto } from './dto/create-profile.dto';
-import { UpdateProfileDto } from './dto/update-profile.dto';
-import { IProfilesService } from './interfaces/IProfilesService';
+
 import { InjectRepository } from '@nestjs/typeorm';
 import { DomainException } from 'src/app/exceptions/domain.exception';
 import { Profile } from 'src/entities/profile.entity';
-import { Repository, DataSource } from 'typeorm';
+import { Repository } from 'typeorm';
 import {
   UsernameAlreadyExistsException,
   ProfileOperationException,
@@ -15,13 +13,15 @@ import {
   CreateProfileParams,
   UpdateProfileParams,
 } from './types/profile-params.types';
+import { ProfileFollow } from 'src/entities/many-to-many/profile-follow.entity';
 
 @Injectable()
-export class ProfilesService implements IProfilesService {
+export class ProfilesService {
   constructor(
     @InjectRepository(Profile)
     private readonly profileRepository: Repository<Profile>,
-    private readonly dataSource: DataSource,
+    @InjectRepository(ProfileFollow)
+    private readonly followRepository: Repository<ProfileFollow>,
   ) {}
 
   async create(params: CreateProfileParams): Promise<Profile> {
@@ -43,34 +43,98 @@ export class ProfilesService implements IProfilesService {
     }
   }
 
-  async findOne(id: number): Promise<Profile> {
-    try {
-      const profile = await this.profileRepository.findOne({
-        where: { id, deleted: false },
+  async searchProfiles(
+    query: string,
+    currentUserId?: number,
+  ): Promise<Profile[]> {
+    let currentUserProfile: Profile | undefined = currentUserId
+      ? await this.findByUserId(currentUserId)
+      : undefined;
+
+    const queryBuilder = this.profileRepository
+      .createQueryBuilder('profile')
+      .where('profile.username ILIKE :search', { search: `%${query}%` })
+      .take(10);
+
+    if (currentUserProfile) {
+      queryBuilder.andWhere('profile.id != :currentUserProfileId', {
+        currentUserProfileId: currentUserProfile.id,
       });
 
-      if (!profile) throw new ProfileNotFoundException(id);
-
-      return profile;
-    } catch (error) {
-      if (error instanceof ProfileNotFoundException) throw error;
-      throw new ProfileOperationException('find profile', error.message);
+      queryBuilder.addSelect((subQuery) => {
+        return subQuery
+          .select('COUNT(f.id) > 0', 'isFollowed')
+          .from('main.profiles_follows', 'f')
+          .where('f.follower_profile_id = :currentUserProfileId', {
+            currentUserProfileId: currentUserProfile.id,
+          })
+          .andWhere('f.followed_profile_id = profile.id');
+      }, 'profile_isFollowed');
     }
+
+    return await queryBuilder.getMany(); // Возвращаем просто массив
+  }
+
+  async getFollowedProfiles(userId: number) {
+    const currentUserProfile = await this.findByUserId(userId);
+  }
+
+  async getFollows(userId: number) {}
+
+  async findFollow(
+    followerProfileId: number,
+    targetProfileId: number,
+  ): Promise<ProfileFollow | null> {
+    const existingFollow = await this.followRepository.findOne({
+      where: {
+        followerProfileId: followerProfileId,
+        followedProfileId: targetProfileId,
+      },
+    });
+
+    return existingFollow;
+  }
+
+  async findByUsername(username: string): Promise<Profile> {
+    const profile = await this.profileRepository.findOne({
+      where: {
+        username: username,
+      },
+    });
+
+    if (!profile) throw new ProfileNotFoundException();
+
+    return profile;
+  }
+
+  async getMyProfile(id: number): Promise<Profile> {
+    const profile = await this.profileRepository.findOne({
+      where: { id, deleted: false },
+    });
+
+    if (!profile) throw new ProfileNotFoundException(id);
+
+    return profile;
+  }
+
+  async findOne(id: number): Promise<Profile> {
+    const profile = await this.profileRepository.findOne({
+      where: { id, deleted: false },
+    });
+
+    if (!profile) throw new ProfileNotFoundException(id);
+
+    return profile;
   }
 
   async findByUserId(userId: number): Promise<Profile> {
-    try {
-      const profile = await this.profileRepository.findOne({
-        where: { userId, deleted: false },
-      });
+    const profile = await this.profileRepository.findOne({
+      where: { userId, deleted: false },
+    });
 
-      if (!profile) throw new ProfileNotFoundException();
+    if (!profile) throw new ProfileNotFoundException();
 
-      return profile;
-    } catch (error) {
-      if (error instanceof ProfileNotFoundException) throw error;
-      throw new ProfileOperationException('find profile', error.message);
-    }
+    return profile;
   }
 
   async getByUserId(userId: number): Promise<Profile | null> {
@@ -97,6 +161,11 @@ export class ProfilesService implements IProfilesService {
       Object.keys(updatePayload).forEach(
         (key) => updatePayload[key] === undefined && delete updatePayload[key],
       );
+
+      if (params.birthday) {
+        const date = new Date(params.birthday);
+        updatePayload.birthday = isNaN(date.getTime()) ? null : date;
+      }
 
       await this.profileRepository.update(profile.id, {
         ...updatePayload,

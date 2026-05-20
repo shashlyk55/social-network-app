@@ -1,10 +1,23 @@
 const corsConfig = {
   development: {
-    origin: [
-      'http://localhost:3002',
-      'http://localhost:3003',
-      'http://127.0.0.1:3000',
-    ],
+    // origin: (origin, callback) => {
+    //   const allowedOrigins = [
+    //     'http://localhost:3000',
+    //     'http://localhost:3002',
+    //     'http://localhost:3003',
+    //   ];
+    //   if (!origin || allowedOrigins.includes(origin)) {
+    //     callback(null, true);
+    //   } else {
+    //     callback(new Error('Not allowed by CORS'));
+    //   }
+    // },
+    // origin: [
+    //   'http://localhost:3002',
+    //   'http://localhost:3003',
+    //   'http://localhost:3000',
+    // ],
+    origin: 'http://localhost:3000',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: [
       'Content-Type',
@@ -15,11 +28,11 @@ const corsConfig = {
       'Access-Control-Allow-Headers',
       'Access-Control-Request-Method',
     ],
-    exposedHeaders: ['Content-Range', 'X-Content-Range'],
     credentials: true,
-    preflightContinue: false,
+    // exposedHeaders: ['Content-Range', 'X-Content-Range'],
+    // preflightContinue: false,
     optionsSuccessStatus: 204,
-    maxAge: 86400,
+    // maxAge: 86400,
   },
 };
 

@@ -32,7 +32,7 @@ export class ProfileMapper {
       updatedById: userId,
       avatarUrl: dto.avatarUrl,
       bio: dto.bio,
-      birthday: dto.birthday ? new Date(dto.birthday) : undefined,
+      birthday: dto.birthday ? new Date(dto.birthday) : null,
       displayName: dto.displayName,
       isPublic: dto.isPublic,
       username: dto.username,

@@ -1,7 +1,7 @@
 import { CreateCommentDto } from '../dto/create-comment.dto';
 import { UpdateCommentDto } from '../dto/update-comment.dto';
 import { CommentResponseDto } from '../dto/comment-response.dto';
-import { PaginationResponseDto } from '../../common/dto/pagination-response.dto';
+import { PaginationDto } from '../../common/dto/pagination.dto';
 import {
   CreateCommentParams,
   UpdateCommentParams,
@@ -51,7 +51,7 @@ export class CommentMappers {
 
   static toPaginationResponse(
     result: CommentPaginationResult,
-  ): PaginationResponseDto<CommentResponseDto> {
+  ): PaginationDto<CommentResponseDto> {
     return {
       data: result.data.map((comment) => this.toCommentResponse(comment)),
       meta: {

@@ -9,6 +9,7 @@ const helmetConfig = {
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
       frameSrc: ["'none'"],
+      connectSrc: ["'self'", 'http://localhost:3000', 'http://localhost:3001'],
     },
   },
   hsts: {
@@ -18,6 +19,8 @@ const helmetConfig = {
   },
   noSniff: true,
   xssFilter: true,
+  crossOriginResourcePolicy: { policy: 'cross-origin' as const },
+  crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' as const },
 };
 
 export const getHelmetConfig = () => {

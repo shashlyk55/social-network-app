@@ -7,7 +7,7 @@ import {
   UpdateChatParams,
   ChatPaginationResult,
 } from '../types/chat-service.types';
-import { PaginationResponseDto } from 'src/common/dto/pagination-response.dto';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 
 export class ChatMappers {
   static toCreateParams(dto: CreateChatDto): CreateChatParams {
@@ -80,7 +80,7 @@ export class ChatMappers {
 
   static toPaginationResponse(
     result: ChatPaginationResult,
-  ): PaginationResponseDto<ChatResponseDto> {
+  ): PaginationDto<ChatResponseDto> {
     return {
       data: result.data.map((chat) => this.toChatResponse(chat)),
       meta: {

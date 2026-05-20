@@ -19,25 +19,50 @@ async function bootstrap() {
     .setTitle('Innogram')
     .setDescription('Innogram Social Network API')
     .setVersion('1.0')
-    .addBearerAuth(
+    .addCookieAuth(
+      'accessToken', // название cookie
       {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
-        name: 'JWT',
-        description: 'Enter JWT token',
-        in: 'header',
+        type: 'apiKey',
+        in: 'cookie',
+        name: 'accessToken',
+        description: 'Enter JWT token in cookie',
       },
-      'access-token',
+      'access-token', // security name
     )
     .build();
 
-  const documnet = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('api', app, documnet);
+  const document = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('api', app, document);
 
+  app.use((req, res, next) => {
+    const origin = req.headers.origin;
+
+    // Проверяем, что запрос идет с нашего фронтенда
+    if (origin === 'http://localhost:3000') {
+      res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
+    }
+
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader(
+      'Access-Control-Allow-Methods',
+      'GET,POST,PUT,PATCH,DELETE,OPTIONS',
+    );
+    res.setHeader(
+      'Access-Control-Allow-Headers',
+      'Origin, X-Requested-With, Content-Type, Accept, Authorization',
+    );
+
+    // КРИТИЧНО: Обработка Preflight запроса
+    if (req.method === 'OPTIONS') {
+      return res.status(204).send();
+    }
+
+    next();
+  });
+
+  // app.enableCors(getCorsConfig());
   app.use(helmet(getHelmetConfig()));
   app.use(cookieParser());
-  app.enableCors(getCorsConfig());
 
   app.useGlobalPipes(
     new ValidationPipe({

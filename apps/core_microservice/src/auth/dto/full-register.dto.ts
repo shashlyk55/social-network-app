@@ -20,9 +20,9 @@ export class FullRegisterDto {
   @IsString()
   password: string;
 
-  @ApiProperty({ enum: UserRole, example: UserRole.USER })
-  @IsEnum(UserRole)
-  role: UserRole;
+  // @ApiProperty({ enum: UserRole, example: UserRole.USER })
+  // @IsEnum(UserRole)
+  // role: UserRole;
 
   @ApiProperty({
     enum: AccountProviderType,

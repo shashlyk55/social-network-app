@@ -8,7 +8,7 @@ import {
   InternalAuthResult,
   LogoutParams,
   OAuthCallbackParams,
-  SignUpParams,
+  SignupParams,
   TokenResult,
 } from '../types/auth-params.types';
 import { CreateProfileParams } from 'src/profiles/types/profile-params.types';
@@ -23,13 +23,13 @@ export class OrchestratorAuthService {
     private readonly profilesService: ProfilesService,
   ) {}
 
-  async signup(params: SignUpParams): Promise<AuthResult> {
+  async signup(params: SignupParams): Promise<AuthResult> {
     let createdUserId: number | null = null;
     let isProfileCreated: boolean = false;
 
     try {
       const internalAuthData: InternalAuthResult =
-        await this.authService.handleSignUp(params.auth);
+        await this.authService.handleSignup(params.auth);
       createdUserId = internalAuthData.user.id;
 
       const profileParams: CreateProfileParams = {

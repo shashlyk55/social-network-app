@@ -21,7 +21,7 @@ export class AssetsService {
     file: Express.Multer.File,
     params: UploadAssetParams,
     userId: number,
-  ): Promise<AssetResult> {
+  ): Promise<Asset> {
     const uniqueFileName = await this.filesService.uploadFile(file);
 
     const asset = this.assetRepository.create({
@@ -35,14 +35,16 @@ export class AssetsService {
 
     const savedAsset = await this.assetRepository.save(asset);
 
-    return {
-      id: savedAsset.id,
-      fileName: savedAsset.fileName,
-      fileType: savedAsset.fileType,
-      fileSize: savedAsset.fileSize,
-      orderIndex: savedAsset.orderIndex,
-      createdAt: savedAsset.createdAt,
-    };
+    return savedAsset;
+    // return {
+    //   id: savedAsset.id,
+    //   fileName: savedAsset.fileName,
+    //   fileType: savedAsset.fileType,
+    //   fileSize: savedAsset.fileSize,
+    //   filePath: savedAsset.filePath,
+    //   orderIndex: savedAsset.orderIndex,
+    //   createdAt: savedAsset.createdAt,
+    // };
   }
 
   private mapMimeTypeToEntity(mimeType: string): FileType {

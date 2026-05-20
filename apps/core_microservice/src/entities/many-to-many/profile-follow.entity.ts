@@ -10,6 +10,17 @@ import {
 } from 'typeorm';
 import { Profile } from '../profile.entity';
 
+export enum FollowStatusFilter {
+  ACCEPTED = 'accepted',
+  PENDING = 'pending',
+  ALL = 'all',
+}
+
+export enum FollowDirection {
+  FOLLOWING = 'following',
+  FOLLOWERS = 'followers',
+}
+
 @Entity('profiles_follows', { schema: 'main' })
 @Check('"follower_profile_id" != "followed_profile_id"')
 export class ProfileFollow {

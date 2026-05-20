@@ -8,6 +8,7 @@ import {
   JoinColumn,
   ManyToOne,
   OneToMany,
+  VirtualColumn,
 } from 'typeorm';
 import { ProfileFollow } from './many-to-many/profile-follow.entity';
 import { ProfileToProfileConfiguration } from './many-to-many/profile-to-profile-configuration.entity';
@@ -65,4 +66,33 @@ export class Profile {
 
   @OneToMany(() => ProfileToProfileConfiguration, (config) => config.profile)
   profileConfigurations: ProfileToProfileConfiguration[];
+
+  @VirtualColumn({
+    query: (alias) =>
+      `SELECT COUNT("id") FROM "main"."profiles_follows" WHERE "followed_profile_id" = ${alias}.id`,
+  })
+  followersCount: number;
+
+  @VirtualColumn({
+    query: (alias) =>
+      `SELECT COUNT("id") FROM "main"."profiles_follows" WHERE "follower_profile_id" = ${alias}.id`,
+  })
+  followedCount: number;
+
+  @VirtualColumn({
+    query: (alias) =>
+      `SELECT COUNT("id") FROM "main"."posts" WHERE "profile_id" = ${alias}.id`,
+  })
+  postsCount: number;
+
+  @VirtualColumn({
+    query: (alias) =>
+      `SELECT COUNT("id") FROM "main"."posts" WHERE "profile_id" = ${alias}.id AND "is_archived" = false`,
+  })
+  publicPostsCount: number;
+
+  @VirtualColumn({
+    query: (alias) => `SELECT false`,
+  })
+  isFollowed: boolean;
 }

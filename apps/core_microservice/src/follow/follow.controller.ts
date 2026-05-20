@@ -9,7 +9,6 @@ import {
   Patch,
   Post,
   Query,
-  Req,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -30,6 +29,9 @@ import {
 } from '@nestjs/swagger';
 import { FollowMapper } from './utils/follow.mapper';
 import { AccessGuard } from 'src/auth/guards/access.guard';
+import { ProfilePreviewDto } from 'src/profiles/dto/profile-preview.dto';
+import { plainToInstance } from 'class-transformer';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 
 @ApiTags('follow')
 @ApiBearerAuth('access-token')
@@ -40,53 +42,11 @@ import { AccessGuard } from 'src/auth/guards/access.guard';
 export class FollowController {
   constructor(private readonly followService: FollowService) {}
 
-  @Get('following')
-  @ApiOperation({ summary: 'Список моих подписок (на кого я подписан)' })
-  @ApiQuery({ name: 'status', enum: FollowStatusFilter, required: false })
-  async getMyFollowing(
-    @CurrentUser('userId') userId: number,
-    @Query('status') status: FollowStatusFilter = FollowStatusFilter.ALL,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-  ) {
-    const followDirection = FollowDirection.FOLLOWING;
-    const result = await this.followService.getFollows(
-      userId,
-      followDirection,
-      status,
-      page,
-      limit,
-    );
-
-    return FollowMapper.toPaginationResponse(result, followDirection);
-  }
-
-  @Get('followers')
-  @ApiOperation({ summary: 'Список моих подписчиков (кто подписан на меня)' })
-  @ApiQuery({ name: 'status', enum: FollowStatusFilter, required: false })
-  async getMyFollowers(
-    @CurrentUser('userId') userId: number,
-    @Query('status') status: FollowStatusFilter = FollowStatusFilter.ALL,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-  ) {
-    const followDirection = FollowDirection.FOLLOWERS;
-    const result = await this.followService.getFollows(
-      userId,
-      followDirection,
-      status,
-      page,
-      limit,
-    );
-
-    return FollowMapper.toPaginationResponse(result, followDirection);
-  }
-
   @Post(':targetProfileId')
-  @HttpCode(HttpStatus.CREATED)
+  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Подписаться на профиль' })
   @ApiResponse({
-    status: 201,
+    status: 204,
     description: 'Запрос создан или подписка оформлена',
   })
   @ApiParam({
@@ -97,7 +57,7 @@ export class FollowController {
     @CurrentUser('userId') userId: number,
     @Param('targetProfileId') targetProfileId: number,
   ) {
-    return await this.followService.follow(userId, targetProfileId);
+    await this.followService.follow(userId, targetProfileId);
   }
 
   @Delete(':targetProfileId')
@@ -133,5 +93,27 @@ export class FollowController {
     @Param('followerProfileId') followerProfileId: number,
   ) {
     await this.followService.rejectRequest(userId, followerProfileId);
+  }
+
+  @Get(':profileId/:direction')
+  @ApiOperation({ summary: 'Подписки или подписчики пользователя' })
+  async getFollows(
+    @Param('profileId', ParseIntPipe) profileId: number,
+    @Param('direction') direction: FollowDirection,
+    @CurrentUser('userId') userId: number,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    const result = await this.followService.getFollows(
+      userId,
+      profileId,
+      direction,
+      page,
+      limit,
+    );
+
+    return plainToInstance(PaginationDto<ProfilePreviewDto>, result, {
+      excludeExtraneousValues: true,
+    });
   }
 }
