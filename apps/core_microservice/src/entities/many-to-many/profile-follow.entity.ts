@@ -33,7 +33,7 @@ export class ProfileFollow {
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @Column({ name: 'created_by' })
+  @Column({ type: 'int', name: 'created_by' })
   createdById: number;
 
   @UpdateDateColumn({ name: 'updated_at' })
@@ -42,7 +42,7 @@ export class ProfileFollow {
   @Column({ type: 'int', name: 'updated_by', nullable: true })
   updatedById: number | null;
 
-  @Column({ name: 'follower_profile_id' })
+  @Column({ type: 'int', name: 'follower_profile_id' })
   followerProfileId: number;
 
   @ManyToOne(() => Profile, (profile) => profile.following, {
@@ -51,7 +51,7 @@ export class ProfileFollow {
   @JoinColumn({ name: 'follower_profile_id' })
   followerProfile: Profile;
 
-  @Column({ name: 'followed_profile_id' })
+  @Column({ type: 'int', name: 'followed_profile_id' })
   followedProfileId: number;
 
   @ManyToOne(() => Profile, (profile) => profile.followers, {

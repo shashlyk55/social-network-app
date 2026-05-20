@@ -13,10 +13,12 @@ export type UpdatePostParams = {
 };
 
 export type FindPostsParams = {
+  userId?: number;
   page?: number;
   limit?: number;
   isArchived?: boolean;
   search?: string;
+  authorProfileId?: number;
 };
 
 export type GetFeedParams = {
@@ -30,4 +32,10 @@ export type PostPaginationResult = {
   page: number;
   limit: number;
   totalPages: number;
+};
+
+export type PostLikeResult = {
+  postId: number;
+  isLiked: boolean;
+  likesCount: number;
 };

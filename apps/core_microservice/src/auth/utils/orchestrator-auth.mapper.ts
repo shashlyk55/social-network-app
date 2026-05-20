@@ -1,4 +1,3 @@
-import { ProfileMapper } from 'src/profiles/utils/profile.mapper';
 import { FullAuthResponseDto } from '../dto/full-auth-response.dto';
 import { FullRegisterDto } from '../dto/full-register.dto';
 import { AuthResult, SignupParams } from '../types/auth-params.types';

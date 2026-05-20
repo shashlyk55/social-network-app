@@ -7,6 +7,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { useMe } from "@/hooks/profile/use-me";
 import { usePathname } from "next/navigation";
 import { Toaster } from "sonner";
+import { ModalProvider } from "@/components/provider/model-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -61,6 +62,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <QueryProvider>
+          <ModalProvider />
           <AppLayout>{children}</AppLayout>
           <Toaster position="top-right" richColors closeButton />
         </QueryProvider>

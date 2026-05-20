@@ -15,27 +15,27 @@ export class PostAsset {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @Column({ name: 'post_id' })
+  @Column({ type: 'int', name: 'post_id' })
   postId: number;
 
   @ManyToOne(() => Post, (post) => post.postAssets, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'post_id' })
   post: Post;
 
-  @Column({ name: 'asset_id' })
+  @Column({ type: 'int', name: 'asset_id' })
   assetId: number;
 
   @ManyToOne(() => Asset, (asset) => asset.postAssets, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'asset_id' })
   asset: Asset;
 
-  @Column({ name: 'order_index', default: 0 })
+  @Column({ type: 'int', name: 'order_index', default: 0 })
   orderIndex: number;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @Column({ name: 'created_by' })
+  @Column({ type: 'int', name: 'created_by' })
   createdById: number;
 
   @UpdateDateColumn({ name: 'updated_at' })

@@ -23,7 +23,7 @@ export class ProfileToProfileConfiguration {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @Column({ name: 'profile_id' })
+  @Column({ type: 'int', name: 'profile_id' })
   profileId: number;
 
   @ManyToOne(() => Profile, (profile) => profile.profileConfigurations, {
@@ -39,7 +39,7 @@ export class ProfileToProfileConfiguration {
   })
   configValue: PrivacyValue;
 
-  @Column({ name: 'profile_configuration_id' })
+  @Column({ type: 'int', name: 'profile_configuration_id' })
   profileConfigurationId: number;
 
   @ManyToOne(
@@ -53,7 +53,7 @@ export class ProfileToProfileConfiguration {
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @Column({ name: 'created_by' })
+  @Column({ type: 'int', name: 'created_by' })
   createdById: number;
 
   @UpdateDateColumn({ name: 'updated_at' })

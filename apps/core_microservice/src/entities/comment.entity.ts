@@ -8,7 +8,6 @@ import {
   OneToMany,
   JoinColumn,
   Index,
-  RelationCount,
   VirtualColumn,
 } from 'typeorm';
 import { CommentLike } from './many-to-many/comment-like.entity';
@@ -22,21 +21,21 @@ export class Comment {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @Column({ name: 'post_id' })
+  @Column({ type: 'int', name: 'post_id' })
   postId: number;
 
   @ManyToOne(() => Post, (post) => post.comments)
   @JoinColumn({ name: 'post_id' })
   post: Post;
 
-  @Column({ name: 'profile_id' })
+  @Column({ type: 'int', name: 'profile_id' })
   profileId: number;
 
   @ManyToOne(() => Profile)
   @JoinColumn({ name: 'profile_id' })
   profile: Profile;
 
-  @Column({ name: 'parent_comment_id', nullable: true })
+  @Column({ type: 'int', name: 'parent_comment_id', nullable: true })
   parentCommentId: number | null;
 
   @ManyToOne(() => Comment, (comment) => comment.replies, {
@@ -52,7 +51,7 @@ export class Comment {
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @Column({ name: 'created_by' })
+  @Column({ type: 'int', name: 'created_by' })
   createdById: number;
 
   @UpdateDateColumn({ name: 'updated_at' })
@@ -68,19 +67,22 @@ export class Comment {
   commentLikes: CommentLike[];
 
   @VirtualColumn({
+    type: 'int',
     query: (alias) =>
       `SELECT COUNT("id") FROM "main"."comments" WHERE "parent_comment_id" = ${alias}.id`,
   })
   repliesCount: number;
 
   @VirtualColumn({
+    type: 'int',
     query: (alias) =>
       `SELECT COUNT("id") FROM "main"."comments_likes" WHERE "comment_id" = ${alias}.id`,
   })
   likesCount: number;
 
   @VirtualColumn({
-    query: (alias) => `SELECT false`,
+    type: 'bool',
+    query: () => `SELECT false`,
   })
   isLiked: boolean;
 }

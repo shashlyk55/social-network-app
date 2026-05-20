@@ -13,6 +13,8 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { ProfilesService } from 'src/profiles/profiles.service';
 import { PrivateProfileException } from 'src/profiles/exceptions/profile.exceptions';
+import { PaginatedData } from 'src/common/types/paginated-data';
+import { Profile } from 'src/entities/profile.entity';
 
 @Injectable()
 export class FollowService {
@@ -28,10 +30,7 @@ export class FollowService {
     direction: FollowDirection,
     page: number = 1,
     limit: number = 50,
-  ): Promise<{
-    data: any[];
-    meta: { total: number; page: number; limit: number; totalPages: number };
-  }> {
+  ): Promise<PaginatedData<Profile>> {
     const currentUserProfile = await this.profilesService.findByUserId(userId);
     const targetProfile = await this.profilesService.findOne(targetProfileId);
 
@@ -130,7 +129,7 @@ export class FollowService {
       throw new UserNotFollowed();
     }
 
-    const result = await this.followRepository.delete({
+    await this.followRepository.delete({
       followerProfileId: profile.id,
       followedProfileId: targetProfileId,
     });

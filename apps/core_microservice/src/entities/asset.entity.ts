@@ -4,9 +4,7 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  ManyToOne,
   OneToMany,
-  JoinColumn,
 } from 'typeorm';
 import { MessageAsset } from './many-to-many/message-asset.entity';
 import { PostAsset } from './many-to-many/post-asset.entity';
@@ -23,11 +21,14 @@ export class Asset {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @Column({ name: 'file_name' })
+  @Column({ type: 'varchar', name: 'file_name' })
   fileName: string;
 
-  @Column({ name: 'file_path' })
-  filePath: string;
+  @Column({ type: 'varchar', name: 'file_path' })
+  filePath: string; // TODO: delete this field when move to S3
+
+  @Column({ type: 'varchar', name: 'download_url', nullable: true })
+  downloadUrl: string | null; // TODO: delete nullable when move to S3
 
   @Column({
     type: 'enum',
@@ -36,16 +37,16 @@ export class Asset {
   })
   fileType: FileType;
 
-  @Column({ name: 'file_size' })
+  @Column({ type: 'int', name: 'file_size' })
   fileSize: number;
 
-  @Column({ name: 'order_index', default: 0 })
+  @Column({ type: 'int', name: 'order_index', default: 0 })
   orderIndex: number;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @Column({ name: 'created_by' })
+  @Column({ type: 'int', name: 'created_by' })
   createdById: number;
 
   @UpdateDateColumn({ name: 'updated_at' })

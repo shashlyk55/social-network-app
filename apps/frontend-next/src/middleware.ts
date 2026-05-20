@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 
 const authRoutes = ["/login", "/signup"];
 
-const protectedRoutes = ["/feed", "/profile", "/feed"];
+const protectedRoutes = ["/feed", "/profile", "/feed", "/posts"];
 
 export function middleware(request: NextRequest) {
   const token = request.cookies.get("accessToken")?.value;

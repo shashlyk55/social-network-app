@@ -1,4 +1,3 @@
-// interceptors/winston-logging.interceptor.ts (с DI)
 import {
   Injectable,
   NestInterceptor,
@@ -30,7 +29,7 @@ export class WinstonLoggingInterceptor implements NestInterceptor {
     });
 
     return next.handle().pipe(
-      tap((data) => {
+      tap(() => {
         const response = context.switchToHttp().getResponse();
         const delay = Date.now() - now;
 

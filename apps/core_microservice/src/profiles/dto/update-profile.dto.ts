@@ -5,6 +5,7 @@ import {
   IsDateString,
   IsOptional,
   IsBoolean,
+  ValidateIf,
 } from 'class-validator';
 
 export class UpdateProfileDto {
@@ -20,15 +21,21 @@ export class UpdateProfileDto {
   @IsNotEmpty()
   displayName?: string;
 
-  @ApiProperty({ example: '2000-01-01', description: 'ISO 8601 date string' })
+  @ApiProperty({
+    example: '2000-01-01',
+    description: 'ISO 8601 date string or null',
+    nullable: true,
+  })
   @IsOptional()
+  // validate if value not null
+  @ValidateIf((object, value) => value !== null)
   @IsDateString()
-  birthday?: string;
+  birthday?: string | null;
 
-  @ApiPropertyOptional({ example: 'Software Engineer from Toronto' })
+  @ApiPropertyOptional({ example: 'Software Engineer' })
   @IsString()
   @IsOptional()
-  bio?: string;
+  bio?: string | null;
 
   @ApiPropertyOptional({ example: 'https://example.com/avatar.jpg' })
   @IsString()

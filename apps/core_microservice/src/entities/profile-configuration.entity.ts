@@ -4,8 +4,6 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  ManyToOne,
-  JoinColumn,
   OneToMany,
 } from 'typeorm';
 import { ProfileToProfileConfiguration } from './many-to-many/profile-to-profile-configuration.entity';
@@ -15,16 +13,16 @@ export class ProfileConfiguration {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @Column({ name: 'config_key', length: 100 })
+  @Column({ type: 'varchar', name: 'config_key', length: 100 })
   configKey: string;
 
-  @Column({ name: 'is_admin_accessible_only', default: false })
+  @Column({ type: 'boolean', name: 'is_admin_accessible_only', default: false })
   isAdminAccessibleOnly: boolean;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @Column({ name: 'created_by' })
+  @Column({ type: 'int', name: 'created_by' })
   createdById: number;
 
   @UpdateDateColumn({ name: 'updated_at' })

@@ -12,8 +12,8 @@
     "baseUrl": "./",
     "incremental": true,
     "skipLibCheck": true,
-    // "strict": true,
-    // "strictPropertyInitialization": false,
+    "strict": true,
+    "strictPropertyInitialization": false,
     "strictNullChecks": true,
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": false,
@@ -22,6 +22,6 @@
     "esModuleInterop": true,
     "moduleResolution": "node"
   },
-  "include": ["src/**/*", "test/**/*", "db"],
+  "include": ["src/**/*", "test/**/*"],
   "exclude": ["node_modules", "dist", "coverage"]
 }

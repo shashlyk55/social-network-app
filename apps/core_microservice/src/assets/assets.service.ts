@@ -1,8 +1,8 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Asset, FileType } from 'src/entities/asset.entity';
 import { Repository } from 'typeorm';
-import { AssetResult, UploadAssetParams } from './types/assets-params.types';
+import { UploadAssetParams } from './types/assets-params.types';
 import { FilesService } from 'src/files/files.service';
 import {
   AssetNotFound,
@@ -35,16 +35,11 @@ export class AssetsService {
 
     const savedAsset = await this.assetRepository.save(asset);
 
+    savedAsset.downloadUrl = `http://localhost:3001/assets/download/${asset.id}`;
+
+    await this.assetRepository.save(savedAsset);
+
     return savedAsset;
-    // return {
-    //   id: savedAsset.id,
-    //   fileName: savedAsset.fileName,
-    //   fileType: savedAsset.fileType,
-    //   fileSize: savedAsset.fileSize,
-    //   filePath: savedAsset.filePath,
-    //   orderIndex: savedAsset.orderIndex,
-    //   createdAt: savedAsset.createdAt,
-    // };
   }
 
   private mapMimeTypeToEntity(mimeType: string): FileType {
@@ -66,7 +61,7 @@ export class AssetsService {
     let asset;
     try {
       asset = this.assetRepository.findOne({ where: { id } });
-    } catch (error) {
+    } catch (error: any) {
       throw new AssetOperationException('find asset', error.message);
     }
     if (!asset) {
@@ -75,6 +70,7 @@ export class AssetsService {
     return asset;
   }
 
+  // TODO: delete method when move to S3
   async getAssetForDownload(id: number) {
     const asset = await this.findOne(id);
 

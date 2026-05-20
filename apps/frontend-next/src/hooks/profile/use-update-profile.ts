@@ -12,12 +12,13 @@ export const useUpdateProfile = () => {
       ProfileService.updateMyProfile(data),
 
     onMutate: () => {
-      toast.loading("Обновление профиля...", { id: "update-profile" });
+      toast.loading("Editing...", { id: "update-profile" });
     },
 
     onSuccess: (updatedProfile) => {
       queryClient.setQueryData(["me"], updatedProfile);
-      toast.success("Профиль успешно обновлен!", { id: "update-profile" });
+      queryClient.invalidateQueries({ queryKey: ["profile-posts"] });
+      toast.success("Profile edited!", { id: "update-profile" });
     },
 
     onError: (error: ApiError) => {

@@ -1,14 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsString,
-  IsNotEmpty,
   IsOptional,
   IsBoolean,
   IsArray,
-  IsNumber,
   MaxLength,
   ArrayMaxSize,
-  ArrayMinSize,
+  MinLength,
 } from 'class-validator';
 
 export class CreatePostDto {
@@ -17,8 +15,9 @@ export class CreatePostDto {
     description: 'Post content',
   })
   @IsString()
-  @MaxLength(5000)
-  @IsNotEmpty()
+  @MinLength(1)
+  @MaxLength(1000)
+  //@IsOptional()
   content: string;
 
   @ApiPropertyOptional({
@@ -30,12 +29,11 @@ export class CreatePostDto {
   isArchived?: boolean;
 
   @ApiPropertyOptional({
-    //example: [1, 2, 3],
-    example: null,
+    example: [1, 2, 3],
+    //example: null,
     description: 'Array of asset IDs to attach to the post',
   })
   @ArrayMaxSize(10)
-  @ArrayMinSize(1)
   @IsArray()
   @IsOptional()
   assetIds?: number[];

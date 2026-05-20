@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsNumber, MaxLength } from 'class-validator';
+import { IsString, IsOptional, MaxLength } from 'class-validator';
 
 export class UpdateCommentDto {
   @ApiPropertyOptional({
@@ -10,9 +10,4 @@ export class UpdateCommentDto {
   @IsOptional()
   @MaxLength(200)
   content?: string;
-
-  @ApiPropertyOptional({ description: 'ID of user updating the comment' })
-  @IsNumber()
-  @IsOptional()
-  updatedById?: number;
 }

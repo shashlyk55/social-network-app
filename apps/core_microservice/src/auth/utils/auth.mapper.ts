@@ -1,7 +1,6 @@
 import { Profile } from 'src/entities/profile.entity';
 import { InternalAuthDto } from '../dto/internal-auth-response.dto';
 import { AuthResult } from '../types/auth-params.types';
-import { ProfileMapper } from 'src/profiles/utils/profile.mapper';
 
 export class AuthMapper {
   static toAuthResult(authDto: InternalAuthDto, profile: Profile): AuthResult {

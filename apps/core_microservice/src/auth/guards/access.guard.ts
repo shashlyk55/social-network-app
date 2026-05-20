@@ -13,7 +13,6 @@ export class AccessGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request: Request = context.switchToHttp().getRequest();
-    //let accessToken = request.headers.authorization;
     let accessToken = request.cookies['accessToken'];
 
     if (!accessToken) {
@@ -28,7 +27,7 @@ export class AccessGuard implements CanActivate {
       request['user'] = authData.payload;
 
       return true;
-    } catch (error) {
+    } catch {
       throw new UnauthorizedException('Invalid or expired token');
     }
   }

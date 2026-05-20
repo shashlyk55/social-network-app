@@ -63,18 +63,18 @@ export class AssetsController {
   @HttpCode(HttpStatus.CREATED)
   async upload(
     @UploadedFile() file: Express.Multer.File,
-    @CurrentUser('userId') userId,
+    @CurrentUser('userId') userId: number,
     @Body() dto: UploadAssetDto,
   ) {
     const params = AssetMapper.toUploadParams(dto);
     const result = await this.assetsService.upload(file, params, userId);
 
-    const fileUrl = `http://localhost:3001/assets/download/${result.id}`;
     return {
-      url: fileUrl,
-      assetId: result.id,
+      id: result.id,
+      downloadUrl: result.downloadUrl,
       orderIndex: result.orderIndex,
       fileType: result.fileType,
+      fileName: result.fileName,
     };
   }
 

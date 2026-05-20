@@ -9,22 +9,30 @@ import {
   Clock,
   MessageCircle,
   MoreVertical,
+  Rocket,
 } from "lucide-react";
 import { useToggleFollow } from "@/hooks/follow/use-toggle-follow";
 import { cn } from "@/lib/utils/cn";
 import Link from "next/link";
+import { useProfilePosts } from "@/hooks/post/use-profile-posts";
+import { PostItem } from "@/components/post/post-item";
 
 export default function OtherProfilePage() {
   const { id } = useParams();
   const profileId = Number(id);
 
-  const { data: profile, isLoading } = useProfileById(profileId);
+  const { data: profile, isLoading: isProfileLoading } =
+    useProfileById(profileId);
   const { mutate: toggleFollow, isPending: isFollowPending } = useToggleFollow(
     profileId,
     profile?.isFollowed || false
   );
 
-  if (isLoading)
+  const { data: postsData, isLoading: isPostsLoading } = useProfilePosts({
+    authorProfileId: profileId,
+  });
+
+  if (isProfileLoading)
     return (
       <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
@@ -33,7 +41,7 @@ export default function OtherProfilePage() {
 
   if (!profile)
     return (
-      <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center text-red-500 font-medium">
+      <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center text-slate-400 font-medium">
         Профиль не найден
       </div>
     );
@@ -103,10 +111,12 @@ export default function OtherProfilePage() {
             <p className="text-xl text-slate-500">@{profile.username}</p>
           </div>
 
-          <p className="max-w-2xl text-slate-300 leading-relaxed text-lg">
-            {profile.bio ||
-              "Full-stack developer & writer. Passionate about web technologies, design systems, and creating beautiful user experiences. Building in public 🚀"}
-          </p>
+          {profile.bio && (
+            <p className="max-w-2xl text-slate-300 leading-relaxed text-lg">
+              {profile.bio}
+              <Rocket className="inline-block w-5 h-5 ml-2 text-pink-500" />
+            </p>
+          )}
 
           {/* Статистика */}
           <div className="flex gap-8 pt-4">
@@ -152,7 +162,21 @@ export default function OtherProfilePage() {
         {/* Контентная область */}
         <div className="space-y-6">
           {profile.canViewFullProfile ? (
-            <div className="space-y-6"></div>
+            <div className="space-y-6">
+              {isPostsLoading ? (
+                <div className="flex justify-center py-10">
+                  <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+                </div>
+              ) : postsData?.data?.length ? (
+                postsData.data.map((post) => (
+                  <PostItem key={post.id} post={post} />
+                ))
+              ) : (
+                <div className="text-center py-20 border border-dashed border-[#222] rounded-3xl">
+                  <p className="text-slate-500">No posts yet</p>
+                </div>
+              )}
+            </div>
           ) : (
             /* Дизайн приватного профиля (Замок) */
             <div className="flex flex-col items-center justify-center py-24 px-6 border border-[#222] bg-[#111] rounded-3xl text-center">

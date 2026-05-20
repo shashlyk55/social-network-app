@@ -166,10 +166,7 @@ export class ChatsController {
     type: Number,
     description: 'ID of user performing deletion',
   })
-  async remove(
-    @Param('id') id: number,
-    @Query('deletedById') deletedById: number,
-  ): Promise<void> {
+  async remove(@Param('id') id: number): Promise<void> {
     await this.chatService.remove(id);
   }
 }
