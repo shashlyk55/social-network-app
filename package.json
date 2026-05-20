@@ -16,13 +16,15 @@
     "clean": "turbo run clean",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
-    "db:migrate": "turbo run db:migrate",
+    "test:core": "jest --projects apps/core_microservice",
     "db:seed": "turbo run db:seed",
-    "test:core": "jest --projects apps/core_microservice"
+    "db:migrate": "turbo run db:migrate",
+    "db:generate": "turbo run db:generate"
   },
   "devDependencies": {
     "@eslint/js": "^9.38.0",
     "@types/node": "^20.0.0",
+    "@types/winston": "^2.4.4",
     "@typescript-eslint/eslint-plugin": "^8.46.2",
     "@typescript-eslint/parser": "^8.46.2",
     "eslint": "^9.38.0",
@@ -34,5 +36,10 @@
     "prettier": "^3.6.2",
     "turbo": "^1.10.0",
     "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@nestjs/mapped-types": "*",
+    "nest-winston": "^1.10.2",
+    "winston": "^3.18.3"
   }
 }

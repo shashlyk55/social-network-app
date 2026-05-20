@@ -1,0 +1,7 @@
+CREATE DATABASE innogram_db;
+
+\c innogram_db;
+
+CREATE SCHEMA IF NOT EXISTS main;
+CREATE SCHEMA IF NOT EXISTS auth;
+CREATE SCHEMA IF NOT EXISTS notification;

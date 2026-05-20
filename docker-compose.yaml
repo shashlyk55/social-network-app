@@ -5,13 +5,19 @@ services:
     image: postgres:15
     container_name: innogram-postgres
     environment:
-      POSTGRES_DB: innogram
-      POSTGRES_USER: innogram_user
-      POSTGRES_PASSWORD: innogram_password
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./packages/db/init-scripts:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d innogram_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     networks:
       - innogram-network
 
@@ -22,6 +28,12 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     networks:
       - innogram-network
 
@@ -34,14 +46,22 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     networks:
       - innogram-network
 
-  auth_microservice:
+  auth-microservice:
     build:
       context: ./apps/auth_microservice
       dockerfile: Dockerfile
     restart: always
+    env_file:
+      - ./apps/auth_microservice/auth.env
     depends_on:
       postgres:
         condition: service_healthy
@@ -52,11 +72,13 @@ services:
     networks:
       - innogram-network
 
-  core_microservice:
+  core-microservice:
     build:
       context: ./apps/core_microservice
       dockerfile: Dockerfile
     restart: always
+    env_file:
+      - ./apps/core_microservice/core.env
     depends_on:
       postgres:
         condition: service_healthy
@@ -67,11 +89,13 @@ services:
     networks:
       - innogram-network
 
-  notifications_consumer_microservice:
+  notifications-consumer-microservice:
     build:
       context: ./apps/notifications_consumer_microservice
       dockerfile: Dockerfile
     restart: always
+    env_file:
+      - ./apps/notifications_consumer_microservice/notifications-consumer.env
     depends_on:
       postgres:
         condition: service_healthy
