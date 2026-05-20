@@ -1,4 +1,58 @@
-import { PartialType } from '@nestjs/swagger';
-import { CreateProfileDto } from './create-profile.dto';
+import {
+  PickType,
+  PartialType,
+  ApiProperty,
+  ApiPropertyOptional,
+} from '@nestjs/swagger';
+import {
+  IsString,
+  IsNotEmpty,
+  IsDateString,
+  IsOptional,
+  IsBoolean,
+} from 'class-validator';
+import { FullRegisterDto } from 'src/auth/dto/full-register.dto';
 
-export class UpdateProfileDto extends PartialType(CreateProfileDto) {}
+export class UpdateProfileDto {
+  // extends PartialType(
+  //   PickType(FullRegisterDto, [
+  //     'username',
+  //     'displayName',
+  //     'birthday',
+  //     'bio',
+  //     'avatarUrl',
+  //     'isPublic',
+  //   ] as const),
+  // )
+  @ApiProperty({ example: 'johndoe' })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  username?: string;
+
+  @ApiProperty({ example: 'John Doe' })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  displayName?: string;
+
+  @ApiProperty({ example: '2000-01-01', description: 'ISO 8601 date string' })
+  @IsOptional()
+  @IsDateString()
+  birthday?: string;
+
+  @ApiPropertyOptional({ example: 'Software Engineer from Toronto' })
+  @IsString()
+  @IsOptional()
+  bio?: string;
+
+  @ApiPropertyOptional({ example: 'https://example.com/avatar.jpg' })
+  @IsString()
+  @IsOptional()
+  avatarUrl?: string;
+
+  @ApiProperty({ default: true })
+  @IsOptional()
+  @IsBoolean()
+  isPublic?: boolean;
+}

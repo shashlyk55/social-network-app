@@ -20,6 +20,17 @@ async function bootstrap() {
     .setTitle('Innogram')
     .setDescription('Innogram Social Network API')
     .setVersion('1.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'JWT',
+        description: 'Enter JWT token',
+        in: 'header',
+      },
+      'access-token',
+    )
     .build();
 
   const documnet = SwaggerModule.createDocument(app, swaggerConfig);

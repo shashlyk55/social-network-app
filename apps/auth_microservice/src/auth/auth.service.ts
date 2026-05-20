@@ -21,6 +21,7 @@ import {
   InvalidCredentials,
   RefreshTokenInBlacklist,
   SessionNotFound,
+  TokenExpired,
 } from './exceptions/auth.exceptions';
 import { AccountProviderType } from '../entities/account.entity';
 import { DomainException } from '../common/exceptions/domain.exception';
@@ -277,7 +278,7 @@ export class AuthService implements IAuthService {
       };
     } catch (error) {
       if (error instanceof jwt.TokenExpiredError) {
-        throw new AuthOperationException('validate token', 'Token expired');
+        throw new TokenExpired();
       }
       if (error instanceof jwt.JsonWebTokenError) {
         throw new AuthOperationException(

@@ -9,6 +9,7 @@ import {
   Query,
   HttpStatus,
   HttpCode,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -18,17 +19,23 @@ import {
   ApiQuery,
   ApiBody,
   ApiBearerAuth,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
 } from '@nestjs/swagger';
 import { PaginationResponseDto } from 'src/common/dto/pagination-response.dto';
-import { CreatePostLikeDto } from './dto/create-post-like.dto';
 import { CreatePostDto } from './dto/create-post.dto';
 import { PostResponseDto } from './dto/post-response.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { PostsService } from './posts.service';
 import { PostMappers } from './utils/params-mapper.util';
+import { AccessGuard } from 'src/auth/guards/access.guard';
+import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 
 @ApiTags('posts')
-@ApiBearerAuth()
+@ApiBearerAuth('access-token')
+@ApiUnauthorizedResponse({ description: 'Unauthorized' })
+@ApiForbiddenResponse({ description: 'Forbidden resource' })
+@UseGuards(AccessGuard)
 @Controller('posts')
 export class PostsController {
   constructor(private readonly postService: PostsService) {}
@@ -42,9 +49,12 @@ export class PostsController {
   })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
   @ApiBody({ type: CreatePostDto })
-  async create(@Body() createPostDto: CreatePostDto): Promise<PostResponseDto> {
+  async create(
+    @CurrentUser('userId') userId: number,
+    @Body() createPostDto: CreatePostDto,
+  ): Promise<PostResponseDto> {
     const params = PostMappers.toCreateParams(createPostDto);
-    const post = await this.postService.create(params);
+    const post = await this.postService.create(params, userId);
     return PostMappers.toPostResponse(post);
   }
 
@@ -79,23 +89,28 @@ export class PostsController {
     type: Boolean,
     description: 'Filter by archived status',
   })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Search posts by content',
+  })
   async findAll(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
-    @Query('profileId') profileId?: number,
     @Query('isArchived') isArchived?: boolean,
+    @Query('search') search?: string,
   ): Promise<PaginationResponseDto<PostResponseDto>> {
-    const params = { page, limit, profileId, isArchived };
+    const params = { page, limit, isArchived, search };
     const result = await this.postService.findAll(params);
     return PostMappers.toPaginationResponse(result);
   }
 
-  @Get('profile/:profileId')
-  @ApiOperation({ summary: 'Get profile posts' })
-  @ApiParam({ name: 'profileId', type: Number, description: 'Profile ID' })
+  @Get('me')
+  @ApiOperation({ summary: 'Get posts list' })
   @ApiResponse({
     status: 200,
-    description: 'Profile posts retrieved successfully',
+    description: 'Posts list retrieved successfully',
     type: PaginationResponseDto<PostResponseDto>,
   })
   @ApiQuery({
@@ -116,14 +131,59 @@ export class PostsController {
     type: Boolean,
     description: 'Filter by archived status',
   })
-  async findProfilePosts(
-    @Param('profileId') profileId: number,
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Search posts by content',
+  })
+  async findCurrentUserPosts(
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('isArchived') isArchived?: boolean,
+    @Query('search') search?: string,
+    @CurrentUser('userId') userId?: number,
+  ): Promise<PaginationResponseDto<PostResponseDto>> {
+    const params = { page, limit, isArchived, search };
+    const result = await this.postService.findAll(params, userId);
+    return PostMappers.toPaginationResponse(result);
+  }
+
+  @Get('following')
+  @ApiOperation({
+    summary: 'Получить ленту постов на основе подписок',
+    description:
+      'Возвращает посты пользователей, на которых подписан текущий пользователь и чьи заявки одобрены.',
+  })
+  @ApiResponse({
+    status: 200,
+    type: PaginationResponseDto<PostResponseDto>,
+    description: 'Список постов с информацией об авторах',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page',
+  })
+  async getFollowedFeed(
+    @CurrentUser('userId') userId: number,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
   ): Promise<PaginationResponseDto<PostResponseDto>> {
-    const params = { page, limit, profileId };
-    const result = await this.postService.findProfilePosts(params);
-    return PostMappers.toPaginationResponse(result);
+    return PostMappers.toPaginationResponse(
+      await this.postService.getFollowedFeed({
+        userId,
+        limit,
+        page,
+      }),
+    );
   }
 
   @Get(':id')
@@ -151,11 +211,12 @@ export class PostsController {
   @ApiResponse({ status: 404, description: 'Post not found' })
   @ApiBody({ type: UpdatePostDto })
   async update(
+    @CurrentUser('userId') userId: number,
     @Param('id') id: number,
     @Body() updatePostDto: UpdatePostDto,
   ): Promise<PostResponseDto> {
     const params = PostMappers.toUpdateParams(id, updatePostDto);
-    const post = await this.postService.update(params);
+    const post = await this.postService.update(params, userId);
     return PostMappers.toPostResponse(post);
   }
 
@@ -176,7 +237,7 @@ export class PostsController {
   })
   async archive(
     @Param('id') id: number,
-    @Query('updatedById') updatedById: number, // change on current user
+    @CurrentUser('userId') updatedById: number,
   ): Promise<PostResponseDto> {
     const post = await this.postService.archive(id, updatedById);
     return PostMappers.toPostResponse(post);
@@ -199,7 +260,7 @@ export class PostsController {
   })
   async unarchive(
     @Param('id') id: number,
-    @Query('updatedById') updatedById: number, // change on current user
+    @CurrentUser('userId') updatedById: number,
   ): Promise<PostResponseDto> {
     const post = await this.postService.unarchive(id, updatedById);
     return PostMappers.toPostResponse(post);
@@ -211,16 +272,7 @@ export class PostsController {
   @ApiParam({ name: 'id', type: Number, description: 'Post ID' })
   @ApiResponse({ status: 204, description: 'Post deleted permanently' })
   @ApiResponse({ status: 404, description: 'Post not found' })
-  @ApiQuery({
-    name: 'deletedById',
-    required: true,
-    type: Number,
-    description: 'ID of user performing deletion',
-  })
-  async remove(
-    @Param('id') id: number,
-    @Query('deletedById') deletedById: number, // change on current user
-  ): Promise<void> {
+  async remove(@Param('id') id: number): Promise<void> {
     await this.postService.remove(id);
   }
 
@@ -229,15 +281,10 @@ export class PostsController {
   @ApiParam({ name: 'id', type: Number, description: 'Post ID' })
   @ApiResponse({ status: 201, description: 'Post liked/unliked successfully' })
   @ApiResponse({ status: 404, description: 'Post not found' })
-  @ApiBody({ type: CreatePostLikeDto })
   async likePost(
+    @CurrentUser('userId') userId: number,
     @Param('id') postId: number,
-    @Body() createPostLikeDto: CreatePostLikeDto,
   ): Promise<void> {
-    const params = PostMappers.toCreatePostLikeParams(
-      postId,
-      createPostLikeDto,
-    );
-    await this.postService.likePost(params);
+    await this.postService.likePost(postId, userId);
   }
 }

@@ -16,8 +16,8 @@ export class ProfileFollow {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @Column({ type: 'boolean', nullable: true })
-  accepted: boolean | null;
+  @Column({ type: 'boolean' })
+  accepted: boolean;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
@@ -25,25 +25,23 @@ export class ProfileFollow {
   @Column({ name: 'created_by' })
   createdById: number;
 
-  // @ManyToOne(() => User)
-  // @JoinColumn({ name: 'created_by' })
-  // createdBy: User;
-
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
   @Column({ type: 'int', name: 'updated_by', nullable: true })
   updatedById: number | null;
 
-  // @ManyToOne(() => User, { nullable: true })
-  // @JoinColumn({ name: 'updated_by' })
-  // updatedBy: User;
+  @Column({ name: 'follower_profile_id' })
+  followerProfileId: number;
 
   @ManyToOne(() => Profile, (profile) => profile.following, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'follower_profile_id' })
   followerProfile: Profile;
+
+  @Column({ name: 'followed_profile_id' })
+  followedProfileId: number;
 
   @ManyToOne(() => Profile, (profile) => profile.followers, {
     onDelete: 'CASCADE',

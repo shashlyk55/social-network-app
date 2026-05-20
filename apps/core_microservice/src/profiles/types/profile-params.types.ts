@@ -1,5 +1,4 @@
-export interface UpdateProfileParams {
-  id: number;
+export type UpdateProfileParams = {
   username?: string;
   displayName?: string;
   birthday?: Date | null;
@@ -7,7 +6,7 @@ export interface UpdateProfileParams {
   avatarUrl?: string | null;
   isPublic?: boolean;
   updatedById: number;
-}
+};
 export type CreateProfileParams = {
   userId: number;
   username: string;

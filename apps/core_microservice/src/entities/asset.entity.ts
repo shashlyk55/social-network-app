@@ -15,6 +15,7 @@ export enum FileType {
   IMAGE = 'image',
   VIDEO = 'video',
   AUDIO = 'audio',
+  DOCUMENT = 'document',
 }
 
 @Entity('assets', { schema: 'main' })
@@ -31,9 +32,9 @@ export class Asset {
   @Column({
     type: 'enum',
     enum: FileType,
-    default: FileType.IMAGE,
+    default: FileType.DOCUMENT,
   })
-  fileType: string;
+  fileType: FileType;
 
   @Column({ name: 'file_size' })
   fileSize: number;
@@ -47,19 +48,11 @@ export class Asset {
   @Column({ name: 'created_by' })
   createdById: number;
 
-  // @ManyToOne(() => User)
-  // @JoinColumn({ name: 'created_by' })
-  // createdBy: User;
-
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
   @Column({ type: 'int', name: 'updated_by', nullable: true })
   updatedById: number | null;
-
-  // @ManyToOne(() => User, { nullable: true })
-  // @JoinColumn({ name: 'updated_by' })
-  // updatedBy: User;
 
   // Relations
   @OneToMany(() => PostAsset, (postAsset) => postAsset.asset)

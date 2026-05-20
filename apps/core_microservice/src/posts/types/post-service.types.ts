@@ -2,17 +2,13 @@ import { Post } from 'src/entities/post.entity';
 
 export type CreatePostParams = {
   content: string;
-  profileId: number;
   isArchived?: boolean;
-  createdById: number;
   assetIds?: number[];
 };
 
 export type UpdatePostParams = {
   id: number;
   content?: string;
-  isArchived?: boolean;
-  updatedById?: number;
   assetIds?: number[];
 };
 
@@ -20,18 +16,13 @@ export type FindPostsParams = {
   page?: number;
   limit?: number;
   isArchived?: boolean;
+  search?: string;
 };
 
-export type FindProfilePostsParams = {
+export type GetFeedParams = {
+  userId: number;
   page?: number;
   limit?: number;
-  profileId?: number;
-};
-
-export type CreatePostLikeParams = {
-  postId: number;
-  profileId: number;
-  createdById: number;
 };
 
 export type PostPaginationResult = {

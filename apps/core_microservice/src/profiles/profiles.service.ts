@@ -84,35 +84,32 @@ export class ProfilesService implements IProfilesService {
     return profile;
   }
 
-  async update(id: number, params: UpdateProfileParams): Promise<Profile> {
-    const profile = await this.findOne(id);
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    // TODO: add updating user email
+  async update(userId: number, params: UpdateProfileParams): Promise<Profile> {
+    const profile = await this.findByUserId(userId);
 
     try {
       if (params.username && params.username !== profile.username) {
-        const existing = await queryRunner.manager.findOne(Profile, {
+        const existing = await this.profileRepository.findOne({
           where: { username: params.username },
         });
         if (existing) throw new UsernameAlreadyExistsException(params.username);
       }
 
-      await queryRunner.manager.update(Profile, id, {
-        ...params,
+      const updatePayload: Partial<Profile> = { ...params };
+
+      Object.keys(updatePayload).forEach(
+        (key) => updatePayload[key] === undefined && delete updatePayload[key],
+      );
+
+      await this.profileRepository.update(profile.id, {
+        ...updatePayload,
         updatedAt: new Date(),
       });
 
-      await queryRunner.commitTransaction();
-      return await this.findOne(id);
+      return await this.findOne(profile.id);
     } catch (error) {
-      await queryRunner.rollbackTransaction();
       if (error instanceof DomainException) throw error;
       throw new ProfileOperationException('update profile', error.message);
-    } finally {
-      await queryRunner.release();
     }
   }
 

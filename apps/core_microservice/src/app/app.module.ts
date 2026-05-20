@@ -8,10 +8,14 @@ import { ChatsModule } from '../chats/chats.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { WinstonLoggerModule } from '../winston-logger/winston-logger.module';
 import { WinstonLoggerService } from '../winston-logger/winston-logger.service';
-import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { WinstonExceptionsFilter } from '../winston-logger/winston-exceptions.filter';
 import { WinstonLoggingInterceptor } from '../winston-logger/winston-logging.interceptor';
 import { GlobalExceptionFilter } from './exceptions/global-exception.filter';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
+import { AssetsModule } from 'src/assets/assets.module';
+import { FollowModule } from 'src/follow/follow.module';
 
 @Module({
   imports: [
@@ -35,12 +39,17 @@ import { GlobalExceptionFilter } from './exceptions/global-exception.filter';
       inject: [ConfigService],
     }),
     AuthModule,
-    //UsersModule,
     PostsModule,
+    FollowModule,
+    AssetsModule,
     CommentsModule,
     ChatsModule,
     NotificationsModule,
     WinstonLoggerModule,
+    ServeStaticModule.forRoot({
+      rootPath: join(process.cwd(), 'local_storage'),
+      serveRoot: '/uploads',
+    }),
   ],
   providers: [
     {
