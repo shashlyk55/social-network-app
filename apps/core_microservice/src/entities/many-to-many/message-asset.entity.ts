@@ -9,7 +9,6 @@ import {
 } from 'typeorm';
 import { Asset } from '../asset.entity';
 import { Message } from '../message.entity';
-import { User } from '../user.entity';
 
 @Entity('messages_assets', { schema: 'main' })
 export class MessageAsset {
@@ -50,8 +49,8 @@ export class MessageAsset {
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
-  @Column({ name: 'updated_by', nullable: true })
-  updatedById: number;
+  @Column({ type: 'int', name: 'updated_by', nullable: true })
+  updatedById: number | null;
 
   // @ManyToOne(() => User, { nullable: true })
   // @JoinColumn({ name: 'updated_by' })

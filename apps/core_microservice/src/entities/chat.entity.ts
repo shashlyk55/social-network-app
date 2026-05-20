@@ -10,7 +10,6 @@ import {
 } from 'typeorm';
 import { ChatParticipant } from './many-to-many/chat-participants.entity';
 import { Message } from './message.entity';
-import { User } from './user.entity';
 
 export enum ChatType {
   PRIVATE = 'private',
@@ -26,7 +25,7 @@ export class Chat {
   name: string;
 
   @Column({ type: 'text', nullable: true })
-  description: string;
+  description: string | null;
 
   @Column({ type: 'enum', enum: ChatType, default: ChatType.GROUP })
   type: ChatType;
@@ -44,7 +43,7 @@ export class Chat {
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
-  @Column({ name: 'updated_by', nullable: true })
+  @Column({ type: 'int', name: 'updated_by', nullable: true })
   updatedById: number;
 
   // @ManyToOne(() => User, { nullable: true })

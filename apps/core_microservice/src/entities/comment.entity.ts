@@ -11,7 +11,6 @@ import {
 import { CommentLike } from './many-to-many/comment-like.entity';
 import { Post } from './post.entity';
 import { Profile } from './profile.entity';
-import { User } from './user.entity';
 
 @Entity('comments', { schema: 'main' })
 export class Comment {
@@ -33,14 +32,14 @@ export class Comment {
   profile: Profile;
 
   @Column({ name: 'parent_comment_id', nullable: true })
-  parentCommentId: number;
+  parentCommentId: number | null;
 
   @ManyToOne(() => Comment, (comment) => comment.replies, {
     nullable: true,
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'parent_comment_id' })
-  parentComment: Comment;
+  parentComment: Comment | null;
 
   @Column({ type: 'text' })
   content: string;
@@ -58,8 +57,8 @@ export class Comment {
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
-  @Column({ name: 'updated_by', nullable: true })
-  updatedById: number;
+  @Column({ type: 'int', name: 'updated_by', nullable: true })
+  updatedById: number | null;
 
   // @ManyToOne(() => User, { nullable: true })
   // @JoinColumn({ name: 'updated_by' })

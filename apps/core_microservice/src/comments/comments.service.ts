@@ -23,7 +23,7 @@ import {
 } from './exceptions/comment-domain.exceptions';
 import {
   DomainException,
-  ProfileNotFoundException,
+  // ProfileNotFoundException,
 } from 'src/app/exceptions/domain.exception';
 import { PostsService } from 'src/posts/posts.service';
 import { Profile } from 'src/entities/profile.entity';
@@ -50,9 +50,9 @@ export class CommentsService implements ICommentsService {
       where: { id: params.profileId },
     });
 
-    if (!profile) {
-      throw new ProfileNotFoundException(params.profileId);
-    }
+    // if (!profile) {
+    //   throw new ProfileNotFoundException(params.profileId);
+    // }
 
     if (params.parentCommentId) {
       const parentComment = await this.commentRepository.findOne({
@@ -250,9 +250,9 @@ export class CommentsService implements ICommentsService {
       where: { id: params.profileId },
     });
 
-    if (!profile) {
-      throw new ProfileNotFoundException(params.profileId);
-    }
+    // if (!profile) {
+    //   throw new ProfileNotFoundException(params.profileId);
+    // }
 
     const comment = await this.findOne(commentId);
 

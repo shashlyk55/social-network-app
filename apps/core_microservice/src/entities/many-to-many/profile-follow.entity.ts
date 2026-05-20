@@ -9,7 +9,6 @@ import {
   Check,
 } from 'typeorm';
 import { Profile } from '../profile.entity';
-import { User } from '../user.entity';
 
 @Entity('profiles_follows', { schema: 'main' })
 @Check('"follower_profile_id" != "followed_profile_id"')
@@ -17,8 +16,8 @@ export class ProfileFollow {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @Column({ nullable: true })
-  accepted: boolean;
+  @Column({ type: 'boolean', nullable: true })
+  accepted: boolean | null;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
@@ -33,8 +32,8 @@ export class ProfileFollow {
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
-  @Column({ name: 'updated_by', nullable: true })
-  updatedById: number;
+  @Column({ type: 'int', name: 'updated_by', nullable: true })
+  updatedById: number | null;
 
   // @ManyToOne(() => User, { nullable: true })
   // @JoinColumn({ name: 'updated_by' })

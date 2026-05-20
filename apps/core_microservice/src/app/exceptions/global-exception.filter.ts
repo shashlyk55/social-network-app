@@ -1,13 +1,11 @@
-// filters/global-exception.filter.ts
 import {
   ExceptionFilter,
   Catch,
   ArgumentsHost,
   HttpStatus,
   Logger,
-  HttpException,
 } from '@nestjs/common';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { ExceptionMapper } from 'src/app/exceptions/exception.mapper';
 import { DomainException } from './domain.exception';
 
@@ -18,41 +16,63 @@ export class GlobalExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
+    const request = ctx.getRequest<Request>();
 
-    let httpException: HttpException;
+    const { status, body } = ExceptionMapper.mapToResponse(exception);
 
-    if (exception instanceof DomainException) {
-      // Маппим доменное исключение в HTTP
-      httpException = ExceptionMapper.mapDomainToHttp(exception);
-    } else if (exception instanceof HttpException) {
-      // Уже HTTP исключение
-      httpException = exception;
-    } else if (exception instanceof Error) {
-      // Неизвестная ошибка
+    this.logError(exception, request, status);
+
+    if (status === HttpStatus.INTERNAL_SERVER_ERROR) {
       this.logger.error(
-        `Unhandled error: ${exception.message}`,
-        exception.stack,
-      );
-      httpException = new HttpException(
-        'Internal server error',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    } else {
-      // Неизвестный тип ошибки
-      httpException = new HttpException(
-        'Unknown error occurred',
-        HttpStatus.INTERNAL_SERVER_ERROR,
+        exception instanceof Error ? exception.stack : exception,
       );
     }
 
-    response.status(httpException.getStatus()).json({
-      success: false,
-      error: {
-        //code: httpException.code,
-        message: httpException.message,
-        //details: httpException.details,
-        timestamp: new Date().toISOString(),
-      },
+    response.status(status).json({
+      ...body,
+      timestamp: new Date().toISOString(),
+      path: request.url,
     });
+  }
+
+  private logError(error: any, req: Request, status: number): void {
+    const errorCode =
+      error?.code ||
+      (error?.getResponse
+        ? (error.getResponse() as any).code
+        : 'INTERNAL_ERROR');
+
+    const logEntry = {
+      timestamp: new Date().toISOString(),
+      method: req.method,
+      url: req.url,
+      status,
+      error: {
+        name: error?.name || 'Error',
+        message: error?.message || 'Unknown error',
+        stack:
+          process.env.NODE_ENV === 'development' ? error?.stack : undefined,
+      },
+      user: (req as any).user?.id || 'anonymous',
+      ip: req.ip,
+    };
+
+    if (process.env.NODE_ENV === 'production') {
+      // В продакшене только JSON одной строкой для систем сбора логов
+      if (status >= 500) this.logger.error(JSON.stringify(logEntry));
+      else this.logger.warn(JSON.stringify(logEntry));
+    } else {
+      // Красивый вывод в консоль для разработки, как в твоем примере
+      console.error('\n=== [ERROR LOG] ===');
+      console.error(`Status: [${status}] ${req.method} ${req.url}`);
+      console.error(`Code:   ${errorCode}`);
+      console.error(`Msg:    ${error.message}`);
+
+      if (error.stack && !(error instanceof DomainException)) {
+        console.error('--- Stack Trace ---');
+        console.error(error.stack);
+      }
+      console.error('====================\n');
+    }
   }
 }

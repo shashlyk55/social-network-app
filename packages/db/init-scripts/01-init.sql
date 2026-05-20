@@ -1,4 +1,4 @@
-CREATE DATABASE innogram_db;
+--CREATE DATABASE innogram_db;
 
 \c innogram_db;
 

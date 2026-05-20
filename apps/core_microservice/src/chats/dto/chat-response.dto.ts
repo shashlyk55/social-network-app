@@ -1,7 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { ChatType } from 'src/entities/chat.entity';
 import { ChatParticipantRole } from 'src/entities/many-to-many/chat-participants.entity';
-import { UserRole } from 'src/entities/user.entity';
 
 // class UserReferenceDto {
 //   @ApiProperty({ example: 1, description: 'User ID' })
@@ -35,6 +34,11 @@ class ParticipantResponseDto {
 
   @ApiProperty({ description: 'Left date', nullable: true })
   leftAt: Date | null;
+
+  @ApiProperty({
+    description: 'Id of user who created this participant',
+  })
+  createdById: number;
 
   // @ApiProperty({
   //   type: UserReferenceDto,

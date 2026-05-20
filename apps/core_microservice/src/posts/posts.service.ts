@@ -24,7 +24,6 @@ import {
 } from './exceptions/post-domain.exceptions';
 import { DomainException } from 'src/app/exceptions/domain.exception';
 import { Profile } from 'src/entities/profile.entity';
-import { ProfileNotFoundException } from 'src/users/exceptions/user.exceptions';
 
 @Injectable()
 export class PostsService implements IPostsService {
@@ -48,9 +47,9 @@ export class PostsService implements IPostsService {
       where: { id: params.profileId },
     });
 
-    if (!profile) {
-      throw new ProfileNotFoundException(params.profileId);
-    }
+    // if (!profile) {
+    //   throw new ProfileNotFoundException(params.profileId);
+    // }
 
     // TODO: check asset existing
 
@@ -278,9 +277,9 @@ export class PostsService implements IPostsService {
       where: { id: params.profileId },
     });
 
-    if (!profile) {
-      throw new ProfileNotFoundException(params.profileId);
-    }
+    // if (!profile) {
+    //   throw new ProfileNotFoundException(params.profileId);
+    // }
 
     const existingLike = await this.postLikeRepository.findOne({
       where: { postId, profileId },
@@ -326,9 +325,9 @@ export class PostsService implements IPostsService {
       where: { id: params.profileId },
     });
 
-    if (!profile) {
-      throw new ProfileNotFoundException(params.profileId);
-    }
+    // if (!profile) {
+    //   throw new ProfileNotFoundException(params.profileId);
+    // }
 
     try {
       const { page = 1, limit = 10 } = params;
