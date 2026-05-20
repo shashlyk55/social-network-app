@@ -9,6 +9,7 @@ import {
   ManyToMany,
   JoinTable,
   JoinColumn,
+  VirtualColumn,
 } from 'typeorm';
 import { PostAsset } from './many-to-many/post-asset.entity';
 import { PostLike } from './many-to-many/post-like.entity';
@@ -53,4 +54,21 @@ export class Post {
 
   @OneToMany(() => PostLike, (postLike) => postLike.post)
   postLikes: PostLike[];
+
+  @VirtualColumn({
+    query: (alias) =>
+      `SELECT COUNT("id") FROM "main"."posts_likes" WHERE "post_id" = ${alias}.id`,
+  })
+  likesCount: number;
+
+  @VirtualColumn({
+    query: (alias) =>
+      `SELECT COUNT("id") FROM "main"."comments" WHERE "post_id" = ${alias}.id`,
+  })
+  commentsCount: number;
+
+  @VirtualColumn({
+    query: (alias) => `SELECT false`,
+  })
+  isLiked: boolean;
 }

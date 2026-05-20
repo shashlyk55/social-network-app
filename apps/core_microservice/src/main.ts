@@ -7,7 +7,6 @@ import helmet from 'helmet';
 import { getHelmetConfig } from './config/helmet.config';
 import { WinstonLoggerService } from './winston-logger/winston-logger.service';
 import { BadRequestException, ValidationPipe } from '@nestjs/common';
-import { GlobalExceptionFilter } from './app/exceptions/global-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);

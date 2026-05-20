@@ -9,6 +9,7 @@ import {
   Query,
   HttpStatus,
   HttpCode,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -22,13 +23,15 @@ import {
 import { PaginationResponseDto } from 'src/common/dto/pagination-response.dto';
 import { CommentsService } from './comments.service';
 import { CommentResponseDto } from './dto/comment-response.dto';
-import { CreateCommentLikeDto } from './dto/create-comment-like.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
 import { CommentMappers } from './utils/params-mapper.util';
+import { AccessGuard } from 'src/auth/guards/access.guard';
+import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 
 @ApiTags('comments')
 @ApiBearerAuth()
+@UseGuards(AccessGuard)
 @Controller('comments')
 export class CommentsController {
   constructor(private readonly commentService: CommentsService) {}
@@ -44,10 +47,11 @@ export class CommentsController {
   @ApiResponse({ status: 404, description: 'Parent comment not found' })
   @ApiBody({ type: CreateCommentDto })
   async create(
+    @CurrentUser('userId') userId: number,
     @Body() createCommentDto: CreateCommentDto,
   ): Promise<CommentResponseDto> {
     const params = CommentMappers.toCreateParams(createCommentDto);
-    const comment = await this.commentService.create(params);
+    const comment = await this.commentService.create(userId, params);
     return CommentMappers.toCommentResponse(comment);
   }
 
@@ -76,27 +80,28 @@ export class CommentsController {
     type: Number,
     description: 'Filter by post ID',
   })
-  // @ApiQuery({
-  //   name: 'profileId',
-  //   required: false,
-  //   type: Number,
-  //   description: 'Filter by profile ID',
-  // })
   @ApiQuery({
     name: 'parentCommentId',
     required: false,
     type: Number,
     description: 'Filter by parent comment ID',
   })
+  @ApiQuery({
+    name: 'order',
+    required: false,
+    type: String,
+    description: 'Sort order',
+  })
   async findAll(
+    @CurrentUser('userId') userId?: number,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('postId') postId?: number,
-    //@Query('profileId') profileId?: number,
     @Query('parentCommentId') parentCommentId?: number,
+    @Query('order') order?: 'ASC' | 'DESC',
   ): Promise<PaginationResponseDto<CommentResponseDto>> {
-    const params = { page, limit, postId, parentCommentId };
-    const result = await this.commentService.findAll(params);
+    const params = { page, limit, postId, parentCommentId, order };
+    const result = await this.commentService.findAll(params, userId);
     return CommentMappers.toPaginationResponse(result);
   }
 
@@ -120,13 +125,20 @@ export class CommentsController {
     type: Number,
     description: 'Items per page',
   })
+  @ApiQuery({
+    name: 'order',
+    required: false,
+    type: String,
+    description: 'Sort order',
+  })
   async findPostComments(
     @Param('postId') postId: number,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
+    @Query('order') order?: 'ASC' | 'DESC',
   ): Promise<PaginationResponseDto<CommentResponseDto>> {
-    const params = { page, limit };
-    const result = await this.commentService.findPostComments(postId, params);
+    const params = { postId, page, limit, order };
+    const result = await this.commentService.findAll(params);
     return CommentMappers.toPaginationResponse(result);
   }
 
@@ -150,16 +162,20 @@ export class CommentsController {
     type: Number,
     description: 'Items per page',
   })
+  @ApiQuery({
+    name: 'order',
+    required: false,
+    type: String,
+    description: 'Sort order',
+  })
   async findCommentReplies(
     @Param('id') commentId: number,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
+    @Query('order') order?: 'ASC' | 'DESC',
   ): Promise<PaginationResponseDto<CommentResponseDto>> {
-    const params = { page, limit };
-    const result = await this.commentService.findCommentReplies(
-      commentId,
-      params,
-    );
+    const params = { commentId, page, limit, order };
+    const result = await this.commentService.findAll(params);
     return CommentMappers.toPaginationResponse(result);
   }
 
@@ -188,11 +204,12 @@ export class CommentsController {
   @ApiResponse({ status: 404, description: 'Comment not found' })
   @ApiBody({ type: UpdateCommentDto })
   async update(
-    @Param('id') id: number,
+    @CurrentUser('userId') userId: number,
+    @Param('id') commentId: number,
     @Body() updateCommentDto: UpdateCommentDto,
   ): Promise<CommentResponseDto> {
-    const params = CommentMappers.toUpdateParams(id, updateCommentDto);
-    const comment = await this.commentService.update(params);
+    const params = CommentMappers.toUpdateParams(updateCommentDto);
+    const comment = await this.commentService.update(userId, commentId, params);
     return CommentMappers.toCommentResponse(comment);
   }
 
@@ -206,34 +223,24 @@ export class CommentsController {
     status: 409,
     description: 'Cannot delete comment with replies',
   })
-  @ApiQuery({
-    name: 'deletedById',
-    required: true,
-    type: Number,
-    description: 'ID of user performing deletion',
-  })
   async remove(
-    @Param('id') id: number,
-    @Query('deletedById') deletedById: number, // change on current user
+    @CurrentUser('userId') userId: number,
+    @Param('id') commentId: number,
   ): Promise<void> {
-    await this.commentService.remove(id);
+    await this.commentService.remove(userId, commentId);
   }
 
   @Post(':id/like')
+  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Like/Unlike comment' })
   @ApiParam({ name: 'id', type: Number, description: 'Comment ID' })
-  @ApiResponse({ status: 201, description: 'Comment liked successfully' })
+  @ApiResponse({ status: 204, description: 'Comment liked successfully' })
   @ApiResponse({ status: 404, description: 'Comment not found' })
   @ApiResponse({ status: 409, description: 'Comment already liked' })
-  @ApiBody({ type: CreateCommentLikeDto })
   async likeComment(
+    @CurrentUser('userId') userId: number,
     @Param('id') commentId: number,
-    @Body() createCommentLikeDto: CreateCommentLikeDto,
   ): Promise<void> {
-    const params = CommentMappers.toCreateCommentLikeParams(
-      commentId,
-      createCommentLikeDto,
-    );
-    await this.commentService.likeComment(params);
+    await this.commentService.likeComment(userId, commentId);
   }
 }

@@ -100,9 +100,10 @@ export class PostsController {
     @Query('limit') limit?: number,
     @Query('isArchived') isArchived?: boolean,
     @Query('search') search?: string,
+    @CurrentUser('userId') userId?: number,
   ): Promise<PaginationResponseDto<PostResponseDto>> {
     const params = { page, limit, isArchived, search };
-    const result = await this.postService.findAll(params);
+    const result = await this.postService.findAll(params, undefined, userId);
     return PostMappers.toPaginationResponse(result);
   }
 
@@ -138,14 +139,14 @@ export class PostsController {
     description: 'Search posts by content',
   })
   async findCurrentUserPosts(
+    @CurrentUser('userId') userId: number,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('isArchived') isArchived?: boolean,
     @Query('search') search?: string,
-    @CurrentUser('userId') userId?: number,
   ): Promise<PaginationResponseDto<PostResponseDto>> {
     const params = { page, limit, isArchived, search };
-    const result = await this.postService.findAll(params, userId);
+    const result = await this.postService.findAll(params, userId, userId);
     return PostMappers.toPaginationResponse(result);
   }
 
@@ -178,11 +179,13 @@ export class PostsController {
     @Query('limit') limit?: number,
   ): Promise<PaginationResponseDto<PostResponseDto>> {
     return PostMappers.toPaginationResponse(
-      await this.postService.getFollowedFeed({
+      await this.postService.getFollowedFeed(
+        {
+          limit,
+          page,
+        },
         userId,
-        limit,
-        page,
-      }),
+      ),
     );
   }
 
@@ -236,10 +239,10 @@ export class PostsController {
     description: 'ID of user performing archive',
   })
   async archive(
-    @Param('id') id: number,
-    @CurrentUser('userId') updatedById: number,
+    @Param('id') postId: number,
+    @CurrentUser('userId') userId: number,
   ): Promise<PostResponseDto> {
-    const post = await this.postService.archive(id, updatedById);
+    const post = await this.postService.archive(postId, userId);
     return PostMappers.toPostResponse(post);
   }
 
@@ -259,10 +262,10 @@ export class PostsController {
     description: 'ID of user performing unarchive',
   })
   async unarchive(
-    @Param('id') id: number,
-    @CurrentUser('userId') updatedById: number,
+    @Param('id') postId: number,
+    @CurrentUser('userId') userId: number,
   ): Promise<PostResponseDto> {
-    const post = await this.postService.unarchive(id, updatedById);
+    const post = await this.postService.unarchive(postId, userId);
     return PostMappers.toPostResponse(post);
   }
 
@@ -272,8 +275,11 @@ export class PostsController {
   @ApiParam({ name: 'id', type: Number, description: 'Post ID' })
   @ApiResponse({ status: 204, description: 'Post deleted permanently' })
   @ApiResponse({ status: 404, description: 'Post not found' })
-  async remove(@Param('id') id: number): Promise<void> {
-    await this.postService.remove(id);
+  async remove(
+    @CurrentUser('userId') userId: number,
+    @Param('id') postId: number,
+  ): Promise<void> {
+    await this.postService.remove(postId, userId);
   }
 
   @Post(':id/like')

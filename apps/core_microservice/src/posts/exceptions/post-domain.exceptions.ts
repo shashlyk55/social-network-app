@@ -29,7 +29,15 @@ export class PostOperationException extends DomainException {
 export class PostAccessDeniedException extends DomainException {
   code = 'POST_ACCESS_DENIED';
 
-  constructor(profileId: number, postId: number) {
-    super(`Profile ${profileId} does not have access to post ${postId}`);
+  constructor(profileId?: number, postId?: number) {
+    let message = 'User does not have access to post';
+    if (profileId && postId) {
+      message = `Profile ${profileId} does not have access to post ${postId}`;
+    } else if (profileId) {
+      message = `Profile ${profileId} does not have access to post`;
+    } else if (profileId) {
+      message = `Profile does not have access to post ${postId}`;
+    }
+    super(message);
   }
 }
