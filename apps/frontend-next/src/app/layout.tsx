@@ -8,6 +8,7 @@ import { useMe } from "@/hooks/profile/use-me";
 import { usePathname } from "next/navigation";
 import { Toaster } from "sonner";
 import { ModalProvider } from "@/components/provider/modal-provider";
+import { NotificationsPanel } from "@/components/layout/notifications-panel";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -63,6 +64,7 @@ export default function RootLayout({
       >
         <QueryProvider>
           <ModalProvider />
+          <NotificationsPanel />
           <AppLayout>{children}</AppLayout>
           <Toaster position="top-right" richColors closeButton />
         </QueryProvider>

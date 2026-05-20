@@ -7,6 +7,7 @@ import { UserAvatar } from "@/components/ui/user-avatar";
 import { Home, LogOut, MessageSquare, Search, User } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { useLogout } from "@/hooks/auth/use-logout";
+import { NotificationsButton } from "../notification/notifications-button";
 
 const NAV_ITEMS = [
   { label: "Home", href: "/feed", icon: Home },
@@ -43,6 +44,9 @@ export const Sidebar = () => {
             </Link>
           );
         })}
+
+        {/* Notifications button is separate because it toggles a panel instead of navigating */}
+        <NotificationsButton />
       </nav>
 
       {me && (
